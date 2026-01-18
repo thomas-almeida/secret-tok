@@ -5,16 +5,16 @@ export default function TopBar() {
     const [selectedTab, setSelectedTab] = useState("para-voce")
 
     return (
-        <div className="absolute z-10 w-full p-4 flex justify-between items-center font-semibold ">
-            <div className="flex items-center text-xl italic mb-3">
+        <div className="absolute z-10 w-full flex justify-between items-center font-semibold p-2">
+            <div className="flex items-center text-xl italic">
                 <Flame className="w-5 h-5 text-red-400" /> rapidinhas
             </div>
-            <div className="grid grid-cols-2 border border-slate-200 rounded-full shadow">
+            <div className="grid grid-cols-2 border border-slate-200 rounded-full shadow w-56 bg-black/50 text-slate-200-500">
                 <div className="flex items-center gap-2" onClick={() => setSelectedTab("para-voce")}>
-                    <p className={`px-4 rounded-full w-26 ${selectedTab === "para-voce" ? "text-white shadow bg-red-400 " : ""}`}>Pra Você</p>
+                    <p className={`px-4 text-center rounded-full ${selectedTab === "para-voce" ? "text-white shadow bg-red-500 " : ""}`}>Só Espiar</p>
                 </div>
                 <div className="flex items-center gap-2" onClick={() => setSelectedTab("famosas")}>
-                    <p className={`px-4 rounded-full w-26 ${selectedTab === "famosas" ? "text-white shadow bg-purple-500" : ""}`}>Famosas</p>
+                    <p className={`px-5 text-center rounded-full ${selectedTab === "famosas" ? "text-white shadow bg-purple-500" : ""}`}>Famosas</p>
                 </div>
             </div>
         </div>
