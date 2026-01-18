@@ -1,38 +1,58 @@
 "use client"
 
+import { Volume2, VolumeX } from "lucide-react"
 import { useRef, useEffect, useState } from "react"
 import VideoInfo from "./video-info"
 
-interface VideoCardProps {
+type Video = {
+  id: string
   videoUrl: string
-  isActive: boolean
+  model: string
+  profilePicture: string
+  description: string
 }
 
-export default function VideoCard({ videoUrl, isActive }: VideoCardProps) {
+interface VideoCardProps {
+  video: Video
+  isActive: boolean
+  triggerSubscriptionModal: () => void
+}
+
+export default function VideoCard({ video, isActive, triggerSubscriptionModal }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const progressBarRef = useRef<HTMLDivElement>(null)
   const [progress, setProgress] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
+  const [isMuted, setIsMuted] = useState(true)
+  const [showAudioIndicator, setShowAudioIndicator] = useState(false)
 
   useEffect(() => {
     if (!videoRef.current) return
 
     if (isActive) {
       videoRef.current.currentTime = 0
+      videoRef.current.muted = true
       videoRef.current.play().catch(() => { })
     } else {
       videoRef.current.pause()
+      // Pré-carregar próximos vídeos quando não estão ativos
+      if (videoRef.current.readyState < 3) {
+        videoRef.current.load()
+      }
     }
   }, [isActive])
 
-  const togglePlay = () => {
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation()
     if (!videoRef.current) return
-
-    if (videoRef.current.paused) {
-      videoRef.current.play()
-    } else {
-      videoRef.current.pause()
-    }
+    videoRef.current.muted = !videoRef.current.muted
+    setIsMuted(!isMuted)
+    
+    // Mostrar indicador por 1 segundo
+    setShowAudioIndicator(true)
+    setTimeout(() => {
+      setShowAudioIndicator(false)
+    }, 1000)
   }
 
   const handleTimeUpdate = () => {
@@ -95,20 +115,33 @@ export default function VideoCard({ videoUrl, isActive }: VideoCardProps) {
   }, [isDragging])
 
   return (
-    <div className="relative h-dvh w-full snap-start snap-always bg-black" onClick={togglePlay}>
+    <div className="relative h-dvh w-full snap-start snap-always bg-black" onClick={toggleMute}>
       <video
         ref={videoRef}
-        src={videoUrl}
+        src={video.videoUrl}
         className="absolute inset-0 h-[calc(100%-4px)] w-full object-cover"
         loop
-        muted
         playsInline
         preload="auto"
         onTimeUpdate={handleTimeUpdate}
       />
+      
+      {/* Indicador de áudio */}
+      {isActive && showAudioIndicator && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+          {isMuted ? (
+            <VolumeX className="w-8 h-8 text-white" />
+          ) : (
+            <Volume2 className="w-8 h-8 text-white" />
+          )}
+        </div>
+      )}
+      
       <VideoInfo
-        userName="Fulana"
-        videoDescription="Lorem Ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod."
+        userName={video.model}
+        videoDescription={video.description}
+        triggerModal={triggerSubscriptionModal}
+        triggerSubscriptionModal={true}
       />
       <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-700 cursor-pointer"
         ref={progressBarRef}

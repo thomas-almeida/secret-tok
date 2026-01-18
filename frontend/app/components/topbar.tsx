@@ -1,8 +1,20 @@
 import { Flame } from "lucide-react"
 import { useState } from "react"
 
-export default function TopBar() {
-    const [selectedTab, setSelectedTab] = useState("para-voce")
+interface TopBarProps {
+    triggerSubscriptionModal: (title: string) => void
+}
+
+export default function TopBar({ triggerSubscriptionModal }: TopBarProps) {
+    const [selectedTab, setSelectedTab] = useState("espiar")
+
+    const handleTabClick = (tab: string) => {
+        if (tab === "famosas") {
+            triggerSubscriptionModal("Seja VIP")
+        } else {
+            setSelectedTab(tab)
+        }
+    }
 
     return (
         <div className="absolute z-10 w-full flex justify-between items-center font-semibold p-2">
@@ -10,10 +22,10 @@ export default function TopBar() {
                 <Flame className="w-5 h-5 text-red-400" /> rapidinhas
             </div>
             <div className="grid grid-cols-2 border border-slate-200 rounded-full shadow w-56 bg-black/50 text-slate-200-500">
-                <div className="flex items-center gap-2" onClick={() => setSelectedTab("para-voce")}>
-                    <p className={`px-4 text-center rounded-full ${selectedTab === "para-voce" ? "text-white shadow bg-red-500 " : ""}`}>Só Espiar</p>
+                <div className="flex items-center gap-2" onClick={() => handleTabClick("espiar")}>
+                    <p className={`px-4 text-center rounded-full ${selectedTab === "espiar" ? "text-white shadow bg-red-500 " : ""}`}>Só Espiar</p>
                 </div>
-                <div className="flex items-center gap-2" onClick={() => setSelectedTab("famosas")}>
+                <div className="flex items-center gap-2" onClick={() => handleTabClick("famosas")}>
                     <p className={`px-5 text-center rounded-full ${selectedTab === "famosas" ? "text-white shadow bg-purple-500" : ""}`}>Famosas</p>
                 </div>
             </div>
