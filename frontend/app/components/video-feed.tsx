@@ -6,15 +6,30 @@ import TopBar from "./topbar"
 
 const videos = [
     {
-        id: "1",
-        videoUrl: "/videos/video-secret.mp4",
+        id: "0",
+        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720366/videos/andressa_urach_2_wwuiy3.mp4",
     },
     {
-        id: "2",
-        videoUrl: "/videos/video-secret",
+        id: "1",
+        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720357/videos/kinechan_1_ntwnls.mp4",
     }, {
+        id: "2",
+        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720362/videos/ester_muniz_1_p2hwvf.mp4",
+    },
+    {
         id: "3",
-        videoUrl: "/videos/video-secret",
+        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720354/videos/cibelly_1_ebw1st.mp4",
+    },
+    {
+        id: "4",
+        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720350/videos/coelhinha_2_d2xlaq.mp4",
+    }, {
+        id: "5",
+        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720356/videos/lina_naamura_3_cme9pv.mp4",
+    },
+    {
+        id: "6",
+        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720367/videos/martina_oliveira_3_y1x59b.mp4",
     },
 ]
 

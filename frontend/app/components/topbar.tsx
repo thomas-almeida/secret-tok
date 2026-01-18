@@ -5,7 +5,7 @@ export default function TopBar() {
     const [selectedTab, setSelectedTab] = useState("para-voce")
 
     return (
-        <div className="absolute z-10 w-full p-4 flex flex-col justify-center items-center font-semibold ">
+        <div className="absolute z-10 w-full p-4 flex justify-between items-center font-semibold ">
             <div className="flex items-center text-xl italic mb-3">
                 <Flame className="w-5 h-5 text-red-400" /> rapidinhas
             </div>

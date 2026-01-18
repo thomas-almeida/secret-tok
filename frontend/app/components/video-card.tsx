@@ -95,7 +95,7 @@ export default function VideoCard({ videoUrl, isActive }: VideoCardProps) {
   }, [isDragging])
 
   return (
-    <div className="relative h-dvh w-full snap-start snap-always flex-shrink-0 bg-black" onClick={togglePlay}>
+    <div className="relative h-dvh w-full snap-start snap-always bg-black" onClick={togglePlay}>
       <video
         ref={videoRef}
         src={videoUrl}
@@ -115,7 +115,7 @@ export default function VideoCard({ videoUrl, isActive }: VideoCardProps) {
         onClick={handleProgressBarClick}
         onMouseDown={handleMouseDown}>
         <div
-          className="h-full bg-white transition-all duration-100"
+          className="h-full bg-red-400 transition-all duration-100"
           style={{ width: `${progress}%` }}
         ></div>
       </div>
