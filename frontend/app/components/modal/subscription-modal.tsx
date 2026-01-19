@@ -54,7 +54,7 @@ export default function SubscriptionModal({ isVisible, title, onAccept, onDeclin
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentSlide((prev) => (prev + 1) % actresses.length)
-        }, 3000)
+        }, 2000)
 
         return () => clearInterval(interval)
     }, [actresses.length])

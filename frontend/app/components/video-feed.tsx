@@ -127,14 +127,49 @@ const videos = [
 
 ]
 
-export default function VideoFeed() {
+export default function VideoFeedOptimized() {
     const [feedVideos, setFeedVideos] = useState(() => [...videos])
     const [isAdultModalVisible, setIsAdultModalVisible] = useState(true)
     const [isSubscriptionModalVisible, setIsSubscriptionModalVisible] = useState(false)
     const [subscriptionModalTitle, setSubscriptionModalTitle] = useState("Suas espiadas diárias acabaram..")
     const [currentIndex, setCurrentIndex] = useState(0)
+    const [preloadRange, setPreloadRange] = useState({ start: 0, end: 2 })
+
     const containerRef = useRef<HTMLDivElement>(null)
-    const isAdjusting = useRef(false)
+
+    // Função para pré-carregar vídeos próximos
+    const preloadNearbyVideos = useCallback((centerIndex: number) => {
+        const preloadAhead = 2 // Pré-carregar 2 vídeos à frente
+        const preloadBehind = 1 // Pré-carregar 1 vídeo atrás
+
+        const start = Math.max(0, centerIndex - preloadBehind)
+        const end = Math.min(feedVideos.length - 1, centerIndex + preloadAhead)
+
+        setPreloadRange({ start, end })
+
+        // Pré-carregar URLs
+        const urlsToPreload: string[] = []
+
+        for (let i = start; i <= end; i++) {
+            if (i !== centerIndex) {
+                urlsToPreload.push(feedVideos[i].videoUrl)
+            }
+        }
+
+        // Pré-carregar as URLs em segundo plano
+        urlsToPreload.forEach(url => {
+            const link = document.createElement('link')
+            link.rel = 'preload'
+            link.as = 'video'
+            link.href = url
+            document.head.appendChild(link)
+            setTimeout(() => document.head.removeChild(link), 1000)
+        })
+    }, [feedVideos])
+
+    useEffect(() => {
+        preloadNearbyVideos(currentIndex)
+    }, [currentIndex, preloadNearbyVideos])
 
     const handleTriggerSubscriptionModal = (title?: string) => {
         if (title) {
@@ -143,41 +178,45 @@ export default function VideoFeed() {
         setIsSubscriptionModalVisible(true)
     }
 
-    const handleScroll = useCallback(() => {
-        if (!containerRef.current || isAdjusting.current) return
-
-        const container = containerRef.current
-        const scrollTop = container.scrollTop
-        const height = container.clientHeight
-        const newIndex = Math.round(scrollTop / height)
-
-        if (newIndex !== currentIndex) {
-            setCurrentIndex(newIndex)
-        }
-
-        // Impedir scroll acima do primeiro vídeo
-        if (scrollTop < 0) {
-            container.scrollTop = 0
-            return
-        }
-
-        // Chegando no fim - adicionar mais vídeos
-        if (newIndex >= feedVideos.length - 2) {
-            isAdjusting.current = true
-            setFeedVideos((prev) => [...prev, ...videos])
-            setTimeout(() => {
-                isAdjusting.current = false
-            }, 50)
-        }
-    }, [currentIndex, feedVideos.length])
-
+    // Otimização: Intersection Observer para detectar vídeos visíveis
     useEffect(() => {
         const container = containerRef.current
         if (!container) return
 
-        container.addEventListener("scroll", handleScroll)
-        return () => container.removeEventListener("scroll", handleScroll)
-    }, [handleScroll])
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const videoIndex = parseInt(entry.target.getAttribute('data-index') || '0')
+                        if (videoIndex !== currentIndex) {
+                            setCurrentIndex(videoIndex)
+                        }
+                    }
+                })
+            },
+            {
+                root: container,
+                threshold: 0.5
+            }
+        )
+
+        // Observar todos os vídeos
+        const videoElements = container.querySelectorAll('.video-container')
+        videoElements.forEach(el => observer.observe(el))
+
+        return () => observer.disconnect()
+    }, [currentIndex, feedVideos.length])
+
+    // Otimização: Pré-carregar primeiro vídeo imediatamente
+    useEffect(() => {
+        if (feedVideos.length > 0) {
+            // Forçar pré-carregamento do primeiro vídeo
+            const firstVideo = new Audio()
+            firstVideo.src = feedVideos[0].videoUrl
+            firstVideo.preload = 'auto'
+            firstVideo.load()
+        }
+    }, [])
 
     return (
         <div
@@ -202,28 +241,26 @@ export default function VideoFeed() {
             )}
 
             <TopBar triggerSubscriptionModal={handleTriggerSubscriptionModal} />
-            <>
-                {feedVideos.map((video, index) => {
-                    // Renderizar apenas vídeos próximos ao atual (atual + 3 anteriores e + 5 próximos)
-                    const isVisible = Math.abs(index - currentIndex) <= 5
-                    
-                    if (!isVisible) {
-                        return (
-                            <div key={`${video.id}-${index}`} className="h-dvh w-full snap-start snap-always bg-black" />
-                        )
-                    }
-                    
-                    return (
+
+            {feedVideos.map((video, index) => {
+                // Determinar se este vídeo deve ser pré-carregado
+                const shouldPreload = index >= preloadRange.start && index <= preloadRange.end
+
+                return (
+                    <div
+                        key={`${video.id}-${index}`}
+                        data-index={index}
+                        className="video-container snap-start snap-always"
+                    >
                         <VideoCard
-                            key={`${video.id}-${index}`}
                             video={video}
                             isActive={index === currentIndex}
+                            shouldPreload={shouldPreload}
                             triggerSubscriptionModal={handleTriggerSubscriptionModal}
                         />
-                    )
-                })}
-            </>
-
+                    </div>
+                )
+            })}
         </div>
     )
 }
