@@ -134,6 +134,7 @@ export default function VideoFeedOptimized() {
     const [subscriptionModalTitle, setSubscriptionModalTitle] = useState("Seja VIP")
     const [currentIndex, setCurrentIndex] = useState(0)
     const [preloadRange, setPreloadRange] = useState({ start: 0, end: 2 })
+    const [dailyLimit, setDailyLimit] = useState(false)
 
     const containerRef = useRef<HTMLDivElement>(null)
 
@@ -161,6 +162,7 @@ export default function VideoFeedOptimized() {
             console.log('Scrolls diários atualizados:', limitReached)
 
             setSubscriptionModalTitle('Suas Espiadas diárias Acabaram')
+            setDailyLimit(true)
             setIsSubscriptionModalVisible(true)
         }
 
@@ -284,6 +286,7 @@ export default function VideoFeedOptimized() {
                 <SubscriptionModal
                     title={subscriptionModalTitle}
                     isVisible={isSubscriptionModalVisible}
+                    dailyLimit={dailyLimit}
                     onAccept={() => setIsSubscriptionModalVisible(false)}
                     onDecline={() => setIsSubscriptionModalVisible(false)}
                 />

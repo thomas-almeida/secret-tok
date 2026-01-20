@@ -1,5 +1,6 @@
 import { Flame } from "lucide-react"
 import { useState } from "react"
+import Logo from "./logo"
 
 interface TopBarProps {
     triggerSubscriptionModal: (title: string) => void
@@ -18,9 +19,7 @@ export default function TopBar({ triggerSubscriptionModal }: TopBarProps) {
 
     return (
         <div className="absolute z-10 w-full flex justify-between items-center font-semibold p-2">
-            <div className="flex items-center text-xl italic">
-                <Flame className="w-5 h-5 text-red-400" /> rapidinhas
-            </div>
+            <Logo />
             <div className="grid grid-cols-2 border border-slate-200 rounded-full shadow w-56 bg-black/50 text-slate-200-500">
                 <div className="flex items-center gap-2" onClick={() => handleTabClick("espiar")}>
                     <p className={`px-4 text-center rounded-full ${selectedTab === "espiar" ? "text-white shadow bg-red-500 " : ""}`}>Só Espiar</p>
