@@ -154,7 +154,6 @@ export default function VideoCard({
     }
   }, [])
 
-  // Resto do código permanece similar...
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation()
     setIsDragging(true)

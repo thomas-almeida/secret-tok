@@ -131,13 +131,43 @@ export default function VideoFeedOptimized() {
     const [feedVideos, setFeedVideos] = useState(() => [...videos])
     const [isAdultModalVisible, setIsAdultModalVisible] = useState(true)
     const [isSubscriptionModalVisible, setIsSubscriptionModalVisible] = useState(false)
-    const [subscriptionModalTitle, setSubscriptionModalTitle] = useState("Suas espiadas diárias acabaram..")
+    const [subscriptionModalTitle, setSubscriptionModalTitle] = useState("Seja VIP")
     const [currentIndex, setCurrentIndex] = useState(0)
     const [preloadRange, setPreloadRange] = useState({ start: 0, end: 2 })
 
     const containerRef = useRef<HTMLDivElement>(null)
 
     // Função para pré-carregar vídeos próximos
+
+    useEffect(() => {
+
+        const checkDailyScrolls = () => {
+            const currentScrolls = localStorage.getItem('daily-scrolls') || 'false'
+            const limitReached = currentScrolls === 'true' ? 'true' : 'true'
+            const scrollsDate = localStorage.getItem('scrolls-date')
+            const today = new Date().toDateString()
+
+            if (scrollsDate !== today) {
+                localStorage.setItem('daily-scrolls', 'false')
+                localStorage.setItem('scrolls-date', today)
+                localStorage.setItem('last-video-reached', 'false')
+                return
+            }
+
+            localStorage.setItem('daily-scrolls', limitReached)
+            localStorage.setItem('scrolls-date', today)
+            localStorage.setItem('last-video-reached', 'true')
+
+            console.log('Scrolls diários atualizados:', limitReached)
+
+            setSubscriptionModalTitle('Suas Espiadas diárias Acabaram')
+            setIsSubscriptionModalVisible(true)
+        }
+
+        checkDailyScrolls()
+
+    }, [])
+
     const preloadNearbyVideos = useCallback((centerIndex: number) => {
         const preloadAhead = 2 // Pré-carregar 2 vídeos à frente
         const preloadBehind = 1 // Pré-carregar 1 vídeo atrás
@@ -190,6 +220,25 @@ export default function VideoFeedOptimized() {
                         const videoIndex = parseInt(entry.target.getAttribute('data-index') || '0')
                         if (videoIndex !== currentIndex) {
                             setCurrentIndex(videoIndex)
+
+                            // Verificar se é o último vídeo
+                            if (videoIndex === feedVideos.length - 1) {
+                                console.log('Último vídeo alcançado - index:', videoIndex)
+
+                                // Atualizar storage com scrolls diários
+                                const currentScrolls = localStorage.getItem('daily-scrolls') || 'false'
+                                const limitReached = currentScrolls === 'true' ? 'true' : 'true'
+                                const today = new Date().toDateString()
+
+                                localStorage.setItem('daily-scrolls', limitReached)
+                                localStorage.setItem('scrolls-date', today)
+                                localStorage.setItem('last-video-reached', 'true')
+
+                                console.log('Scrolls diários atualizados:', limitReached)
+
+                                setSubscriptionModalTitle('Suas Espiadas diárias Acabaram')
+                                setIsSubscriptionModalVisible(true)
+                            }
                         }
                     }
                 })
