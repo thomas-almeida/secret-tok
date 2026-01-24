@@ -1,13 +1,17 @@
 import mongoose from 'mongoose';
 
 const subscriptionSchema = new mongoose.Schema({
-  transactionId: {
+  planId: {
     type: String,
     required: true
   },
   amount: {
     type: Number,
     required: true
+  },
+  active: {
+    type: Boolean,
+    default: true
   },
   transactionDate: {
     type: Date,
