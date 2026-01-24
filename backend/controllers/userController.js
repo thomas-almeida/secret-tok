@@ -3,11 +3,11 @@ import { hashPassword } from '../utils/password.js';
 
 export const createUser = async (req, res) => {
   try {
-    const { name, phone, password, subscription } = req.body;
+    const { name, phone, email, password, subscription } = req.body;
 
-    if (!name || !phone || !password) {
-      return res.status(400).json({ 
-        error: 'Name, phone and password are required' 
+    if (!name || !phone || !password || !email) {
+      return res.status(400).json({
+        error: 'Name, phone, email and password are required'
       });
     }
 
@@ -16,6 +16,7 @@ export const createUser = async (req, res) => {
     const user = new User({
       name,
       phone,
+      email,
       password: hashedPassword,
       subscription
     });
@@ -27,14 +28,15 @@ export const createUser = async (req, res) => {
         id: user._id,
         name: user.name,
         phone: user.phone,
+        email: user.email,
         subscription: user.subscription,
         createdAt: user.createdAt
       }
     });
   } catch (error) {
-    res.status(500).json({ 
-      error: 'Error creating user', 
-      message: error.message 
+    res.status(500).json({
+      error: 'Error creating user',
+      message: error.message
     });
   }
 };
@@ -44,9 +46,9 @@ export const getUsers = async (req, res) => {
     const users = await User.find();
     res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ 
-      error: 'Error fetching users', 
-      message: error.message 
+    res.status(500).json({
+      error: 'Error fetching users',
+      message: error.message
     });
   }
 };
