@@ -1,6 +1,11 @@
 import Logo from "../logo"
+import ModelsCarousel from "../models-carousel"
 import ModalContainer from "./modal-container"
+import Accordion from "../accordion"
 import { useState, useEffect } from "react"
+import Input from "../input"
+
+import { Clipboard, Lock, MessageCircle, User } from "lucide-react"
 
 interface SubscriptionModalProps {
     isVisible: boolean
@@ -15,25 +20,39 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
     const prices = {
         forever: 49.90,
         monthly: 25.90,
-        discountForever: (((5.90 * 12) - 14.90) / (5.90 * 12) * 100).toFixed(0)
+        discountForever: (((5.90 * 12) - 14.90) / (5.90 * 12) * 100)
     }
 
     const [selectedPlan, setSelectedPlan] = useState('vitalicio')
     const [isProcessing, setIsProcessing] = useState(false)
     const [expandedPlan, setExpandedPlan] = useState<string | null>(null)
+    const [step, setStep] = useState<'select' | 'signup' | 'payment'>('select')
+
+    const toCamelCase = (str: string) => {
+        return str.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+    }
 
     const handlePixPayment = () => {
+
         setIsProcessing(true)
         setTimeout(() => {
-            onAccept()
             setIsProcessing(false)
-        }, 3000)
+
+            if (step === 'select') {
+                setStep('signup')
+            } else if (step === 'signup') {
+                setStep('payment')
+            }
+
+        }, 1000)
     }
 
     const handlePlanSelect = (plan: string) => {
         setSelectedPlan(plan)
         setExpandedPlan(expandedPlan === plan ? null : plan)
     }
+
+    const plans = ['vitalicio', 'mensal']
 
     const planBenefits = {
         vitalicio: [
@@ -49,7 +68,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
         ]
     }
 
-    const actresses = [
+    const models = [
 
         {
             name: "Andressa Urach",
@@ -88,151 +107,109 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
         }
     ]
 
-
-
     if (!isVisible) return null
 
     return (
         <>
-            <style jsx>{`
-                @keyframes infinite-scroll {
-                    0% {
-                        transform: translateX(0);
-                    }
-                    100% {
-                        transform: translateX(-300%);
-                    }
-                }
-                
-                .animate-infinite-scroll {
-                    animation: infinite-scroll 40s linear infinite;
-                }
-                
-            `}</style>
-
             <ModalContainer>
                 <div className="flex flex-col items-center gap-4 bg-neutral-900 p-6 rounded-lg text-center">
                     <Logo />
                     <div>
                         <h1 className="text-xl font-bold">
-                            {title}
+                            {
+                                step === 'select' ? title :
+                                    step === 'signup' ? 'Crie sua Conta' :
+                                        'Pagamento via PIX'
+                            }
                         </h1>
-                        <p className="text-sm py-1">Continue espiando tornando-se VIP e assista sem limites!, Todas elas estão aqui!</p>
+                        <p className={step === 'select' ? 'text-sm py-1' : 'hidden'}>Continue espiando tornando-se VIP e assista sem limites!, Todas elas estão aqui!</p>
                     </div>
 
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="relative w-full max-w-md overflow-hidden">
-                            <div className="relative">
-                                <div className="flex animate-infinite-scroll">
-                                    {[...actresses, ...actresses].map((actress, index) => (
-                                        <div key={index} className="shrink-0 relative px-2 w-2/5 h-[105px]">
-                                            <div className="relative h-full rounded-tl-2xl rounded-br-2xl rounded-tr-sm rounded-bl-sm overflow-hidden shadow-lg shadow-red-500/15">
-                                                <img
-                                                    src={actress.image}
-                                                    alt={actress.name}
-                                                    className="w-[180px] h-full object-cover"
-                                                />
-                                                <div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-transparent">
-                                                    <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
-                                                        <h3 className="text-lg font-bold mb-1 drop-shadow-lg leading-4">{actress.name}</h3>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {step === 'select' && (
+                        <ModelsCarousel models={models} />
+                    )}
 
                     <div className="grid grid-cols-1 gap-2 w-full text-lg">
-                        <div
-                            className={`relative border ${selectedPlan === 'vitalicio' ? 'border-red-400 shadow-2xl shadow-red-400/90' : 'border-slate-200'} text-white px-4 py-4 rounded w-full cursor-pointer transition-colors`}
-                            onClick={() => handlePlanSelect('vitalicio')}
-                        >
-                            <div className={`absolute top-[-15px] right-2.5 ${selectedPlan === 'vitalicio' ? 'bg-red-500' : 'bg-slate-200'} p-1 px-1.5 shadow rounded text-white font-bold`}>
-                                <p className={`text-xs ${selectedPlan === 'vitalicio' ? 'text-white' : 'text-slate-700'}`}>Economize {prices.discountForever}%</p>
-                            </div>
-                            <div className="flex justify-start items-center gap-2 italic">
-                                <input
-                                    type="radio"
-                                    id="vitalicio"
-                                    className="accent-red-500"
-                                    checked={selectedPlan === 'vitalicio'}
-                                    readOnly
+
+                        {
+                            step === 'select' && plans.map((plan) => (
+                                <Accordion
+                                    selectedPlan={plan}
+                                    expandedPlan={expandedPlan}
+                                    handlePlanSelect={handlePlanSelect}
+                                    planBenefits={planBenefits}
+                                    prices={plan === 'vitalicio' ? prices.forever : prices.monthly}
+                                    planName={toCamelCase(plan)}
+                                    promotional={plan === 'vitalicio'}
                                 />
-                                <div className="flex-1">
-                                    Assinar <b>Vitalício</b> - <b>R$ {prices.forever.toFixed(2).replace('.', ',')}</b>
-                                </div>
-                                <div className={`transform transition-transform duration-200 ${expandedPlan === 'vitalicio' ? 'rotate-180' : ''}`}>
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                            {expandedPlan === 'vitalicio' && (
-                                <div className="mt-4 pt-4 border-t border-slate-600">
-                                    <ul className="text-sm space-y-2 text-left">
-                                        {planBenefits.vitalicio.map((benefit, index) => (
-                                            <li key={index} className="flex items-start gap-2">
-                                                <svg className="w-4 h-4 text-green-400 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                </svg>
-                                                <span className="text-slate-300">{benefit}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                        <div
-                            className={`relative border ${selectedPlan === 'mensal' ? 'border-red-400' : 'border-slate-200'} text-white px-4 py-4 rounded w-full cursor-pointer transition-colors`}
-                            onClick={() => handlePlanSelect('mensal')}
-                        >
-                            <div className="flex justify-start items-center gap-2">
-                                <input
-                                    type="radio"
-                                    id="mensal"
-                                    className="accent-red-500"
-                                    checked={selectedPlan === 'mensal'}
-                                    readOnly
+
+                            ))
+                        }
+
+                        {
+                            step === 'signup' && (
+                                <>
+                                    <div className="grid grid-cols-1 gap-4 w-full">
+                                        <Input
+                                            icon={<MessageCircle className="w-5 h-5" />}
+                                            type="text"
+                                            placeholder="Telefone com DDD"
+                                            value=""
+                                        />
+                                        <Input
+                                            icon={<User className="w-5 h-5" />}
+                                            type="text"
+                                            placeholder="Nome de usuário"
+                                            value=""
+                                        />
+
+                                        <Input
+                                            icon={<Lock className="w-5 h-5" />}
+                                            type="password"
+                                            placeholder="Senha"
+                                            value=""
+                                        />
+
+                                    </div>
+                                </>
+                            )
+                        }
+
+                        {step === 'payment' && (
+                            <div className="flex flex-col items-center gap-4 w-full">
+                                <img src="/qrcode.svg" alt="PIX QR Code" className="w-54 h-54 p-2 border rounded shadow-2xl" />
+                                <Input
+                                    icon={<Clipboard className="w-5 h-5" />}
+                                    type="text"
+                                    value="123e4567-e89b-12d3-a456-426614174000"
                                 />
-                                <div className="flex-1">
-                                    Assinar <b>Mensal</b> - <b>R$ {prices.monthly.toFixed(2).replace('.', ',')}</b>
-                                </div>
-                                <div className={`transform transition-transform duration-200 ${expandedPlan === 'mensal' ? 'rotate-180' : ''}`}>
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
+                                <button className="border border-slate-100 text-white py-2 rounded w-[90%]">Copiar Código PIX</button>
+                                <p className="text-sm">Use o QR Code acima para completar seu pagamento via PIX.</p>
                             </div>
-                            {expandedPlan === 'mensal' && (
-                                <div className="mt-4 pt-4 border-t border-slate-600">
-                                    <ul className="text-sm space-y-2 text-left">
-                                        {planBenefits.mensal.map((benefit, index) => (
-                                            <li key={index} className="flex items-start gap-2">
-                                                <svg className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                </svg>
-                                                <span className="text-slate-300">{benefit}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                        <button className="bg-green-600 text-white px-4 py-2 mt-4 rounded w-full shadow-2xl shadow-green-600/50" onClick={handlePixPayment} disabled={isProcessing}>
+                        )}
+
+                        <button
+                            className="bg-green-600 text-white px-4 py-2 mt-4 rounded w-full shadow-2xl shadow-green-600/50"
+                            onClick={handlePixPayment}
+                            disabled={isProcessing}
+                        >
                             <div className="flex justify-center items-center gap-2">
                                 {isProcessing ? (
                                     <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                 ) : (
                                     <>
-                                        <h3 className="font-bold">Continuar para o PIX</h3>
-                                        <img src="/icons/pix-white.png" alt="PIX" className="w-6 h-6" />
+                                        <h3 className="font-bold">{
+                                            step === 'select'
+                                                ? 'Continuar para Cadastro' :
+                                                step === 'signup'
+                                                    ? 'Cadastrar e Continuar'
+                                                    : 'Verificar Pagamento'
+                                        }</h3>
+                                        <img src="/icons/pix-white.png" alt="PIX" className={step === 'payment' ? 'w-6 h-6' : 'hidden'} />
                                     </>
                                 )}
                             </div>
-                            <p className={`text-xs ${isProcessing ? 'hidden' : ''}`}>Pagamento discreto e seguro</p>
+                            <p className={`text-xs ${isProcessing || step !== 'select' ? 'hidden' : ''}`}>Insira seu <b>Telegram</b> para continuar</p>
                         </button>
                         {
                             dailyLimit ? (
