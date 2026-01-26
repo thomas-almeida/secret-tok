@@ -15,6 +15,12 @@ interface SubscriptionModalProps {
     onDecline: () => void
 }
 
+interface FormData {
+    phone: string
+    name: string
+    password: string
+}
+
 export default function SubscriptionModal({ isVisible, title, dailyLimit, onAccept, onDecline }: SubscriptionModalProps) {
 
     const prices = {
@@ -23,10 +29,17 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
         discountForever: (((5.90 * 12) - 14.90) / (5.90 * 12) * 100)
     }
 
+
     const [selectedPlan, setSelectedPlan] = useState('vitalicio')
     const [isProcessing, setIsProcessing] = useState(false)
     const [expandedPlan, setExpandedPlan] = useState<string | null>(null)
     const [step, setStep] = useState<'select' | 'signup' | 'payment'>('select')
+
+    const [payload, setPayload] = useState<FormData>({
+        phone: '',
+        name: '',
+        password: ''
+    })
 
     const toCamelCase = (str: string) => {
         return str.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
@@ -112,7 +125,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
     return (
         <>
             <ModalContainer>
-                <div className="flex flex-col items-center gap-4 bg-neutral-900 p-6 rounded-lg text-center">
+                <div className="flex flex-col items-center gap-4 bg-neutral-900 p-6 rounded-lg text-center w-[95%] shadow-2xl shadow-black/50">
                     <Logo />
                     <div>
                         <h1 className="text-xl font-bold">
@@ -122,7 +135,13 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                                         'Pagamento via PIX'
                             }
                         </h1>
-                        <p className={step === 'select' ? 'text-sm py-1' : 'hidden'}>Continue espiando tornando-se VIP e assista sem limites!, Todas elas estão aqui!</p>
+                        <p className={'text-sm py-1'}>
+                            {
+                                step === 'select' ? 'Continue espiando tornando-se VIP e assista sem limites!, Todas elas estão aqui!' :
+                                    step === 'signup' ? 'Complete seu cadastro para continuar.' :
+                                        'Quase lá, use o QR Code abaixo para completar seu pagamento e aproveitar seus benefícios.'
+                            }
+                        </p>
                     </div>
 
                     {step === 'select' && (
@@ -142,7 +161,6 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                                     planName={toCamelCase(plan)}
                                     promotional={plan === 'vitalicio'}
                                 />
-
                             ))
                         }
 
@@ -154,20 +172,24 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                                             icon={<MessageCircle className="w-5 h-5" />}
                                             type="text"
                                             placeholder="Telefone com DDD"
-                                            value=""
+                                            onChange={(e) => setPayload({ ...payload, phone: e.target.value })}
+                                            value={payload.phone}
+                                            numericOnly
                                         />
                                         <Input
                                             icon={<User className="w-5 h-5" />}
                                             type="text"
                                             placeholder="Nome de usuário"
-                                            value=""
+                                            onChange={(e) => setPayload({ ...payload, name: e.target.value })}
+                                            value={payload.name}
                                         />
 
                                         <Input
                                             icon={<Lock className="w-5 h-5" />}
                                             type="password"
                                             placeholder="Senha"
-                                            value=""
+                                            onChange={(e) => setPayload({ ...payload, password: e.target.value })}
+                                            value={payload.password}
                                         />
 
                                     </div>
@@ -183,8 +205,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                                     type="text"
                                     value="123e4567-e89b-12d3-a456-426614174000"
                                 />
-                                <button className="border border-slate-100 text-white py-2 rounded w-[90%]">Copiar Código PIX</button>
-                                <p className="text-sm">Use o QR Code acima para completar seu pagamento via PIX.</p>
+                                <button className="border border-slate-100 text-white py-2 rounded w-full">Copiar Código PIX</button>
                             </div>
                         )}
 
