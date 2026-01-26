@@ -6,12 +6,13 @@ interface InputProps {
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
     icon?: React.ReactNode
     numericOnly?: boolean
+    className?: string
 }
 
-export default function Input({ type, placeholder, value, onChange, icon, numericOnly }: InputProps) {
+export default function Input({ type, placeholder, value, onChange, icon, numericOnly, className }: InputProps) {
     return (
         <>
-            <div className="flex items-center border rounded p-2 gap-2 bg-neutral-800 border-neutral-700">
+            <div className={`flex items-center border rounded p-2 gap-2 bg-neutral-800 border-neutral-700 ${className}`}>
                 {icon}
                 <input
                     type={type || 'text'}

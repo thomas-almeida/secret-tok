@@ -4,8 +4,11 @@ import ModalContainer from "./modal-container"
 import Accordion from "../accordion"
 import { useState, useEffect } from "react"
 import Input from "../input"
+import copy from "copy-to-clipboard"
 
-import { Clipboard, Lock, MessageCircle, User } from "lucide-react"
+import { Clipboard, Lock, MessageCircle, User, Mail } from "lucide-react"
+import { createUser } from "@/app/services/user-service"
+import { createPaymentIntent } from "@/app/services/payments-service"
 
 interface SubscriptionModalProps {
     isVisible: boolean
@@ -18,7 +21,20 @@ interface SubscriptionModalProps {
 interface FormData {
     phone: string
     name: string
+    email: string
     password: string
+}
+
+type Plan = {
+    id: string
+    name: string
+}
+
+type PixData = {
+    pixId: string
+    brCode: string
+    brCode64: string
+    status: string
 }
 
 export default function SubscriptionModal({ isVisible, title, dailyLimit, onAccept, onDecline }: SubscriptionModalProps) {
@@ -29,8 +45,20 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
         discountForever: (((5.90 * 12) - 14.90) / (5.90 * 12) * 100)
     }
 
+    const [selectedPlan, setSelectedPlan] = useState<Plan>({ id: 'RAPIDINHAS_VITALICIO', name: 'vitalicio' })
+    const [pixData, setPixData] = useState<PixData>()
 
-    const [selectedPlan, setSelectedPlan] = useState('vitalicio')
+    const plans = [
+        {
+            id: 'RAPIDINHAS_VITALICIO',
+            name: 'vitalicio',
+        },
+        {
+            id: 'RAPIDINHAS_MENSAL',
+            name: 'mensal',
+        }
+    ]
+
     const [isProcessing, setIsProcessing] = useState(false)
     const [expandedPlan, setExpandedPlan] = useState<string | null>(null)
     const [step, setStep] = useState<'select' | 'signup' | 'payment'>('select')
@@ -38,34 +66,77 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
     const [payload, setPayload] = useState<FormData>({
         phone: '',
         name: '',
+        email: '',
         password: ''
     })
+
+    const [copiedCode, setCopiedCode] = useState(false)
 
     const toCamelCase = (str: string) => {
         return str.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
     }
 
-    const handlePixPayment = () => {
+    const handlePixPayment = async () => {
 
-        setIsProcessing(true)
-        setTimeout(() => {
-            setIsProcessing(false)
+        if (step === 'select') {
+            setStep('signup')
+        } else if (step === 'signup') {
 
-            if (step === 'select') {
-                setStep('signup')
-            } else if (step === 'signup') {
+            setIsProcessing(true)
+
+            const response = await createUser(
+                payload.name,
+                Number(payload.phone),
+                payload.email,
+                payload.password
+            )
+
+            if (response?.user?.id) {
+
+                const paymentIntent = await createPaymentIntent({
+                    planId: selectedPlan.id,
+                    customer: {
+                        name: payload.name,
+                        cellphone: payload.phone,
+                        email: payload.email,
+                        userId: response?.user?.id
+                    }
+                })
+
+                setPixData({
+                    pixId: paymentIntent?.paymentIntent?.id,
+                    brCode: paymentIntent?.paymentIntent?.brCode,
+                    brCode64: paymentIntent?.paymentIntent?.brCodeBase64,
+                    status: paymentIntent?.paymentIntent?.status
+                })
+
                 setStep('payment')
+                setIsProcessing(false)
+                console.log(pixData)
             }
+        }
 
-        }, 1000)
     }
 
-    const handlePlanSelect = (plan: string) => {
+    const handlePlanSelect = (plan: Plan) => {
         setSelectedPlan(plan)
-        setExpandedPlan(expandedPlan === plan ? null : plan)
+        setExpandedPlan(expandedPlan === plan.name ? null : plan.name)
     }
 
-    const plans = ['vitalicio', 'mensal']
+    const handleCopyCode = async () => {
+        if (!pixData?.brCode) return
+
+        const copied = copy(pixData.brCode)
+
+        if (copied) {
+            setCopiedCode(true)
+            setTimeout(() => setCopiedCode(false), 3000)
+        } else {
+            console.error('Falha ao copiar')
+        }
+    }
+
+
 
     const planBenefits = {
         vitalicio: [
@@ -153,13 +224,14 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                         {
                             step === 'select' && plans.map((plan) => (
                                 <Accordion
+                                    key={plan.id}
                                     selectedPlan={plan}
                                     expandedPlan={expandedPlan}
                                     handlePlanSelect={handlePlanSelect}
                                     planBenefits={planBenefits}
-                                    prices={plan === 'vitalicio' ? prices.forever : prices.monthly}
-                                    planName={toCamelCase(plan)}
-                                    promotional={plan === 'vitalicio'}
+                                    prices={plan.name === 'vitalicio' ? prices.forever : prices.monthly}
+                                    planName={toCamelCase(plan.name)}
+                                    promotional={plan.name === 'vitalicio'}
                                 />
                             ))
                         }
@@ -169,6 +241,13 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                                 <>
                                     <div className="grid grid-cols-1 gap-4 w-full">
                                         <Input
+                                            icon={<User className="w-5 h-5" />}
+                                            type="text"
+                                            placeholder="Nome de usuário"
+                                            onChange={(e) => setPayload({ ...payload, name: e.target.value })}
+                                            value={payload.name}
+                                        />
+                                        <Input
                                             icon={<MessageCircle className="w-5 h-5" />}
                                             type="text"
                                             placeholder="Telefone com DDD"
@@ -177,11 +256,11 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                                             numericOnly
                                         />
                                         <Input
-                                            icon={<User className="w-5 h-5" />}
+                                            icon={<Mail className="w-5 h-5" />}
                                             type="text"
-                                            placeholder="Nome de usuário"
-                                            onChange={(e) => setPayload({ ...payload, name: e.target.value })}
-                                            value={payload.name}
+                                            placeholder="E-mail"
+                                            onChange={(e) => setPayload({ ...payload, email: e.target.value })}
+                                            value={payload.email}
                                         />
 
                                         <Input
@@ -197,15 +276,23 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                             )
                         }
 
-                        {step === 'payment' && (
+                        {step === 'payment' && pixData && (
                             <div className="flex flex-col items-center gap-4 w-full">
-                                <img src="/qrcode.svg" alt="PIX QR Code" className="w-54 h-54 p-2 border rounded shadow-2xl" />
+                                <img src={pixData.brCode64} alt="PIX QR Code" className="w-54 h-54 p-2 border-2 rounded shadow-2xl" />
                                 <Input
-                                    icon={<Clipboard className="w-5 h-5" />}
                                     type="text"
-                                    value="123e4567-e89b-12d3-a456-426614174000"
+                                    value={pixData?.brCode}
+                                    className="w-full"
                                 />
-                                <button className="border border-slate-100 text-white py-2 rounded w-full">Copiar Código PIX</button>
+                                <button
+                                    className={`border py-2 rounded w-full shadow-2xl transition-all ${copiedCode
+                                            ? 'bg-green-600 border-green-600 text-white'
+                                            : 'border-slate-100 text-white hover:bg-slate-100 hover:text-neutral-900'
+                                        }`}
+                                    onClick={handleCopyCode}
+                                >
+                                    {copiedCode ? '✓ Código Copiado!' : 'Copiar Código PIX'}
+                                </button>
                             </div>
                         )}
 
