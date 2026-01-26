@@ -71,6 +71,31 @@ export const createPaymentIntent = async (req, res) => {
     }
 }
 
+export const updateSubscriptionStatus = async (gatewayId) => {
+    try {
+
+        const transaction = await Transaction.findOne({ gatewayId });
+
+        if (transaction) {
+            transaction.status = 'PAID';
+            await transaction.save();
+
+            await User.findByIdAndUpdate(transaction.userId, {
+                subscription: {
+                    active: true,
+                    transactionDate: new Date()
+                }
+            }).exec();
+        }
+
+    } catch (error) {
+        res.status(500).json({
+            error: 'Error to update subscription status',
+            message: error.message
+        })
+    }
+}
+
 export const webhookAbacatePay = async (req, res) => {
     try {
 
@@ -105,4 +130,44 @@ export const webhookAbacatePay = async (req, res) => {
             message: error.message
         })
     }
+}
+
+export const checkTransactionStatus = async (req, res) => {
+
+    try {
+        const { gatewayId } = req.params;
+
+        const abacatePayResponse = await axios.get(
+            `https://api.abacatepay.com/v1/pixQrCode/check?id=${gatewayId}`,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.ABKTPAY_DEV}`
+                }
+            })
+
+
+        if (abacatePayResponse.data?.data?.status === 'PAID') {
+
+            await updateSubscriptionStatus(gatewayId);
+
+            res.status(200).json({
+                message: 'Assinatura ativada com sucesso',
+                transactionStatus: abacatePayResponse.data?.data?.status
+            });
+        }
+
+        res.status(200).json({
+            message: 'success',
+            transactionStatus: abacatePayResponse.data?.data?.status,
+        });
+
+
+    } catch (error) {
+        res.status(500).json({
+            error: 'Error to check transaction status',
+            message: error.message
+        })
+    }
+
 }
