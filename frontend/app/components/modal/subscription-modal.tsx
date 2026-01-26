@@ -8,7 +8,7 @@ import copy from "copy-to-clipboard"
 
 import { Clipboard, Lock, MessageCircle, User, Mail } from "lucide-react"
 import { createUser } from "@/app/services/user-service"
-import { createPaymentIntent } from "@/app/services/payments-service"
+import { createPaymentIntent, checkTransactionStatus } from "@/app/services/payments-service"
 
 interface SubscriptionModalProps {
     isVisible: boolean
@@ -112,8 +112,32 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
 
                 setStep('payment')
                 setIsProcessing(false)
-                console.log(pixData)
             }
+
+        } else if (step === 'payment') {
+
+            setIsProcessing(true)
+
+            if (pixData?.pixId) {
+                try {
+                    const statusResponse = await checkTransactionStatus(pixData.pixId)
+                    console.log(statusResponse)
+                    setPixData({
+                        ...pixData,
+                        status: statusResponse?.transactionStatus
+                    })
+                    setIsProcessing(false)
+                    
+                    setInterval(() => {
+                        onAccept()
+                    }, 2000)
+
+                } catch (error) {
+                    console.error('Erro ao verificar status da transação:', error)
+                    setIsProcessing(false)
+                }
+            }
+
         }
 
     }
@@ -286,13 +310,16 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                                 />
                                 <button
                                     className={`border py-2 rounded w-full shadow-2xl transition-all ${copiedCode
-                                            ? 'bg-green-600 border-green-600 text-white'
-                                            : 'border-slate-100 text-white hover:bg-slate-100 hover:text-neutral-900'
+                                        ? 'bg-green-600 border-green-600 text-white'
+                                        : 'border-slate-100 text-white hover:bg-slate-100 hover:text-neutral-900'
                                         }`}
                                     onClick={handleCopyCode}
                                 >
                                     {copiedCode ? '✓ Código Copiado!' : 'Copiar Código PIX'}
                                 </button>
+                                <div className={pixData.status === 'PAID' ? 'text-green-400 font-bold text-sm' : 'text-yellow-400 font-bold text-sm'}>
+                                    STATUS: <b>{pixData.status === 'PENDING' ? 'Pendente' : pixData.status === 'PAID' ? 'Pago!' : pixData.status}</b>
+                                </div>
                             </div>
                         )}
 
