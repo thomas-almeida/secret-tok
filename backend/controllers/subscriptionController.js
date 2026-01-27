@@ -71,31 +71,6 @@ export const createPaymentIntent = async (req, res) => {
     }
 }
 
-export const updateSubscriptionStatus = async (gatewayId) => {
-    try {
-
-        const transaction = await Transaction.findOne({ gatewayId });
-
-        if (transaction) {
-            transaction.status = 'PAID';
-            await transaction.save();
-
-            await User.findByIdAndUpdate(transaction.userId, {
-                subscription: {
-                    active: true,
-                    transactionDate: new Date()
-                }
-            }).exec();
-        }
-
-    } catch (error) {
-        res.status(500).json({
-            error: 'Error to update subscription status',
-            message: error.message
-        })
-    }
-}
-
 export const webhookAbacatePay = async (req, res) => {
     try {
 
@@ -146,10 +121,26 @@ export const checkTransactionStatus = async (req, res) => {
                 }
             })
 
-
         if (abacatePayResponse.data?.data?.status === 'PAID') {
 
-            await updateSubscriptionStatus(gatewayId);
+            const transaction = await Transaction.findOne({ gatewayId });
+
+            if (!transaction) {
+                return res.status(404).json({ error: 'Transaction not found' });
+            }
+
+            if (transaction.status !== 'PAID') {
+                transaction.status = 'PAID';
+                await transaction.save();
+
+                const user = await User.findById(transaction.userId);
+
+                if (user) {
+                    user.subscription.active = true;
+                    user.subscription.transactionDate = new Date();
+                    await user.save();
+                }
+            }
 
             res.status(200).json({
                 message: 'Assinatura ativada com sucesso',

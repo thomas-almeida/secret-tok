@@ -6,22 +6,22 @@ export const loginUser = async (req, res) => {
     const { phone, password } = req.body;
 
     if (!phone || !password) {
-      return res.status(400).json({ 
-        error: 'Phone and password are required' 
+      return res.status(400).json({
+        error: 'Phone and password are required'
       });
     }
 
     const user = await User.findOne({ phone });
     if (!user) {
-      return res.status(401).json({ 
-        error: 'Invalid credentials' 
+      return res.status(401).json({
+        error: 'Invalid credentials'
       });
     }
 
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ 
-        error: 'Invalid credentials' 
+      return res.status(401).json({
+        error: 'Invalid credentials'
       });
     }
 
@@ -31,13 +31,14 @@ export const loginUser = async (req, res) => {
         id: user._id,
         name: user.name,
         phone: user.phone,
-        subscription: user.subscription
+        subscription: user.subscription,
+        revenue: user.revenue
       }
     });
   } catch (error) {
-    res.status(500).json({ 
-      error: 'Error during login', 
-      message: error.message 
+    res.status(500).json({
+      error: 'Error during login',
+      message: error.message
     });
   }
 };

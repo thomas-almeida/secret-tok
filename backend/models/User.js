@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import subscriptionSchema from './subscriptionSchema.js';
+import Revenue from './Revenue.js';
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -26,7 +27,13 @@ const userSchema = new mongoose.Schema({
   subscription: {
     type: subscriptionSchema,
     required: false
+  },
+  revenue: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Revenue',
+    required: false
   }
+
 }, {
   timestamps: true
 });
