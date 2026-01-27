@@ -5,11 +5,19 @@ interface User {
   id: string
   name: string
   phone: number
+  email: string
   subscription: {
     amount: number
     active: boolean
     transactionDate: string
     _id: string
+  },
+  revenue: {
+    userId: string
+    createdAt: string
+    updatedAt: string
+    balance: number
+    associatedUsers: string[]
   }
 }
 
