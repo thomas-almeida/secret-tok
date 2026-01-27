@@ -5,3 +5,7 @@ export const createUser = async (name: string, phone: number, email: string, pas
     return response.data;
 }
 
+export const loginUser = async (phone: number, password: string) => {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_BASEURL}/api/auth/login`, { phone, password });
+    return response.data;
+}

@@ -2,13 +2,15 @@ import Logo from "../logo"
 import ModelsCarousel from "../models-carousel"
 import ModalContainer from "./modal-container"
 import Accordion from "../accordion"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Input from "../input"
 import copy from "copy-to-clipboard"
 
 import { Clipboard, Lock, MessageCircle, User, Mail } from "lucide-react"
 import { createUser } from "@/app/services/user-service"
 import { createPaymentIntent, checkTransactionStatus } from "@/app/services/payments-service"
+import { useAuthStore } from "@/app/stores/auth-store"
+import { useEffect } from "react"
 
 interface SubscriptionModalProps {
     isVisible: boolean
@@ -16,6 +18,7 @@ interface SubscriptionModalProps {
     dailyLimit: boolean
     onAccept: () => void
     onDecline: () => void
+    onShowLogin?: () => void
 }
 
 interface FormData {
@@ -37,8 +40,9 @@ type PixData = {
     status: string
 }
 
-export default function SubscriptionModal({ isVisible, title, dailyLimit, onAccept, onDecline }: SubscriptionModalProps) {
+export default function SubscriptionModal({ isVisible, title, dailyLimit, onAccept, onDecline, onShowLogin }: SubscriptionModalProps) {
 
+    const { isAuthenticated } = useAuthStore()
     const prices = {
         forever: 49.90,
         monthly: 25.90,
@@ -71,6 +75,12 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
     })
 
     const [copiedCode, setCopiedCode] = useState(false)
+
+    useEffect(() => {
+        if (isAuthenticated && isVisible) {
+            onAccept()
+        }
+    }, [isAuthenticated, isVisible, onAccept])
 
     const toCamelCase = (str: string) => {
         return str.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
@@ -127,8 +137,9 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                         status: statusResponse?.transactionStatus
                     })
                     setIsProcessing(false)
-                    
+
                     setInterval(() => {
+                        localStorage.setItem('is-subscribed', 'true')
                         onAccept()
                     }, 2000)
 
@@ -346,6 +357,18 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                             </div>
                             <p className={`text-xs ${isProcessing || step !== 'select' ? 'hidden' : ''}`}>Insira seu <b>Telegram</b> para continuar</p>
                         </button>
+
+                        {
+                            step === 'select' && (
+                                <button
+                                    className="border py-2 mt-2 rounded w-full shadow-2xl transition-all border-slate-100 text-white hover:bg-slate-100 hover:text-neutral-900"
+                                    onClick={onShowLogin}
+                                >
+                                    Já Tenho Conta
+                                </button>
+                            )
+                        }
+
                         {
                             dailyLimit ? (
                                 <p className="text-red-200 px-4 pt-4 rounded w-full text-sm">Oferta válida até hoje: {new Date().toLocaleDateString('pt-BR')}</p>
@@ -358,7 +381,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                         }
                     </div>
                 </div>
-            </ModalContainer>
+            </ModalContainer >
         </>
     )
 

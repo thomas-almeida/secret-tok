@@ -6,18 +6,23 @@ import Button from "./button"
 import { Heart, Bookmark, MessageCircle, Download } from "lucide-react"
 import Tag from "./tag"
 
+import { useAuthStore } from "../stores/auth-store"
+import { on } from "events"
+
 interface VideoInfoProps {
     userName: string
     videoDescription: string
     triggerModal: () => void
+    onUserModal: () => void
     triggerSubscriptionModal: boolean
 }
 
-export default function VideoInfo({ userName, videoDescription, triggerModal, triggerSubscriptionModal }: VideoInfoProps) {
+export default function VideoInfo({ userName, videoDescription, triggerModal, onUserModal, triggerSubscriptionModal }: VideoInfoProps) {
     const [isFollowing, setIsFollowing] = useState(false)
     const handleClick = (e: React.MouseEvent) => {
         e.stopPropagation() // Prevent click from reaching the parent VideoCard
     }
+    const { user, isAuthenticated } = useAuthStore()
 
     return (
         <>
@@ -60,7 +65,7 @@ export default function VideoInfo({ userName, videoDescription, triggerModal, tr
                     <Tag link="#loira">#loira</Tag>
                 </div>
 
-                <div className="absolute right-2 bottom-20 flex flex-col items-center gap-4">
+                <div className="absolute right-2 bottom-20 flex flex-col items-center gap-2">
                     <button
                         onClick={(e) => {
                             e.stopPropagation()
@@ -71,17 +76,6 @@ export default function VideoInfo({ userName, videoDescription, triggerModal, tr
                         className="p-2 rounded-full transition-colors"
                     >
                         <Heart className="w-8 h-8 text-white fill-white/0 stroke-2" />
-                    </button>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            if (triggerSubscriptionModal) {
-                                triggerModal()
-                            }
-                        }}
-                        className="p-2 rounded-full transition-colors"
-                    >
-                        <MessageCircle className="w-8 h-8 text-white fill-white/0 stroke-2" />
                     </button>
                     <button
                         onClick={(e) => {
@@ -105,6 +99,22 @@ export default function VideoInfo({ userName, videoDescription, triggerModal, tr
                     >
                         <Download className="w-8 h-8 text-white fill-white/0 stroke-2" />
                     </button>
+                    {
+                        isAuthenticated && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    onUserModal()
+                                    console.log("clicou no user modal")
+                                }}
+                                className="p-2 rounded-full transition-colors"
+                            >
+                                <div className="bg-red-500 w-12 h-12 rounded-md flex items-center justify-center text-white font-bold text-2xl shadow-4xl shadow-slate-900">
+                                    <b className="uppercase">{user?.name?.slice(0, 1)}</b>
+                                </div>
+                            </button>
+                        )
+                    }
                 </div>
             </div>
         </>

@@ -5,150 +5,33 @@ import VideoCard from "./video-card"
 import TopBar from "./topbar"
 import AdultModal from "./modal/adult-modal"
 import SubscriptionModal from "./modal/subscription-modal"
-
-const videos = [
-    {
-        id: "0",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720366/videos/andressa_urach_2_wwuiy3.mp4",
-        model: "Andressa Urach",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Andressa Urach"
-    },
-    {
-        id: "1",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720357/videos/kinechan_1_ntwnls.mp4",
-        model: "Kinechan",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Kinechan"
-    }, {
-        id: "2",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720362/videos/ester_muniz_1_p2hwvf.mp4",
-        model: "Ester Muniz",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Ester Muniz"
-    },
-    {
-        id: "3",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720354/videos/cibelly_1_ebw1st.mp4",
-        model: "Cibelly",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Cibelly"
-    },
-    {
-        id: "4",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720350/videos/coelhinha_2_d2xlaq.mp4",
-        model: "Coelhinha",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Coelhinha"
-    }, {
-        id: "5",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720356/videos/lina_naamura_3_cme9pv.mp4",
-        model: "Lina Naamura",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Lina Naamura"
-    },
-    {
-        id: "6",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720367/videos/martina_oliveira_3_y1x59b.mp4",
-        model: "Martina Oliveira",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Martina Oliveira"
-    },
-    {
-        id: "7",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768774842/juliana_bonde_2_ueal1g.mp4",
-        model: "Juliana Bonde",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Juliana Bonde"
-    },
-    {
-        id: "8",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720349/videos/coelhinha_3_yrypuo.mp4",
-        model: "Coelhinha",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Coelhinha"
-    },
-    {
-        id: "9",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720353/videos/lina_naamura_1_wx9eho.mp4",
-        model: "Lina Nakamura",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Lina Nakamura"
-    },
-    {
-        id: "10",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720364/videos/ester_muniz_2_sujnac.mp4",
-        model: "Ester Muniz",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Ester Muniz"
-    },
-    {
-        id: "11",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720359/videos/kinechan_2_u6oemn.mp4",
-        model: "Kinechan",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Kinechan"
-    },
-    {
-        id: "12",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720360/videos/mari_avila_3_epwjni.mp4",
-        model: "Maria Avila",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Maria Avila"
-    },
-    {
-        id: "13",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720363/videos/ester_muniz_3_gysl4i.mp4",
-        model: "Ester Muniz",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Ester Muniz"
-    },
-    {
-        id: "15",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720359/videos/mc_pipokinha_2_j6vge3.mp4",
-        model: "MC Pipokinha",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "MC Pipokinha"
-    },
-    {
-        id: "16",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768720363/videos/martina_oliveira_1_isbvzq.mp4",
-        model: "Martina Oliveira",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Martina Oliveira"
-    },
-    {
-        id: "17",
-        videoUrl: "https://res.cloudinary.com/daaj5jf0n/video/upload/v1768774828/juliana_bonde_1_tzbe57.mp4",
-        model: "Juliana Bonde",
-        profilePicture: "https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg",
-        description: "Juliana Bonde"
-    }
-
-]
+import LoginModal from "./modal/login-modal"
+import { videos } from "../utils/mocked-videos"
+import UserModal from "./modal/user-modal"
 
 export default function VideoFeedOptimized() {
     const [feedVideos, setFeedVideos] = useState(() => [...videos])
     const [isAdultModalVisible, setIsAdultModalVisible] = useState(true)
     const [isSubscriptionModalVisible, setIsSubscriptionModalVisible] = useState(false)
+    const [isLoginModalVisible, setLoginVisible] = useState(false)
     const [subscriptionModalTitle, setSubscriptionModalTitle] = useState("Seja VIP")
     const [currentIndex, setCurrentIndex] = useState(0)
     const [preloadRange, setPreloadRange] = useState({ start: 0, end: 2 })
     const [dailyLimit, setDailyLimit] = useState(false)
+    const [userModalVisible, setUserModalVisible] = useState(false)
 
     const containerRef = useRef<HTMLDivElement>(null)
-
-    // Função para pré-carregar vídeos próximos
 
     useEffect(() => {
 
         const checkDailyScrolls = () => {
             const currentScrolls = localStorage.getItem('daily-scrolls') || 'false'
-            const limitReached = currentScrolls === 'true' ? 'true' : 'true'
+            const limitReached = currentScrolls === 'true' ? 'true' : 'false'
             const scrollsDate = localStorage.getItem('scrolls-date')
             const today = new Date().toDateString()
+            const isSub = localStorage.getItem('is-subscribed')
 
-            if (scrollsDate !== today) {
+            if (scrollsDate !== today || isSub === 'true') {
                 localStorage.setItem('daily-scrolls', 'false')
                 localStorage.setItem('scrolls-date', today)
                 localStorage.setItem('last-video-reached', 'false')
@@ -225,21 +108,24 @@ export default function VideoFeedOptimized() {
 
                             // Verificar se é o último vídeo
                             if (videoIndex === feedVideos.length - 1) {
+
                                 console.log('Último vídeo alcançado - index:', videoIndex)
 
                                 // Atualizar storage com scrolls diários
                                 const currentScrolls = localStorage.getItem('daily-scrolls') || 'false'
-                                const limitReached = currentScrolls === 'true' ? 'true' : 'true'
+                                const limitReached = currentScrolls === 'true' ? 'true' : 'false'
                                 const today = new Date().toDateString()
 
-                                localStorage.setItem('daily-scrolls', limitReached)
-                                localStorage.setItem('scrolls-date', today)
-                                localStorage.setItem('last-video-reached', 'true')
+                                if (localStorage.getItem('is-subscribed') !== 'true') {
 
-                                console.log('Scrolls diários atualizados:', limitReached)
+                                    localStorage.setItem('daily-scrolls', limitReached)
+                                    localStorage.setItem('scrolls-date', today)
+                                    localStorage.setItem('last-video-reached', 'true')
+                                    console.log('Scrolls diários atualizados:', limitReached)
+                                    setSubscriptionModalTitle('Suas Espiadas diárias Acabaram')
+                                    setIsSubscriptionModalVisible(true)
 
-                                setSubscriptionModalTitle('Suas Espiadas diárias Acabaram')
-                                setIsSubscriptionModalVisible(true)
+                                }
                             }
                         }
                     }
@@ -289,8 +175,26 @@ export default function VideoFeedOptimized() {
                     dailyLimit={dailyLimit}
                     onAccept={() => setIsSubscriptionModalVisible(false)}
                     onDecline={() => setIsSubscriptionModalVisible(false)}
+                    onShowLogin={() => setLoginVisible(true)}
                 />
             )}
+
+            {isLoginModalVisible && (
+                <LoginModal
+                    isVisible={isLoginModalVisible}
+                    onAccept={() => setLoginVisible(false)}
+                    onDecline={() => setLoginVisible(false)}
+                />
+            )}
+
+            {
+                userModalVisible && (
+                    <UserModal
+                        visible={userModalVisible}
+                        onClose={() => setUserModalVisible(false)}
+                    />
+                )
+            }
 
             <TopBar triggerSubscriptionModal={handleTriggerSubscriptionModal} />
 
@@ -309,6 +213,7 @@ export default function VideoFeedOptimized() {
                             isActive={index === currentIndex}
                             shouldPreload={shouldPreload}
                             triggerSubscriptionModal={handleTriggerSubscriptionModal}
+                            onUserModal={() => setUserModalVisible(true)}
                         />
                     </div>
                 )

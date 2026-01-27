@@ -4,6 +4,7 @@
 import { Volume2, VolumeX, Loader2 } from "lucide-react"
 import { useRef, useEffect, useState, useCallback } from "react"
 import VideoInfo from "./video-info"
+import UserModal from "./modal/user-modal"
 
 type Video = {
   id: string
@@ -18,13 +19,15 @@ interface VideoCardProps {
   isActive: boolean
   shouldPreload: boolean // Novo: indica se deve pré-carregar
   triggerSubscriptionModal: () => void
+  onUserModal: () => void
 }
 
-export default function VideoCard({ 
-  video, 
-  isActive, 
+export default function VideoCard({
+  video,
+  isActive,
   shouldPreload,
-  triggerSubscriptionModal 
+  triggerSubscriptionModal,
+  onUserModal
 }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const progressBarRef = useRef<HTMLDivElement>(null)
@@ -34,18 +37,19 @@ export default function VideoCard({
   const [showAudioIndicator, setShowAudioIndicator] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
+  const [userModalVisible, setUserModalVisible] = useState(true)
 
   // Estratégia de pré-carregamento inteligente
   useEffect(() => {
     if (!videoRef.current) return
 
     const videoElement = videoRef.current
-    
+
     // Configurações otimizadas
     videoElement.preload = shouldPreload ? "auto" : "metadata"
     videoElement.playsInline = true
     videoElement.crossOrigin = "anonymous"
-    
+
     // Event listeners para controle de carregamento
     const handleCanPlay = () => {
       setIsLoading(false)
@@ -87,12 +91,12 @@ export default function VideoCard({
       if (videoRef.current.currentTime >= videoRef.current.duration - 0.5) {
         videoRef.current.currentTime = 0
       }
-      
+
       videoRef.current.muted = true
-      
+
       // Tentar play com fallback
       const playPromise = videoRef.current.play()
-      
+
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
@@ -111,7 +115,7 @@ export default function VideoCard({
     } else {
       // Pausar vídeo não ativo
       videoRef.current.pause()
-      
+
       // Manter buffer se estiver pré-carregado
       if (!shouldPreload && videoRef.current.readyState >= 3) {
         // Manter vídeo carregado mas pausado
@@ -123,10 +127,10 @@ export default function VideoCard({
   const toggleMute = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     if (!videoRef.current) return
-    
+
     videoRef.current.muted = !videoRef.current.muted
     setIsMuted(!isMuted)
-    
+
     setShowAudioIndicator(true)
     setTimeout(() => {
       setShowAudioIndicator(false)
@@ -150,7 +154,7 @@ export default function VideoCard({
     videoRef.current.currentTime = pos * videoRef.current.duration
 
     if (videoRef.current.paused) {
-      videoRef.current.play().catch(() => {})
+      videoRef.current.play().catch(() => { })
     }
   }, [])
 
@@ -164,7 +168,7 @@ export default function VideoCard({
     setIsDragging(false)
 
     if (videoRef.current?.paused) {
-      videoRef.current.play().catch(() => {})
+      videoRef.current.play().catch(() => { })
     }
   }, [])
 
@@ -199,12 +203,13 @@ export default function VideoCard({
         </div>
       )}
 
+
       {/* Overlay de erro */}
       {hasError && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
           <div className="text-center text-white">
             <p className="text-lg">Erro ao carregar vídeo</p>
-            <button 
+            <button
               onClick={() => {
                 setHasError(false)
                 setIsLoading(true)
@@ -218,17 +223,19 @@ export default function VideoCard({
         </div>
       )}
 
-      <video
-        ref={videoRef}
-        src={video.videoUrl}
-        className="absolute inset-0 h-[calc(100%-4px)] w-full object-cover"
-        loop
-        playsInline
-        muted
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedData={() => setIsLoading(false)}
-      />
-      
+      <div className="bg-black/90 blur-3xl h-full w-full relative overflow-hidden">
+        <video
+          ref={videoRef}
+          src={video.videoUrl}
+          className="absolute inset-0 h-[calc(100%-4px)] w-full object-cover"
+          loop
+          playsInline
+          muted
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedData={() => setIsLoading(false)}
+        />
+      </div>
+
       {/* Indicador de áudio */}
       {isActive && showAudioIndicator && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
@@ -239,23 +246,24 @@ export default function VideoCard({
           )}
         </div>
       )}
-      
+
       <VideoInfo
         userName={video.model}
         videoDescription={video.description}
         triggerModal={triggerSubscriptionModal}
         triggerSubscriptionModal={true}
+        onUserModal={() => onUserModal()}
       />
-      
+
       {/* Barra de progresso */}
-      <div 
+      <div
         className="absolute bottom-0 left-0 w-full h-1 bg-gray-800 cursor-pointer z-10"
         ref={progressBarRef}
         onClick={handleProgressBarClick}
         onMouseDown={handleMouseDown}
       >
         <div
-          className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-100"
+          className="h-full bg-linear-to-r from-pink-500 to-purple-500 transition-all duration-100"
           style={{ width: `${progress}%` }}
         />
       </div>

@@ -1,6 +1,7 @@
 import { Flame } from "lucide-react"
 import { useState } from "react"
 import Logo from "./logo"
+import { useAuthStore } from "../stores/auth-store"
 
 interface TopBarProps {
     triggerSubscriptionModal: (title: string) => void
@@ -8,10 +9,16 @@ interface TopBarProps {
 
 export default function TopBar({ triggerSubscriptionModal }: TopBarProps) {
     const [selectedTab, setSelectedTab] = useState("espiar")
+    const { user, isAuthenticated } = useAuthStore()
 
     const handleTabClick = (tab: string) => {
         if (tab === "famosas") {
-            triggerSubscriptionModal("Seja VIP")
+            if (!isAuthenticated) {
+                triggerSubscriptionModal("Acesso às Famosas")
+                return
+            }
+
+            setSelectedTab(tab)
         } else {
             setSelectedTab(tab)
         }
