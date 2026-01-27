@@ -20,7 +20,7 @@ export const createUser = async (req, res) => {
       password: hashedPassword,
       subscription
     });
-
+    
     await user.save();
     res.status(201).json({
       message: 'User created successfully',
