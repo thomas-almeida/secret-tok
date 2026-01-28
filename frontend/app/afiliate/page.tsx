@@ -31,7 +31,7 @@ export default function AfiliatePage() {
     }, [pixKey])
 
     useEffect(() => {
-        if (isHydrated && !isAuthenticated) {
+        if (isHydrated && !isAuthenticated || !user?.subscription.active) {
             router.push('/');
         }
     }, [isHydrated, isAuthenticated, router])
