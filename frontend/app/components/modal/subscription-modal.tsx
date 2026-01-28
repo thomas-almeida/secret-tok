@@ -19,6 +19,8 @@ interface SubscriptionModalProps {
     onAccept: () => void
     onDecline: () => void
     onShowLogin?: () => void
+    initialStep?: 'select' | 'signup' | 'payment'
+    isRePayment?: boolean
 }
 
 interface FormData {
@@ -40,9 +42,9 @@ type PixData = {
     status: string
 }
 
-export default function SubscriptionModal({ isVisible, title, dailyLimit, onAccept, onDecline, onShowLogin }: SubscriptionModalProps) {
+export default function SubscriptionModal({ isVisible, title, dailyLimit, onAccept, onDecline, onShowLogin, initialStep = 'select', isRePayment = false }: SubscriptionModalProps) {
 
-    const { isAuthenticated, login: loginUserToStore } = useAuthStore()
+    const { isAuthenticated, user, login: loginUserToStore } = useAuthStore()
     const prices = {
         forever: 49.90,
         monthly: 25.90,
@@ -65,8 +67,17 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
 
     const [isProcessing, setIsProcessing] = useState(false)
     const [expandedPlan, setExpandedPlan] = useState<string | null>(null)
-    const [step, setStep] = useState<'select' | 'signup' | 'payment'>('select')
+    const [step, setStep] = useState<'select' | 'signup' | 'payment'>(isRePayment ? 'payment' : initialStep)
     const [newUser, setNewUser] = useState<any>(null)
+    const [isLoadingPayment, setIsLoadingPayment] = useState(false)
+
+    // Garanta que quando isRePayment muda para true, o step vai direto para pagamento
+    useEffect(() => {
+        if (isRePayment && step !== 'payment') {
+            console.log('Re-payment ativado, mudando para payment step')
+            setStep('payment')
+        }
+    }, [isRePayment])
 
     const [payload, setPayload] = useState<FormData>({
         phone: '',
@@ -77,11 +88,50 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
 
     const [copiedCode, setCopiedCode] = useState(false)
 
+    // Gerar payment intent automaticamente quando usuário já autenticado precisa pagar subscription
     useEffect(() => {
-        if (isAuthenticated && isVisible) {
+        const generatePaymentForAuthenticatedUser = async () => {
+            console.log('Payment Effect - isAuthenticated:', isAuthenticated, 'isVisible:', isVisible, 'isRePayment:', isRePayment, 'step:', step, 'pixData:', pixData)
+            
+            if (isAuthenticated && isVisible && isRePayment && step === 'payment' && !pixData) {
+                // Usuário está logado e precisa pagar, gerar payment intent
+                console.log('Iniciando geração de payment intent')
+                setIsLoadingPayment(true)
+                
+                try {
+                    const paymentIntent = await createPaymentIntent({
+                        planId: selectedPlan.id,
+                        customer: {
+                            name: user?.name || '',
+                            cellphone: user?.phone?.toString() || '',
+                            email: user?.email || '',
+                            userId: user?._id || ''
+                        }
+                    })
+
+                    console.log('Payment intent gerado:', paymentIntent)
+                    setPixData({
+                        pixId: paymentIntent?.paymentIntent?.id,
+                        brCode: paymentIntent?.paymentIntent?.brCode,
+                        brCode64: paymentIntent?.paymentIntent?.brCodeBase64,
+                        status: paymentIntent?.paymentIntent?.status
+                    })
+                } catch (error) {
+                    console.error('Erro ao gerar intent de pagamento:', error)
+                } finally {
+                    setIsLoadingPayment(false)
+                }
+            }
+        }
+
+        generatePaymentForAuthenticatedUser()
+    }, [isAuthenticated, isVisible, isRePayment, step, selectedPlan, pixData, user])
+
+    useEffect(() => {
+        if (isAuthenticated && isVisible && initialStep === 'select' && !isRePayment) {
             onAccept()
         }
-    }, [isAuthenticated, isVisible, onAccept])
+    }, [isAuthenticated, isVisible, initialStep, isRePayment, onAccept])
 
     const toCamelCase = (str: string) => {
         return str.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
@@ -351,13 +401,20 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                             </div>
                         )}
 
+                        {step === 'payment' && isLoadingPayment && (
+                            <div className="flex flex-col items-center justify-center gap-4 w-full py-8">
+                                <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                                <p className="text-neutral-300">Gerando QR Code de pagamento...</p>
+                            </div>
+                        )}
+
                         <button
-                            className="bg-green-600 text-white px-4 py-2 mt-4 rounded w-full shadow-2xl shadow-green-600/50"
+                            className="bg-green-600 text-white px-4 py-2 mt-4 rounded w-full shadow-2xl shadow-green-600/50 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-60"
                             onClick={handlePixPayment}
-                            disabled={isProcessing}
+                            disabled={isProcessing || (step === 'payment' && isLoadingPayment)}
                         >
                             <div className="flex justify-center items-center gap-2">
-                                {isProcessing ? (
+                                {isProcessing || (step === 'payment' && isLoadingPayment) ? (
                                     <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                 ) : (
                                     <>

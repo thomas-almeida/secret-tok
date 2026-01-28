@@ -19,9 +19,10 @@ interface LoginModalProps {
     isVisible: boolean
     onAccept: () => void
     onDecline: () => void
+    onNeedSubscription?: () => void
 }
 
-export default function LoginModal({ isVisible, onAccept, onDecline }: LoginModalProps) {
+export default function LoginModal({ isVisible, onAccept, onDecline, onNeedSubscription }: LoginModalProps) {
 
     const [loginPayload, setLoginPayload] = useState<LoginPayload>({ phone: 0, password: '' })
     const [isProcessing, setIsProcessing] = useState(false)
@@ -39,8 +40,21 @@ export default function LoginModal({ isVisible, onAccept, onDecline }: LoginModa
         try {
             const loginResponse = await loginUser(loginPayload.phone, loginPayload.password)
             console.log('Login successful:', loginResponse)
+            console.log('Subscription active:', loginResponse?.user?.subscription?.active)
             loginUserToStore(loginResponse?.user)
-            onAccept()
+
+            // Verificar se subscription está ativa
+            if (loginResponse?.user?.subscription?.active !== true) {
+                // Subscription não está ativa, mostrar modal de pagamento
+                console.log('Abrindo modal de pagamento')
+                if (onNeedSubscription) {
+                    onNeedSubscription()
+                }
+            } else {
+                // Subscription ativa, fazer login normalmente
+                console.log('Subscription ativa, fechando login')
+                onAccept()
+            }
         } catch (error) {
             console.error('Login failed:', error)
         } finally {

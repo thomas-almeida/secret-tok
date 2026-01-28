@@ -5,9 +5,10 @@ import { useAuthStore } from "../stores/auth-store"
 
 interface TopBarProps {
     triggerSubscriptionModal: (title: string) => void
+    triggerPaymentModal?: () => void
 }
 
-export default function TopBar({ triggerSubscriptionModal }: TopBarProps) {
+export default function TopBar({ triggerSubscriptionModal, triggerPaymentModal }: TopBarProps) {
     const [selectedTab, setSelectedTab] = useState("espiar")
     const { user, isAuthenticated } = useAuthStore()
 
@@ -15,6 +16,15 @@ export default function TopBar({ triggerSubscriptionModal }: TopBarProps) {
         if (tab === "famosas") {
             if (!isAuthenticated) {
                 triggerSubscriptionModal("Acesso às Famosas")
+                return
+            }
+
+            // Se está autenticado mas subscription não está ativa, mostrar pagamento
+            if (user?.subscription?.active !== true) {
+                console.log('Usuário tentou acessar famosas sem subscription ativa')
+                if (triggerPaymentModal) {
+                    triggerPaymentModal()
+                }
                 return
             }
 

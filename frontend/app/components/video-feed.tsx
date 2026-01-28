@@ -17,6 +17,8 @@ export default function VideoFeedOptimized() {
     const [currentIndex, setCurrentIndex] = useState(0)
     const [preloadRange, setPreloadRange] = useState({ start: 0, end: 2 })
     const [dailyLimit, setDailyLimit] = useState(false)
+    const [subscriptionModalInitialStep, setSubscriptionModalInitialStep] = useState<'select' | 'signup' | 'payment'>('select')
+    const [isRePayment, setIsRePayment] = useState(false)
 
     const containerRef = useRef<HTMLDivElement>(null)
 
@@ -88,6 +90,14 @@ export default function VideoFeedOptimized() {
         if (title) {
             setSubscriptionModalTitle(title)
         }
+        setIsSubscriptionModalVisible(true)
+    }
+
+    const handleTriggerPaymentModal = () => {
+        console.log('Abrindo modal de pagamento direto')
+        setSubscriptionModalTitle('Complete seu Pagamento')
+        setSubscriptionModalInitialStep('select')
+        setIsRePayment(true)
         setIsSubscriptionModalVisible(true)
     }
 
@@ -171,22 +181,44 @@ export default function VideoFeedOptimized() {
                     title={subscriptionModalTitle}
                     isVisible={isSubscriptionModalVisible}
                     dailyLimit={dailyLimit}
-                    onAccept={() => setIsSubscriptionModalVisible(false)}
-                    onDecline={() => setIsSubscriptionModalVisible(false)}
+                    onAccept={() => {
+                        setIsSubscriptionModalVisible(false)
+                        setIsRePayment(false)
+                    }}
+                    onDecline={() => {
+                        setIsSubscriptionModalVisible(false)
+                        setIsRePayment(false)
+                    }}
                     onShowLogin={() => setLoginVisible(true)}
+                    initialStep={subscriptionModalInitialStep}
+                    isRePayment={isRePayment}
                 />
             )}
 
             {isLoginModalVisible && (
                 <LoginModal
                     isVisible={isLoginModalVisible}
-                    onAccept={() => setLoginVisible(false)}
-                    onDecline={() => setLoginVisible(false)}
+                    onAccept={() => {
+                        console.log('Login bem-sucedido, fechando modal')
+                        setLoginVisible(false)
+                    }}
+                    onDecline={() => {
+                        console.log('Login cancelado')
+                        setLoginVisible(false)
+                    }}
+                    onNeedSubscription={() => {
+                        console.log('Usuário precisa de subscription, abrindo modal de pagamento')
+                        setLoginVisible(false)
+                        setSubscriptionModalTitle('Complete seu Pagamento')
+                        setSubscriptionModalInitialStep('select')
+                        setIsRePayment(true)
+                        setIsSubscriptionModalVisible(true)
+                    }}
                 />
             )}
 
 
-            <TopBar triggerSubscriptionModal={handleTriggerSubscriptionModal} />
+            <TopBar triggerSubscriptionModal={handleTriggerSubscriptionModal} triggerPaymentModal={handleTriggerPaymentModal} />
 
             {feedVideos.map((video, index) => {
                 // Determinar se este vídeo deve ser pré-carregado
@@ -203,6 +235,7 @@ export default function VideoFeedOptimized() {
                             isActive={index === currentIndex}
                             shouldPreload={shouldPreload}
                             triggerSubscriptionModal={handleTriggerSubscriptionModal}
+                            triggerPaymentModal={handleTriggerPaymentModal}
                         />
                     </div>
                 )

@@ -15,9 +15,10 @@ interface VideoInfoProps {
     videoDescription: string
     triggerModal: () => void
     triggerSubscriptionModal: boolean
+    triggerPaymentModal?: () => void
 }
 
-export default function VideoInfo({ userName, videoDescription, triggerModal, triggerSubscriptionModal }: VideoInfoProps) {
+export default function VideoInfo({ userName, videoDescription, triggerModal, triggerSubscriptionModal, triggerPaymentModal }: VideoInfoProps) {
     const [isFollowing, setIsFollowing] = useState(false)
     const handleClick = (e: React.MouseEvent) => {
         e.stopPropagation() // Prevent click from reaching the parent VideoCard
@@ -69,8 +70,15 @@ export default function VideoInfo({ userName, videoDescription, triggerModal, tr
                     <button
                         onClick={(e) => {
                             e.stopPropagation()
-                            if (triggerSubscriptionModal) {
+                            // Se não autenticado, mostrar modal de subscription
+                            if (!isAuthenticated) {
                                 triggerModal()
+                                return
+                            }
+                            // Se autenticado mas sem subscription, mostrar pagamento
+                            if (user?.subscription?.active !== true && triggerPaymentModal) {
+                                triggerPaymentModal()
+                                return
                             }
                         }}
                         className="p-2 rounded-full transition-colors"
@@ -80,8 +88,15 @@ export default function VideoInfo({ userName, videoDescription, triggerModal, tr
                     <button
                         onClick={(e) => {
                             e.stopPropagation()
-                            if (triggerSubscriptionModal) {
+                            // Se não autenticado, mostrar modal de subscription
+                            if (!isAuthenticated) {
                                 triggerModal()
+                                return
+                            }
+                            // Se autenticado mas sem subscription, mostrar pagamento
+                            if (user?.subscription?.active !== true && triggerPaymentModal) {
+                                triggerPaymentModal()
+                                return
                             }
                         }}
                         className="p-2 rounded-full transition-colors"
@@ -91,8 +106,15 @@ export default function VideoInfo({ userName, videoDescription, triggerModal, tr
                     <button
                         onClick={(e) => {
                             e.stopPropagation()
-                            if (triggerSubscriptionModal) {
+                            // Se não autenticado, mostrar modal de subscription
+                            if (!isAuthenticated) {
                                 triggerModal()
+                                return
+                            }
+                            // Se autenticado mas sem subscription, mostrar pagamento
+                            if (user?.subscription?.active !== true && triggerPaymentModal) {
+                                triggerPaymentModal()
+                                return
                             }
                         }}
                         className="p-2 rounded-full transition-colors"
@@ -100,7 +122,7 @@ export default function VideoInfo({ userName, videoDescription, triggerModal, tr
                         <Download className="w-8 h-8 text-white fill-white/0 stroke-2" />
                     </button>
                     {
-                        isAuthenticated && (
+                        isAuthenticated && user?.subscription?.active === true && (
                             <Link href={"/afiliate"}>
                                 <button
                                     className="p-2 rounded-full transition-colors"
