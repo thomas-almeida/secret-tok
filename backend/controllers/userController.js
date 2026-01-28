@@ -46,3 +46,28 @@ export const getUsers = async (req, res) => {
     });
   }
 };
+
+export const getAfiliateBalance = async (req, res) => {
+  try {
+    const { afiliateId } = req.params;
+    const afiliate = await User.findById(afiliateId).select('revenue').lean();
+
+    if (!afiliate) {
+      return res.status(404).json({ error: 'Afiliado não encontrado' });
+    }
+
+    const balance = afiliate.revenue?.balance ?? 0;
+    const associatedUsers = afiliate.revenue?.associatedUsers?.length ?? 0;
+
+    return res.status(200).json({
+      message: 'success',
+      data: { balance, associatedUsers }
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      error: 'Error fetching affiliate balance',
+      message: error.message
+    });
+  }
+}

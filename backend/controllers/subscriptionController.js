@@ -6,7 +6,7 @@ import User from "../models/User.js";
 export const createPaymentIntent = async (req, res) => {
     try {
 
-        const { planId, customer } = req.body;
+        const { planId, customer, referenceId } = req.body;
 
         const plan = getPlanById(planId);
 
@@ -52,6 +52,7 @@ export const createPaymentIntent = async (req, res) => {
             amount: plan.amount,
             userId: customer.userId,
             gatewayId: abacatePayResponse.data?.data?.id,
+            referenceId: referenceId
         });
 
         await transaction.save();
@@ -101,12 +102,29 @@ export const checkTransactionStatus = async (req, res) => {
 
             const user = await User.findById(transaction.userId);
 
-            console.log(user)
-
             if (user) {
                 user.subscription.active = true;
                 user.subscription.transactionDate = new Date();
                 await user.save();
+            }
+
+            if (transaction.referenceId && transaction.referenceId !== "none") {
+                const affiliateUser = await User.findById(transaction.referenceId);
+
+                if (affiliateUser) {
+
+                    const commissionPercentage = affiliateUser.revenue.associatedUsers.length >= 10 ? 0.45 : 0.35;
+
+                    affiliateUser.revenue.balance += transaction.amount * commissionPercentage;
+
+                    if (!affiliateUser.revenue.associatedUsers.includes(transaction.userId)) {
+                        affiliateUser.revenue.associatedUsers.push(transaction.userId);
+                    }
+                    
+                    await affiliateUser.save();
+
+                    console.log(`Comissão de ${commissionPercentage * 100}% (R$ ${transaction.amount * commissionPercentage}) adicionada ao afiliado ${affiliateUser._id}`);
+                }
             }
 
             res.status(200).json({

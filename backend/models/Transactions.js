@@ -26,6 +26,10 @@ const transactionSchema = new mongoose.Schema({
         type: String,
         enum: ['PENDING', 'PAID', 'FAILED'],
         default: 'PENDING'
+    },
+    referenceId: {
+        type: String,
+        required: false
     }
 })
 
