@@ -8,11 +8,6 @@ const associatedUsers = {
 };
 
 const revenueSchema = new mongoose.Schema({
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
     balance: {
         type: Number,
         required: true,
@@ -29,6 +24,4 @@ const revenueSchema = new mongoose.Schema({
     associatedUsers: associatedUsers
 })
 
-const Revenue = mongoose.model('Revenue', revenueSchema);
-
-export default Revenue;
+export default revenueSchema;

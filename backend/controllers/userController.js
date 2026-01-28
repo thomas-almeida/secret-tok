@@ -3,7 +3,7 @@ import { hashPassword } from '../utils/password.js';
 
 export const createUser = async (req, res) => {
   try {
-    const { name, phone, email, password, subscription } = req.body;
+    const { name, phone, email, password, subscription, revenue } = req.body;
 
     if (!name || !phone || !password || !email) {
       return res.status(400).json({
@@ -18,20 +18,14 @@ export const createUser = async (req, res) => {
       phone,
       email,
       password: hashedPassword,
-      subscription
+      subscription,
+      revenue
     });
-    
+
     await user.save();
     res.status(201).json({
       message: 'User created successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        subscription: user.subscription,
-        createdAt: user.createdAt
-      }
+      user: user
     });
   } catch (error) {
     res.status(500).json({

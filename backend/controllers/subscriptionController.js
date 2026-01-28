@@ -51,7 +51,7 @@ export const createPaymentIntent = async (req, res) => {
             userId: customer.userId,
             amount: plan.amount,
             userId: customer.userId,
-            gatewayId: abacatePayResponse.data?.id,
+            gatewayId: abacatePayResponse.data?.data?.id,
         });
 
         await transaction.save();
@@ -69,6 +69,65 @@ export const createPaymentIntent = async (req, res) => {
         })
 
     }
+}
+
+export const checkTransactionStatus = async (req, res) => {
+
+    try {
+        const { gatewayId } = req.params;
+
+        const abacatePayResponse = await axios.get(
+            `https://api.abacatepay.com/v1/pixQrCode/check?id=${gatewayId}`,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.ABKTPAY_DEV}`
+                }
+            })
+
+
+        if (abacatePayResponse.data?.data?.status === 'PAID') {
+
+            const transaction = await Transaction.findOne({ gatewayId });
+
+            if (!transaction) {
+                return res.status(404).json({ error: 'Transaction not found' });
+            }
+
+            console.log('Transaction found:', transaction);
+
+            transaction.status = 'PAID';
+            await transaction.save();
+
+            const user = await User.findById(transaction.userId);
+
+            console.log(user)
+
+            if (user) {
+                user.subscription.active = true;
+                user.subscription.transactionDate = new Date();
+                await user.save();
+            }
+
+            res.status(200).json({
+                message: 'Assinatura ativada com sucesso',
+                transactionStatus: abacatePayResponse.data?.data?.status
+            });
+        }
+
+        res.status(200).json({
+            message: 'success',
+            transactionStatus: abacatePayResponse.data?.data?.status,
+        });
+
+
+    } catch (error) {
+        res.status(500).json({
+            error: 'Error to check transaction status',
+            message: error.message
+        })
+    }
+
 }
 
 export const webhookAbacatePay = async (req, res) => {
@@ -105,60 +164,4 @@ export const webhookAbacatePay = async (req, res) => {
             message: error.message
         })
     }
-}
-
-export const checkTransactionStatus = async (req, res) => {
-
-    try {
-        const { gatewayId } = req.params;
-
-        const abacatePayResponse = await axios.get(
-            `https://api.abacatepay.com/v1/pixQrCode/check?id=${gatewayId}`,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.ABKTPAY_DEV}`
-                }
-            })
-
-        if (abacatePayResponse.data?.data?.status === 'PAID') {
-
-            const transaction = await Transaction.findOne({ gatewayId });
-
-            if (!transaction) {
-                return res.status(404).json({ error: 'Transaction not found' });
-            }
-
-            if (transaction.status !== 'PAID') {
-                transaction.status = 'PAID';
-                await transaction.save();
-
-                const user = await User.findById(transaction.userId);
-
-                if (user) {
-                    user.subscription.active = true;
-                    user.subscription.transactionDate = new Date();
-                    await user.save();
-                }
-            }
-
-            res.status(200).json({
-                message: 'Assinatura ativada com sucesso',
-                transactionStatus: abacatePayResponse.data?.data?.status
-            });
-        }
-
-        res.status(200).json({
-            message: 'success',
-            transactionStatus: abacatePayResponse.data?.data?.status,
-        });
-
-
-    } catch (error) {
-        res.status(500).json({
-            error: 'Error to check transaction status',
-            message: error.message
-        })
-    }
-
 }
