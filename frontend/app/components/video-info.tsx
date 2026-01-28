@@ -6,8 +6,9 @@ import Button from "./button"
 import { Heart, Bookmark, MessageCircle, Download } from "lucide-react"
 import Tag from "./tag"
 
+import Link from "next/link"
+
 import { useAuthStore } from "../stores/auth-store"
-import { on } from "events"
 
 interface VideoInfoProps {
     userName: string
@@ -101,18 +102,16 @@ export default function VideoInfo({ userName, videoDescription, triggerModal, on
                     </button>
                     {
                         isAuthenticated && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    onUserModal()
-                                    console.log("clicou no user modal")
-                                }}
-                                className="p-2 rounded-full transition-colors"
-                            >
-                                <div className="bg-red-500 w-12 h-12 rounded-md flex items-center justify-center text-white font-bold text-2xl shadow-4xl shadow-slate-900">
-                                    <b className="uppercase">{user?.name?.slice(0, 1)}</b>
-                                </div>
-                            </button>
+                            <Link href={"/afiliate"}>
+                                <button
+                                    className="p-2 rounded-full transition-colors"
+                                >
+                                    <div className="bg-red-500 w-12 h-12 rounded-md flex items-center justify-center text-white font-bold text-2xl shadow-4xl shadow-slate-900">
+                                        <b className="uppercase">{user?.name?.slice(0, 1)}</b>
+                                    </div>
+                                </button>
+                            </Link>
+
                         )
                     }
                 </div>

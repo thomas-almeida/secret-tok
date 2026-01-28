@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 interface User {
-  id: string
+  _id: string
   name: string
   phone: number
   email: string
@@ -13,7 +13,7 @@ interface User {
     _id: string
   },
   revenue: {
-    userId: string
+    _id: string
     createdAt: string
     updatedAt: string
     balance: number

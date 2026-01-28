@@ -1,0 +1,156 @@
+'use client';
+
+import Logo from "../components/logo";
+import Input from "../components/input";
+import { useState } from "react";
+import { useAuthStore } from "../stores/auth-store";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Users, Wallet, ArrowLeft } from "lucide-react";
+import copy from "copy-to-clipboard";
+
+export default function AfiliatePage() {
+
+    const { user, isAuthenticated } = useAuthStore();
+    const router = useRouter();
+    const [copiedLink, setCopiedLink] = useState<boolean>(false)
+
+    if (!isAuthenticated) {
+        router.push('/');
+        return null;
+    }
+
+    const handleCopyCode = () => {
+        if (!user?._id) return
+
+        const copied = copy(`https://rapidinhas.vercel.app?ref=${user?._id}`)
+
+        if (copied) {
+            setCopiedLink(true)
+            setTimeout(() => setCopiedLink(false), 3000)
+        } else {
+            console.error('falha ao copiar link')
+        }
+    }
+
+
+    const getPercentage = () => {
+        if (user?.revenue?.associatedUsers?.length! >= 10) {
+            return 45
+        }
+
+        return 35
+    }
+
+
+    return (
+        <div className="bg-neutral-900 h-screen w-full text-white flex flex-col">
+            <div className="fixed top-0 left-0 right-0 z-50 bg-neutral-900 py-6 px-4 border-b border-neutral-800 shadow-2xl">
+                <div className="flex justify-center items-center relative">
+                    <Link href={"/"} className="border absolute left-4 p-2 px-4 rounded border-slate-300/50 shadow-2xl shadow-amber-50/15">
+                        <ArrowLeft className="w-6 h-6" />
+                    </Link>
+                    <Logo />
+                </div>
+            </div>
+
+            <div className="overflow-y-auto flex justify-center items-start pt-24 pb-6 px-4">
+                <div className="">
+
+                    <div className="py-6">
+                        <p>Área do Afiliado</p>
+                        <h1 className="text-2xl font-bold text-left w-full pt-4">{user?.name}</h1>
+                        <p className="py-1">{user?.email}</p>
+
+                        <div className="flex flex-col gap-6 mt-6">
+
+                            <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-4">
+                                <h2 className="text-2xl font-semibold pb-2">Código de Afiliado</h2>
+                                <p>Ao convidar sua base, use este link abaixo para contabilizar os ganhos.</p>
+                                <Input
+                                    type="text"
+                                    placeholder="Seu código de indicação"
+                                    value={`https://rapidinhas.vercel.app?ref=${user?._id}`}
+                                    className="mt-2 text-xl font-medium"
+                                />
+                                <button
+                                    onClick={handleCopyCode}
+                                    className={`mt-2 border text-white px-4 py-3 rounded font-semibold transition-colors text-lg ${copiedLink && 'bg-green-600'}`}>
+                                    {copiedLink ? 'Copiado!' : 'Copiar Link de Afiliado'}
+                                </button>
+                            </div >
+
+
+                            <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-6">
+                                <p className="text-2xl pb-2 font-bold">Receita Compartilhada</p>
+
+                                <div className="flex justify-start items-center p-2 px-4 gap-4 mt-4 border rounded-md border-neutral-800 bg-neutral-800/50">
+                                    <Wallet className="w-8 h-8 text-white" />
+                                    <div className="flex flex-col">
+                                        <p className="text-lg">Saldo de comissão</p>
+                                        <h2 className="text-xl font-bold">{user?.revenue.balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-start items-center p-2 px-4 gap-4 mt-4 border rounded-md border-neutral-800 bg-neutral-800/50">
+                                    <Users className="w-8 h-8 text-white" />
+                                    <div className="flex flex-col">
+                                        <p className="text-lg">Usuários Trazidos</p>
+                                        <h2 className="text-xl font-bold">{user?.revenue.associatedUsers.length} usuários</h2>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-start items-center p-2 px-4 gap-4 mt-4 border rounded-md border-neutral-800 bg-neutral-800/50">
+                                    <Users className="w-8 h-8 text-white" />
+                                    <div className="flex flex-col">
+                                        <p className="text-lg">Porcentagem de comissão</p>
+                                        <h2 className="text-xl font-bold">{getPercentage()}%</h2>
+                                    </div>
+                                </div>
+
+                                <button
+                                    className="mt-2 flex justify-center items-center gap-4 bg-green-600 text-white px-4 py-4 rounded font-semibold hover:bg-red-600 transition-colors text-lg disabled:bg-gray-600 disabled:cursor-not-allowed disabled:hover:bg-gray-600 disabled:opacity-60"
+                                    disabled={user?.revenue.balance === 0}
+                                >
+                                    <p>Solicitar Saque</p>
+                                    <img src="/icons/pix-white.png" className="w-6 h-6" alt="" />
+                                </button>
+                            </div>
+
+                            <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-4">
+                                <h2 className="text-2xl font-semibold pb-4">Perguntas Frequentes</h2>
+
+                                <div className="space-y-4">
+                                    <div className="border-l-4 border-green-600 pl-4">
+                                        <h3 className="font-semibold text-lg mb-2">Como ser comissionado?</h3>
+                                        <p className="text-neutral-300">Você começa como afiliado com <span className="text-green-400 font-bold">35% de comissão</span> em cada venda que realizar através do seu código de indicação.</p>
+                                    </div>
+
+                                    <div className="border-l-4 border-green-600 pl-4">
+                                        <h3 className="font-semibold text-lg mb-2">Como aumentar minha comissão?</h3>
+                                        <p className="text-neutral-300">Após realizar <span className="text-green-400 font-bold">10 vendas</span>, sua comissão sobe automaticamente para <span className="text-green-400 font-bold">45%</span>.</p>
+                                    </div>
+
+                                    <div className="border-l-4 border-green-600 pl-4">
+                                        <h3 className="font-semibold text-lg mb-2">Qual o prazo para receber meu saque?</h3>
+                                        <p className="text-neutral-300">Após solicitar o saque, o prazo para receber é de <span className="text-green-400 font-bold">24 horas</span>. Você receberá na conta bancária cadastrada.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-4">
+                                <h2 className="text-2xl font-semibold pb-2">Suporte</h2>
+                                <p>Teve algum problema, bug ou dúvidas de como o app funciona? chama a gente no suporte prioritário para afiliados!</p>
+                                <Link href={"/afiliate/#"} className={`mt-2 border text-white px-4 py-3 rounded font-semibold transition-colors text-lg text-center ${copiedLink && 'bg-green-600'}`}>
+                                    Chamar Suporte
+                                </Link>
+                            </div >
+                        </div>
+
+                    </div >
+                </div >
+            </div >
+        </div >
+    );
+}

@@ -42,7 +42,7 @@ type PixData = {
 
 export default function SubscriptionModal({ isVisible, title, dailyLimit, onAccept, onDecline, onShowLogin }: SubscriptionModalProps) {
 
-    const { isAuthenticated } = useAuthStore()
+    const { isAuthenticated, login: loginUserToStore } = useAuthStore()
     const prices = {
         forever: 49.90,
         monthly: 25.90,
@@ -66,6 +66,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
     const [isProcessing, setIsProcessing] = useState(false)
     const [expandedPlan, setExpandedPlan] = useState<string | null>(null)
     const [step, setStep] = useState<'select' | 'signup' | 'payment'>('select')
+    const [newUser, setNewUser] = useState<any>(null)
 
     const [payload, setPayload] = useState<FormData>({
         phone: '',
@@ -98,10 +99,23 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                 payload.name,
                 Number(payload.phone),
                 payload.email,
-                payload.password
+                payload.password,
+                {
+                    amount: selectedPlan.name === 'vitalicio' ? prices.forever : prices.monthly,
+                    transactionDate: new Date().toISOString(),
+                    isActive: false
+                },
+                {
+                    balance: 0,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    associatedUsers: []
+                }
             )
 
-            if (response?.user?.id) {
+            if (response?.user?._id) {
+
+                setNewUser(response.user)
 
                 const paymentIntent = await createPaymentIntent({
                     planId: selectedPlan.id,
@@ -109,7 +123,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                         name: payload.name,
                         cellphone: payload.phone,
                         email: payload.email,
-                        userId: response?.user?.id
+                        userId: response?.user?._id
                     }
                 })
 
@@ -138,10 +152,13 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                     })
                     setIsProcessing(false)
 
-                    setInterval(() => {
-                        localStorage.setItem('is-subscribed', 'true')
-                        onAccept()
-                    }, 2000)
+                    if (statusResponse?.transactionStatus === 'PAID') {
+                        setInterval(() => {
+                            localStorage.setItem('is-subscribed', 'true')
+                            loginUserToStore(newUser)
+                            onAccept()
+                        }, 2000)
+                    }
 
                 } catch (error) {
                     console.error('Erro ao verificar status da transação:', error)
@@ -284,7 +301,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                                         />
                                         <Input
                                             icon={<MessageCircle className="w-5 h-5" />}
-                                            type="text"
+                                            type="tel"
                                             placeholder="Telefone com DDD"
                                             onChange={(e) => setPayload({ ...payload, phone: e.target.value })}
                                             value={payload.phone}
@@ -292,7 +309,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                                         />
                                         <Input
                                             icon={<Mail className="w-5 h-5" />}
-                                            type="text"
+                                            type="email"
                                             placeholder="E-mail"
                                             onChange={(e) => setPayload({ ...payload, email: e.target.value })}
                                             value={payload.email}
