@@ -7,7 +7,6 @@ import AdultModal from "./modal/adult-modal"
 import SubscriptionModal from "./modal/subscription-modal"
 import LoginModal from "./modal/login-modal"
 import { videos } from "../utils/mocked-videos"
-import UserModal from "./modal/user-modal"
 
 export default function VideoFeedOptimized() {
     const [feedVideos, setFeedVideos] = useState(() => [...videos])
@@ -18,7 +17,6 @@ export default function VideoFeedOptimized() {
     const [currentIndex, setCurrentIndex] = useState(0)
     const [preloadRange, setPreloadRange] = useState({ start: 0, end: 2 })
     const [dailyLimit, setDailyLimit] = useState(false)
-    const [userModalVisible, setUserModalVisible] = useState(false)
 
     const containerRef = useRef<HTMLDivElement>(null)
 
@@ -187,14 +185,6 @@ export default function VideoFeedOptimized() {
                 />
             )}
 
-            {
-                userModalVisible && (
-                    <UserModal
-                        visible={userModalVisible}
-                        onClose={() => setUserModalVisible(false)}
-                    />
-                )
-            }
 
             <TopBar triggerSubscriptionModal={handleTriggerSubscriptionModal} />
 
@@ -213,7 +203,6 @@ export default function VideoFeedOptimized() {
                             isActive={index === currentIndex}
                             shouldPreload={shouldPreload}
                             triggerSubscriptionModal={handleTriggerSubscriptionModal}
-                            onUserModal={() => setUserModalVisible(true)}
                         />
                     </div>
                 )

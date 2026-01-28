@@ -4,7 +4,6 @@
 import { Volume2, VolumeX, Loader2 } from "lucide-react"
 import { useRef, useEffect, useState, useCallback } from "react"
 import VideoInfo from "./video-info"
-import UserModal from "./modal/user-modal"
 
 type Video = {
   id: string
@@ -19,7 +18,6 @@ interface VideoCardProps {
   isActive: boolean
   shouldPreload: boolean // Novo: indica se deve pré-carregar
   triggerSubscriptionModal: () => void
-  onUserModal: () => void
 }
 
 export default function VideoCard({
@@ -27,7 +25,6 @@ export default function VideoCard({
   isActive,
   shouldPreload,
   triggerSubscriptionModal,
-  onUserModal
 }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const progressBarRef = useRef<HTMLDivElement>(null)
@@ -37,7 +34,6 @@ export default function VideoCard({
   const [showAudioIndicator, setShowAudioIndicator] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
-  const [userModalVisible, setUserModalVisible] = useState(true)
 
   // Estratégia de pré-carregamento inteligente
   useEffect(() => {
@@ -252,7 +248,6 @@ export default function VideoCard({
         videoDescription={video.description}
         triggerModal={triggerSubscriptionModal}
         triggerSubscriptionModal={true}
-        onUserModal={() => onUserModal()}
       />
 
       {/* Barra de progresso */}

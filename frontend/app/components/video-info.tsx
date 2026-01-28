@@ -14,11 +14,10 @@ interface VideoInfoProps {
     userName: string
     videoDescription: string
     triggerModal: () => void
-    onUserModal: () => void
     triggerSubscriptionModal: boolean
 }
 
-export default function VideoInfo({ userName, videoDescription, triggerModal, onUserModal, triggerSubscriptionModal }: VideoInfoProps) {
+export default function VideoInfo({ userName, videoDescription, triggerModal, triggerSubscriptionModal }: VideoInfoProps) {
     const [isFollowing, setIsFollowing] = useState(false)
     const handleClick = (e: React.MouseEvent) => {
         e.stopPropagation() // Prevent click from reaching the parent VideoCard
