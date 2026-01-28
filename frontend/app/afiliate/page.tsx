@@ -2,21 +2,41 @@
 
 import Logo from "../components/logo";
 import Input from "../components/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../stores/auth-store";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, Wallet, ArrowLeft } from "lucide-react";
+import { Users, Wallet, ArrowLeft, ChevronDown, Percent } from "lucide-react";
 import copy from "copy-to-clipboard";
 
 export default function AfiliatePage() {
 
-    const { user, isAuthenticated } = useAuthStore();
+    const { user, isAuthenticated, isHydrated } = useAuthStore();
     const router = useRouter();
     const [copiedLink, setCopiedLink] = useState<boolean>(false)
+    const [pixKey, setPixKey] = useState<string>('')
+    const [expandedPix, setExpandedPix] = useState<boolean>(false)
 
-    if (!isAuthenticated) {
-        router.push('/');
+    useEffect(() => {
+        const savedPixKey = localStorage.getItem('userPixKey')
+        if (savedPixKey) {
+            setPixKey(savedPixKey)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (pixKey) {
+            localStorage.setItem('userPixKey', pixKey)
+        }
+    }, [pixKey])
+
+    useEffect(() => {
+        if (isHydrated && !isAuthenticated) {
+            router.push('/');
+        }
+    }, [isHydrated, isAuthenticated, router])
+
+    if (!isHydrated) {
         return null;
     }
 
@@ -81,7 +101,7 @@ export default function AfiliatePage() {
                             </div >
 
 
-                            <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-6">
+                            <div className="flex flex-col gap-4 border rounded-md border-neutral-800 p-2 py-6">
                                 <p className="text-2xl pb-2 font-bold">Receita Compartilhada</p>
 
                                 <div className="flex justify-start items-center p-2 px-4 gap-4 mt-4 border rounded-md border-neutral-800 bg-neutral-800/50">
@@ -92,7 +112,7 @@ export default function AfiliatePage() {
                                     </div>
                                 </div>
 
-                                <div className="flex justify-start items-center p-2 px-4 gap-4 mt-4 border rounded-md border-neutral-800 bg-neutral-800/50">
+                                <div className="flex justify-start items-center p-2 px-4 gap-4 border rounded-md border-neutral-800 bg-neutral-800/50">
                                     <Users className="w-8 h-8 text-white" />
                                     <div className="flex flex-col">
                                         <p className="text-lg">Usuários Trazidos</p>
@@ -100,13 +120,40 @@ export default function AfiliatePage() {
                                     </div>
                                 </div>
 
-                                <div className="flex justify-start items-center p-2 px-4 gap-4 mt-4 border rounded-md border-neutral-800 bg-neutral-800/50">
-                                    <Users className="w-8 h-8 text-white" />
+                                <div className="flex justify-start items-center p-2 px-4 gap-4 border rounded-md border-neutral-800 bg-neutral-800/50">
+                                    <Percent className="w-8 h-8 text-white" />
                                     <div className="flex flex-col">
                                         <p className="text-lg">Porcentagem de comissão</p>
                                         <h2 className="text-xl font-bold">{getPercentage()}%</h2>
                                     </div>
                                 </div>
+
+                                <div className="flex flex-col gap-2 border rounded-md p-4 border-neutral-800 bg-neutral-800/50">
+                                    <button
+                                        onClick={() => setExpandedPix(!expandedPix)}
+                                        className="flex justify-between items-center w-full"
+                                    >
+                                        <h2 className="text-lg font-semibold">Chave PIX para Saques</h2>
+                                        <ChevronDown className={`w-6 h-6 transition-transform duration-300 ${expandedPix ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    {expandedPix && (
+                                        <div className="mt-4 pt-4 border-t border-neutral-800">
+                                            <p className="mb-4 text-neutral-300">Cadastre sua chave PIX para receber seus saques. Sua chave será salva com segurança.</p>
+                                            <Input
+                                                type="text"
+                                                placeholder="Digite sua chave PIX (email, CPF, celular ou aleatória)"
+                                                value={pixKey}
+                                                className="mt-2 text-lg font-medium"
+                                                onChange={(e) => setPixKey(e.target.value)}
+                                            />
+                                            <p className="text-sm text-green-400 mt-2">
+                                                {pixKey ? '✓ Chave salva automaticamente' : 'Digite sua chave PIX acima'}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div >
+
 
                                 <button
                                     className="mt-2 flex justify-center items-center gap-4 bg-green-600 text-white px-4 py-4 rounded font-semibold hover:bg-red-600 transition-colors text-lg disabled:bg-gray-600 disabled:cursor-not-allowed disabled:hover:bg-gray-600 disabled:opacity-60"
@@ -138,9 +185,7 @@ export default function AfiliatePage() {
                                 </div>
                             </div>
 
-
                             <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-4">
-                                <h2 className="text-2xl font-semibold pb-2">Suporte</h2>
                                 <p>Teve algum problema, bug ou dúvidas de como o app funciona? chama a gente no suporte prioritário para afiliados!</p>
                                 <Link href={"/afiliate/#"} className={`mt-2 border text-white px-4 py-3 rounded font-semibold transition-colors text-lg text-center ${copiedLink && 'bg-green-600'}`}>
                                     Chamar Suporte
