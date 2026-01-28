@@ -62,6 +62,10 @@ export default function AfiliatePage() {
         return 35
     }
 
+    const formattedBalance = () => {
+        const balanceFormatted = user?.revenue.balance! / 100
+        return balanceFormatted.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    }
 
     return (
         <div className="bg-neutral-900 h-screen w-full text-white flex flex-col">
@@ -108,7 +112,7 @@ export default function AfiliatePage() {
                                     <Wallet className="w-8 h-8 text-white" />
                                     <div className="flex flex-col">
                                         <p className="text-lg">Saldo de comissão</p>
-                                        <h2 className="text-xl font-bold">{user?.revenue.balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2>
+                                        <h2 className="text-xl font-bold">{formattedBalance()}</h2>
                                     </div>
                                 </div>
 

@@ -7,7 +7,8 @@ interface PaymentIntenPayload {
         cellphone: string;
         email: string;
         userId: string;
-    }
+    },
+    referenceId: string
 }
 
 export const createPaymentIntent = async (payload: PaymentIntenPayload) => {

@@ -45,6 +45,7 @@ type PixData = {
 export default function SubscriptionModal({ isVisible, title, dailyLimit, onAccept, onDecline, onShowLogin, initialStep = 'select', isRePayment = false }: SubscriptionModalProps) {
 
     const { isAuthenticated, user, login: loginUserToStore } = useAuthStore()
+
     const prices = {
         forever: 49.90,
         monthly: 25.90,
@@ -53,6 +54,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
 
     const [selectedPlan, setSelectedPlan] = useState<Plan>({ id: 'RAPIDINHAS_VITALICIO', name: 'vitalicio' })
     const [pixData, setPixData] = useState<PixData>()
+    const afiliateCode = localStorage.getItem("afiliate-code")
 
     const plans = [
         {
@@ -92,12 +94,12 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
     useEffect(() => {
         const generatePaymentForAuthenticatedUser = async () => {
             console.log('Payment Effect - isAuthenticated:', isAuthenticated, 'isVisible:', isVisible, 'isRePayment:', isRePayment, 'step:', step, 'pixData:', pixData)
-            
+
             if (isAuthenticated && isVisible && isRePayment && step === 'payment' && !pixData) {
                 // Usuário está logado e precisa pagar, gerar payment intent
                 console.log('Iniciando geração de payment intent')
                 setIsLoadingPayment(true)
-                
+
                 try {
                     const paymentIntent = await createPaymentIntent({
                         planId: selectedPlan.id,
@@ -106,7 +108,8 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                             cellphone: user?.phone?.toString() || '',
                             email: user?.email || '',
                             userId: user?._id || ''
-                        }
+                        },
+                        referenceId: afiliateCode || 'none'
                     })
 
                     console.log('Payment intent gerado:', paymentIntent)
@@ -174,7 +177,8 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                         cellphone: payload.phone,
                         email: payload.email,
                         userId: response?.user?._id
-                    }
+                    },
+                    referenceId: afiliateCode || 'none'
                 })
 
                 setPixData({
