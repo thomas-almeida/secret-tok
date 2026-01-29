@@ -13,17 +13,50 @@ import { useAuthStore } from "../stores/auth-store"
 interface VideoInfoProps {
     userName: string
     videoDescription: string
+    videoUrl: string
     triggerModal: () => void
     triggerSubscriptionModal: boolean
     triggerPaymentModal?: () => void
 }
 
-export default function VideoInfo({ userName, videoDescription, triggerModal, triggerSubscriptionModal, triggerPaymentModal }: VideoInfoProps) {
+export default function VideoInfo({ userName, videoDescription, videoUrl, triggerModal, triggerSubscriptionModal, triggerPaymentModal }: VideoInfoProps) {
     const [isFollowing, setIsFollowing] = useState(false)
     const handleClick = (e: React.MouseEvent) => {
         e.stopPropagation() // Prevent click from reaching the parent VideoCard
     }
     const { user, isAuthenticated } = useAuthStore()
+
+    const handleDownload = async (e: React.MouseEvent) => {
+        e.stopPropagation()
+        
+        // Se não autenticado, mostrar modal de subscription
+        if (!isAuthenticated) {
+            triggerModal()
+            return
+        }
+        
+        // Se autenticado mas sem subscription, mostrar pagamento
+        if (user?.subscription?.active !== true && triggerPaymentModal) {
+            triggerPaymentModal()
+            return
+        }
+
+        // Fazer download do vídeo
+        try {
+            const response = await fetch(videoUrl)
+            const blob = await response.blob()
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `video-${Date.now()}.mp4`
+            document.body.appendChild(a)
+            a.click()
+            window.URL.revokeObjectURL(url)
+            document.body.removeChild(a)
+        } catch (error) {
+            console.error('Erro ao fazer download do vídeo:', error)
+        }
+    }
 
     return (
         <>
@@ -104,19 +137,7 @@ export default function VideoInfo({ userName, videoDescription, triggerModal, tr
                         <Bookmark className="w-8 h-8 text-white fill-white/0 stroke-2" />
                     </button>
                     <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            // Se não autenticado, mostrar modal de subscription
-                            if (!isAuthenticated) {
-                                triggerModal()
-                                return
-                            }
-                            // Se autenticado mas sem subscription, mostrar pagamento
-                            if (user?.subscription?.active !== true && triggerPaymentModal) {
-                                triggerPaymentModal()
-                                return
-                            }
-                        }}
+                        onClick={handleDownload}
                         className="p-2 rounded-full transition-colors"
                     >
                         <Download className="w-8 h-8 text-white fill-white/0 stroke-2" />
