@@ -221,7 +221,7 @@ export default function VideoCard({
         </div>
       )}
 
-      <div className="bg-black/90 blur-3xl h-full w-full relative overflow-hidden">
+      <div className="h-full w-full relative overflow-hidden">
         <video
           ref={videoRef}
           src={video.videoUrl}
