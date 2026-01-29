@@ -247,7 +247,10 @@ export default function AfiliatePage() {
 
                             <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-4 mb-6">
                                 <p>Teve algum problema, bug ou dúvidas de como o app funciona? chama a gente no suporte prioritário para afiliados!</p>
-                                <Link href={"/afiliate/#"} className={`mt-2 border text-white px-4 py-3 rounded font-semibold transition-colors text-lg text-center ${copiedLink && 'bg-green-600'}`}>
+                                <Link
+                                    href={`https://wa.me/5511949098312?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20no%20rapidinhas%2C%20meu%20c%C3%B3digo%20de%20usu%C3%A1rio%20%C3%A9%3A${user?._id}`}
+                                    className={`mt-2 border text-white px-4 py-3 rounded font-semibold transition-colors text-lg text-center ${copiedLink && 'bg-green-600'}`}
+                                >
                                     Chamar Suporte
                                 </Link>
                             </div >
