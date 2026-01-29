@@ -211,7 +211,7 @@ export default function AfiliatePage() {
 
                                 <Link
                                     className="flex justify-center items-center bg-green-600 text-white px-4 py-4 rounded font-semibold transition-colors text-lg disabled:bg-gray-600 disabled:cursor-not-allowed disabled:hover:bg-gray-600 disabled:opacity-60"
-                                    href={`https://wa.me/5511949098312?text=Ol%C3%A1%2C%20quero%20solicitar%20meu%20saque%2C%20meu%20c%C3%B3digo%20de%20usu%C3%A1rio%20%C3%A9%3A%20${user?._id}`}
+                                    href={`https://wa.me/5511989008294?text=Ol%C3%A1%2C%20quero%20solicitar%20meu%20saque%2C%20meu%20c%C3%B3digo%20de%20usu%C3%A1rio%20%C3%A9%3A%20${user?._id}`}
                                 >
                                     <button
                                         className="flex justify-center items-center gap-4 "
@@ -248,7 +248,7 @@ export default function AfiliatePage() {
                             <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-4 mb-6">
                                 <p>Teve algum problema, bug ou dúvidas de como o app funciona? chama a gente no suporte prioritário para afiliados!</p>
                                 <Link
-                                    href={`https://wa.me/5511949098312?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20no%20rapidinhas%2C%20meu%20c%C3%B3digo%20de%20usu%C3%A1rio%20%C3%A9%3A${user?._id}`}
+                                    href={`https://wa.me/5511989008294?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20no%20rapidinhas%2C%20meu%20c%C3%B3digo%20de%20usu%C3%A1rio%20%C3%A9%3A${user?._id}`}
                                     className={`mt-2 border text-white px-4 py-3 rounded font-semibold transition-colors text-lg text-center ${copiedLink && 'bg-green-600'}`}
                                 >
                                     Chamar Suporte
