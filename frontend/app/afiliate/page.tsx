@@ -209,14 +209,19 @@ export default function AfiliatePage() {
                                     )}
                                 </div >
 
-
-                                <button
-                                    className="mt-2 flex justify-center items-center gap-4 bg-green-600 text-white px-4 py-4 rounded font-semibold hover:bg-red-600 transition-colors text-lg disabled:bg-gray-600 disabled:cursor-not-allowed disabled:hover:bg-gray-600 disabled:opacity-60"
-                                    disabled={user?.revenue.balance === 0}
+                                <Link
+                                    className="flex justify-center items-center bg-green-600 text-white px-4 py-4 rounded font-semibold transition-colors text-lg disabled:bg-gray-600 disabled:cursor-not-allowed disabled:hover:bg-gray-600 disabled:opacity-60"
+                                    href={`https://wa.me/5511949098312?text=Ol%C3%A1%2C%20quero%20solicitar%20meu%20saque%2C%20meu%20c%C3%B3digo%20de%20usu%C3%A1rio%20%C3%A9%3A%20${user?._id}`}
                                 >
-                                    <p>Solicitar Saque</p>
-                                    <img src="/icons/pix-white.png" className="w-6 h-6" alt="" />
-                                </button>
+                                    <button
+                                        className="flex justify-center items-center gap-4 "
+                                        disabled={user?.revenue.balance === 0}
+                                    >
+                                        <p>Solicitar Saque</p>
+                                        <img src="/icons/pix-white.png" className="w-6 h-6" alt="" />
+                                    </button>
+                                </Link>
+
                             </div>
 
                             <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-4">
