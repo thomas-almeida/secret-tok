@@ -28,13 +28,13 @@ export default function VideoInfo({ userName, videoDescription, videoUrl, trigge
 
     const handleDownload = async (e: React.MouseEvent) => {
         e.stopPropagation()
-        
+
         // Se não autenticado, mostrar modal de subscription
         if (!isAuthenticated) {
             triggerModal()
             return
         }
-        
+
         // Se autenticado mas sem subscription, mostrar pagamento
         if (user?.subscription?.active !== true && triggerPaymentModal) {
             triggerPaymentModal()
@@ -100,24 +100,6 @@ export default function VideoInfo({ userName, videoDescription, videoUrl, trigge
                 </div>
 
                 <div className="absolute right-2 bottom-20 flex flex-col items-center gap-2">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            // Se não autenticado, mostrar modal de subscription
-                            if (!isAuthenticated) {
-                                triggerModal()
-                                return
-                            }
-                            // Se autenticado mas sem subscription, mostrar pagamento
-                            if (user?.subscription?.active !== true && triggerPaymentModal) {
-                                triggerPaymentModal()
-                                return
-                            }
-                        }}
-                        className="p-2 rounded-full transition-colors"
-                    >
-                        <Heart className="w-8 h-8 text-white fill-white/0 stroke-2" />
-                    </button>
                     <button
                         onClick={(e) => {
                             e.stopPropagation()
