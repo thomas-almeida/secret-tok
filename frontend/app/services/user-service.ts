@@ -22,3 +22,8 @@ export const loginUser = async (phone: number, password: string) => {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_BASEURL}/api/auth/login`, { phone, password });
     return response.data;
 }
+
+export const getAfiliateData = async (afiliateId: string) => {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_BASEURL}/api/users/afiliate/${afiliateId}`)
+    return response.data
+}

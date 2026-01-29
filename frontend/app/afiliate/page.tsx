@@ -6,8 +6,14 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "../stores/auth-store";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, Wallet, ArrowLeft, ChevronDown, Percent } from "lucide-react";
+import { Users, Wallet, ArrowLeft, ChevronDown, Percent, RotateCcw } from "lucide-react";
 import copy from "copy-to-clipboard";
+import { getAfiliateData } from "../services/user-service";
+
+interface AfiliateData {
+    balance: number,
+    associatedUsers: number
+}
 
 export default function AfiliatePage() {
 
@@ -16,6 +22,8 @@ export default function AfiliatePage() {
     const [copiedLink, setCopiedLink] = useState<boolean>(false)
     const [pixKey, setPixKey] = useState<string>('')
     const [expandedPix, setExpandedPix] = useState<boolean>(false)
+    const [isFetching, setIsFetching] = useState<boolean>(false)
+    const [afiliateData, setAfiliateData] = useState<AfiliateData | null>(null)
 
     useEffect(() => {
         const savedPixKey = localStorage.getItem('userPixKey')
@@ -36,6 +44,17 @@ export default function AfiliatePage() {
         }
     }, [isHydrated, isAuthenticated, router])
 
+    useEffect(() => {
+
+        if (user) {
+            setAfiliateData({
+                balance: user.revenue.balance,
+                associatedUsers: user.revenue.associatedUsers.length
+            })
+        }
+
+    }, [])
+
     if (!isHydrated) {
         return null;
     }
@@ -53,6 +72,30 @@ export default function AfiliatePage() {
         }
     }
 
+    const handleUpdateAfiliateData = async () => {
+        try {
+
+            setIsFetching(true)
+
+            if (user?._id) {
+
+                const res = await getAfiliateData(user?._id)
+                console.log(res.data)
+                setAfiliateData({
+                    balance: res.data?.balance,
+                    associatedUsers: res.data?.associatedUsers
+                })
+
+                setInterval(() => {
+                    setIsFetching(false)
+                }, 2000)
+
+            }
+
+        } catch (error) {
+            console.error(error)
+        }
+    }
 
     const getPercentage = () => {
         if (user?.revenue?.associatedUsers?.length! >= 10) {
@@ -63,7 +106,7 @@ export default function AfiliatePage() {
     }
 
     const formattedBalance = () => {
-        const balanceFormatted = user?.revenue.balance! / 100
+        const balanceFormatted = afiliateData?.balance! / 100
         return balanceFormatted.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
     }
 
@@ -106,7 +149,15 @@ export default function AfiliatePage() {
 
 
                             <div className="flex flex-col gap-4 border rounded-md border-neutral-800 p-2 py-6">
-                                <p className="text-2xl pb-2 font-bold">Receita Compartilhada</p>
+                                <div className="flex justify-between items-center">
+                                    <p className="text-2xl font-bold">Receita Compartilhada</p>
+                                    <button
+                                        onClick={handleUpdateAfiliateData}
+                                        disabled={isFetching}
+                                        className="p-3 px-4 ">
+                                        <RotateCcw className={`w-6 h-6 ${isFetching && 'animate-spin'}`} />
+                                    </button>
+                                </div>
 
                                 <div className="flex justify-start items-center p-2 px-4 gap-4 mt-4 border rounded-md border-neutral-800 bg-neutral-800/50">
                                     <Wallet className="w-8 h-8 text-white" />
@@ -120,7 +171,7 @@ export default function AfiliatePage() {
                                     <Users className="w-8 h-8 text-white" />
                                     <div className="flex flex-col">
                                         <p className="text-lg">Usuários Trazidos</p>
-                                        <h2 className="text-xl font-bold">{user?.revenue.associatedUsers.length} usuários</h2>
+                                        <h2 className="text-xl font-bold">{afiliateData?.associatedUsers} usuários</h2>
                                     </div>
                                 </div>
 
@@ -189,7 +240,7 @@ export default function AfiliatePage() {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-4">
+                            <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-4 mb-6">
                                 <p>Teve algum problema, bug ou dúvidas de como o app funciona? chama a gente no suporte prioritário para afiliados!</p>
                                 <Link href={"/afiliate/#"} className={`mt-2 border text-white px-4 py-3 rounded font-semibold transition-colors text-lg text-center ${copiedLink && 'bg-green-600'}`}>
                                     Chamar Suporte
