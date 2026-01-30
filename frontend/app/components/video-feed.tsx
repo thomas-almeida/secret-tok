@@ -7,6 +7,7 @@ import AdultModal from "./modal/adult-modal"
 import SubscriptionModal from "./modal/subscription-modal"
 import LoginModal from "./modal/login-modal"
 import { videos } from "../utils/mocked-videos"
+import { useAuthStore } from "../stores/auth-store"
 
 export default function VideoFeedOptimized() {
     const [feedVideos, setFeedVideos] = useState(() => [...videos])
@@ -19,8 +20,10 @@ export default function VideoFeedOptimized() {
     const [dailyLimit, setDailyLimit] = useState(false)
     const [subscriptionModalInitialStep, setSubscriptionModalInitialStep] = useState<'select' | 'signup' | 'payment'>('select')
     const [isRePayment, setIsRePayment] = useState(false)
+    const [hasLoadedMore, setHasLoadedMore] = useState(false)
 
     const containerRef = useRef<HTMLDivElement>(null)
+    const { isAuthenticated } = useAuthStore()
 
     useEffect(() => {
 
@@ -119,12 +122,17 @@ export default function VideoFeedOptimized() {
 
                                 console.log('Último vídeo alcançado - index:', videoIndex)
 
-                                // Atualizar storage com scrolls diários
-                                const currentScrolls = localStorage.getItem('daily-scrolls') || 'false'
-                                const limitReached = currentScrolls === 'true' ? 'true' : 'false'
-                                const today = new Date().toDateString()
-
-                                if (localStorage.getItem('is-subscribed') !== 'true') {
+                                // Se usuário está autenticado, carregar mais vídeos (scroll infinito)
+                                if (isAuthenticated) {
+                                    console.log('Usuário autenticado - carregando mais vídeos')
+                                    // Duplicar os vídeos para criar scroll infinito
+                                    setFeedVideos(prevVideos => [...prevVideos, ...videos])
+                                    setHasLoadedMore(true)
+                                } else {
+                                    // Usuário não autenticado - mostrar modal de subscription
+                                    const currentScrolls = localStorage.getItem('daily-scrolls') || 'false'
+                                    const limitReached = currentScrolls === 'true' ? 'true' : 'false'
+                                    const today = new Date().toDateString()
 
                                     localStorage.setItem('daily-scrolls', limitReached)
                                     localStorage.setItem('scrolls-date', today)
@@ -132,7 +140,6 @@ export default function VideoFeedOptimized() {
                                     console.log('Scrolls diários atualizados:', limitReached)
                                     setSubscriptionModalTitle('Suas Espiadas diárias Acabaram')
                                     setIsSubscriptionModalVisible(true)
-
                                 }
                             }
                         }
@@ -150,7 +157,7 @@ export default function VideoFeedOptimized() {
         videoElements.forEach(el => observer.observe(el))
 
         return () => observer.disconnect()
-    }, [currentIndex, feedVideos.length])
+    }, [currentIndex, feedVideos.length, isAuthenticated])
 
     // Otimização: Pré-carregar primeiro vídeo imediatamente
     useEffect(() => {
@@ -161,7 +168,7 @@ export default function VideoFeedOptimized() {
             firstVideo.preload = 'auto'
             firstVideo.load()
         }
-    }, [])
+    }, [feedVideos])
 
     return (
         <div
