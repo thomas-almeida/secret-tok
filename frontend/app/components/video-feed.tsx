@@ -8,9 +8,11 @@ import SubscriptionModal from "./modal/subscription-modal"
 import LoginModal from "./modal/login-modal"
 import { videos } from "../utils/mocked-videos"
 import { useAuthStore } from "../stores/auth-store"
+import { useVideoQueue } from "../hooks/useVideoQueue"
 
 export default function VideoFeedOptimized() {
     const [feedVideos, setFeedVideos] = useState(() => [...videos])
+
     const [isAdultModalVisible, setIsAdultModalVisible] = useState(true)
     const [isSubscriptionModalVisible, setIsSubscriptionModalVisible] = useState(false)
     const [isLoginModalVisible, setLoginVisible] = useState(false)
@@ -22,8 +24,14 @@ export default function VideoFeedOptimized() {
     const [isRePayment, setIsRePayment] = useState(false)
     const [hasLoadedMore, setHasLoadedMore] = useState(false)
 
+    const [queueTab, setQueueTab] = useState<string | null>(null)
+
     const containerRef = useRef<HTMLDivElement>(null)
     const { isAuthenticated } = useAuthStore()
+
+    useEffect(() => {
+        console.log(queueTab)
+    }, [queueTab])
 
     useEffect(() => {
 
@@ -225,7 +233,11 @@ export default function VideoFeedOptimized() {
             )}
 
 
-            <TopBar triggerSubscriptionModal={handleTriggerSubscriptionModal} triggerPaymentModal={handleTriggerPaymentModal} />
+            <TopBar
+                triggerSubscriptionModal={handleTriggerSubscriptionModal}
+                triggerPaymentModal={handleTriggerPaymentModal}
+                onToggleQueue={setQueueTab}
+            />
 
             {feedVideos.map((video, index) => {
                 // Determinar se este vídeo deve ser pré-carregado

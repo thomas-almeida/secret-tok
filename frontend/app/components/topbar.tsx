@@ -6,9 +6,10 @@ import { useAuthStore } from "../stores/auth-store"
 interface TopBarProps {
     triggerSubscriptionModal: (title: string) => void
     triggerPaymentModal?: () => void
+    onToggleQueue: (tab: string) => void
 }
 
-export default function TopBar({ triggerSubscriptionModal, triggerPaymentModal }: TopBarProps) {
+export default function TopBar({ triggerSubscriptionModal, triggerPaymentModal, onToggleQueue }: TopBarProps) {
     const [selectedTab, setSelectedTab] = useState("espiar")
     const { user, isAuthenticated } = useAuthStore()
 
@@ -29,8 +30,10 @@ export default function TopBar({ triggerSubscriptionModal, triggerPaymentModal }
             }
 
             setSelectedTab(tab)
+            onToggleQueue(tab)
         } else {
             setSelectedTab(tab)
+            onToggleQueue(tab)
         }
     }
 
