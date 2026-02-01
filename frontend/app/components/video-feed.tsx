@@ -217,7 +217,7 @@ export default function VideoFeedOptimized() {
     return (
         <div
             ref={containerRef}
-            className="h-full w-full overflow-y-scroll snap-y snap-mandatory hide-scrollbar"
+            className="h-full w-full overflow-y-scroll snap-y snap-mandatory hide-scrollbar scrollbar-hide"
         >
             {isAdultModalVisible && (
                 <AdultModal

@@ -11,7 +11,7 @@ import AffiliateModal from "../components/affiliate-modal"
 
 export default function AdsLandingPage() {
 
-    const [sales, setSales] = useState<string>('0')
+    const [sales, setSales] = useState<string>('10')
     const [selectedPercent, setSelectedPercent] = useState<number>(30)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const videoRef = useRef<HTMLVideoElement>(null)
@@ -78,150 +78,157 @@ export default function AdsLandingPage() {
                     </div>
                 </header>
 
-                <main className="flex flex-col items-center text-center gap-4 py-12">
-                    <h1 className="text-center text-3xl tracking-tighter leading-8 font-bold">A Primeira Plataforma de Vazados em formato TikTok com afiliados.</h1>
-                    <p className="text-lg px-4 leading-5">O nicho hot nunca foi tão fácil, chega de perder tempo configurando Bots, gateways e grupos de mídia no telegram, vem pro nicho hot de vazados <b>2.0!</b></p>
-                    <div className="w-[80%]">
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="p-4 text-lg font-bold rounded bg-red-600 shadow-2xl w-full"
-                        >
-                            Me Tornar Afiliado Agora
-                        </button>
+                <main className="flex flex-col items-center text-center gap-4 py-12 px-4">
+                    <div className="max-w-6xl mx-auto">
+                        <h1 className="text-center text-3xl tracking-tighter leading-8 font-bold lg:text-5xl lg:leading-[0.9] lg:mx-64">A Primeira Plataforma de Vazados em formato TikTok com afiliados.</h1>
+                        <p className="text-lg px-4 leading-5 mt-6 text-neutral-300 lg:text-xl lg:px-8">O nicho hot nunca foi tão fácil, chega de perder tempo configurando Bots, gateways e grupos de mídia no telegram, vem pro nicho hot de vazados <b>2.0!</b></p>
+                        <div className="w-[80%] max-w-md mx-auto mt-8">
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className="p-4 text-lg font-bold rounded bg-red-600 shadow-2xl w-full hover:bg-red-700 lg:text-xl lg:py-6 cursor-pointer"
+                            >
+                                Me Tornar Afiliado Agora
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="p-2 py-4">
+                    <div className="p-2 py-4 w-full max-w-6xl mx-auto">
                         <div className="py-4 px-4">
-                            <h2 className="text-2xl font-bold tracking-tight pb-4">Todas Elas Estão Aqui</h2>
-                            <p className="leading-6 text-lg">Facilite a vida do seu lead enviando apenas um link da plataforma, ele não escolhe mais o que assite, faz scroll infinito nos melhores vazados da cena enquanto você fatura!</p>
+                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">Todas Elas Estão Aqui</h2>
+                            <p className="leading-6 text-lg text-neutral-300 lg:text-xl max-w-4xl mx-auto">Facilite a vida do seu lead enviando apenas um link da plataforma, ele não escolhe mais o que assite, faz scroll infinito nos melhores vazados da cena enquanto você fatura!</p>
                         </div>
                         <ModelsCarousel models={models} />
                     </div>
 
-                    <div className="p-2 py-4 w-full">
+                    <div className="p-2 py-4 w-full max-w-6xl mx-auto">
                         <div className="py-4 px-4">
-                            <h2 className="text-2xl font-bold tracking-tight pb-4">Eles assinam, você ganha!</h2>
-                            <p className="leading-6 text-lg">Seja comissionado por cada assinatura de plano da plataforma que seu lead escolher, quanto mais pessoas virem de você maior sua porcentagem</p>
-                            <div className="mt-4 w-full flex flex-col items-center gap-4">
-                                <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-lg p-4 flex flex-col sm:flex-row items-center gap-4 shadow-lg">
-                                    <div className="text-sm text-neutral-300">Se você vender</div>
-                                    <div className="flex flex-col items-center gap-2 w-full">
-                                        <div className="flex-1">
+                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">Eles assinam, você ganha!</h2>
+                            <p className="leading-6 text-lg text-neutral-300 lg:text-xl max-w-4xl mx-auto">Seja comissionado por cada assinatura de plano da plataforma que seu lead escolher, quanto mais pessoas virem de você maior sua porcentagem</p>
+                            <div className="mt-8 w-full flex flex-col items-center gap-6 lg:gap-8">
+                                <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-2xl">
+                                    <div className="text-center mb-2">
+                                        <h3 className="text-xl font-semibold text-neutral-300 mb-2">Calcule seus ganhos</h3>
+                                        <p className="text-lg text-neutral-400">Se você trouxer</p>
+                                    </div>
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="w-full max-w-xs">
                                             <Input
                                                 placeholder="0"
                                                 value={sales}
                                                 onChange={(e) => setSales(e.target.value)}
                                                 numericOnly
-                                                className="w-full text-center text-white text-lg font-semibold"
+                                                className="w-full text-center text-white text-xl font-bold py-4"
                                             />
+                                            <p className="text-lg text-red-400 py-2">Leads Pagantes</p>
                                         </div>
-                                        <div className="">
-                                            <div className="text-xs text-neutral-300">cada assinatura</div>
-                                            <div className="text-white font-bold">{fmt.format(price)}</div>
+                                        <div className="text-center">
+                                            <div className="text-sm text-neutral-300">cada assinatura</div>
+                                            <div className="text-white font-bold text-lg">{fmt.format(price)}</div>
                                         </div>
                                     </div>
+                                    
                                     {/* Level selector buttons */}
-                                    <div className="w-full mt-3 flex gap-2 justify-center">
+                                    <div className="w-full mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                                         <button
                                             onClick={() => setSelectedPercent(30)}
-                                            className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${selectedPercent === 30 ? 'bg-white text-black shadow-lg' : 'bg-transparent border border-neutral-700 text-neutral-300'}`}>
+                                            className={`px-4 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-all ${selectedPercent === 30 ? 'bg-white text-black shadow-lg scale-105' : 'bg-transparent border border-neutral-700 text-neutral-300 hover:border-neutral-600'}`}>
                                             Primeiro Nivel
                                         </button>
                                         <button
                                             onClick={() => setSelectedPercent(40)}
-                                            className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${selectedPercent === 40 ? 'bg-white text-black shadow-lg' : 'bg-transparent border border-neutral-700 text-neutral-300'}`}>
+                                            className={`px-4 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-all ${selectedPercent === 40 ? 'bg-white text-black shadow-lg scale-105' : 'bg-transparent border border-neutral-700 text-neutral-300 hover:border-neutral-600'}`}>
                                             Segundo Nível
                                         </button>
                                         <button
                                             onClick={() => setSelectedPercent(50)}
-                                            className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${selectedPercent === 50 ? 'bg-white text-black shadow-lg' : 'bg-transparent border border-neutral-700 text-neutral-300'}`}>
+                                            className={`px-4 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-all ${selectedPercent === 50 ? 'bg-white text-black shadow-lg scale-105' : 'bg-transparent border border-neutral-700 text-neutral-300 hover:border-neutral-600'}`}>
                                             Terceiro Nível
                                         </button>
                                     </div>
                                 </div>
 
-                                <div className="w-full max-w-2xl bg-linear-to-r from-black to-neutral-900 border border-neutral-800 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                                    <div>
-                                        <div className="text-sm text-neutral-300">Sua comissão:</div>
-                                        <div className={`text-4xl sm:text-3xl font-extrabold mt-1 ${levelColor}`}>{calcEarnings(selectedPercent)}</div>
+                                <div className="w-full max-w-2xl bg-linear-to-r from-black to-neutral-900 border-2 border-neutral-800 rounded-xl p-6 shadow-2xl">
+                                    <div className="text-center">
+                                        <div className="text-sm text-neutral-300 mb-2">Sua comissão:</div>
+                                        <div className={`text-5xl lg:text-6xl font-extrabold mt-2 ${levelColor}`}>{calcEarnings(selectedPercent)}</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="grid grid-cols-1 gap-4 px-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-6 mt-8 max-w-6xl mx-auto">
                             {/* Tier 1 */}
-                            <div className={`relative p-6 py-8 border-2 rounded-xl shadow-2xl border-green-400 bg-linear-to-br from-green-900 to-green-800 hover:from-green-900 hover:to-green-800/20 transition-all duration-300`}>
+                            <div className={`relative p-6 py-8 border-2 rounded-xl shadow-2xl border-green-400 bg-linear-to-br from-green-900 to-green-800 hover:from-green-900 hover:to-green-800/20 transition-all duration-300 hover:scale-105 hover:shadow-3xl`}>
                                 <div className="absolute top-0 right-0 bg-green-400 text-black px-3 py-1 rounded-bl-lg font-bold text-sm">Primeiro Nível</div>
                                 <div className="flex justify-center items-center gap-2 pb-6">
-                                    <Users className="w-6 h-6 text-green-400" />
-                                    <h3 className="text-lg font-semibold">10+ Usuários</h3>
+                                    <Users className="w-8 h-8 text-green-400" />
+                                    <h3 className="text-xl font-semibold">10+ Usuários</h3>
                                 </div>
                                 <div className="text-center">
-                                    <span className="text-6xl font-black text-green-400">30%</span>
-                                    <p className="text-sm text-gray-300 mt-2">Comissão por assinatura</p>
-                                    <p className="mt-3 text-white">Você ganharia: <span className="font-bold">{calcEarnings(30)}</span></p>
+                                    <span className="text-7xl font-black text-green-400 block">30%</span>
+                                    <p className="text-base text-neutral-300 mt-3">Comissão por assinatura</p>
+                                    <p className="mt-4 text-white text-lg">Você ganharia: <span className="font-bold text-xl">{calcEarnings(30)}</span></p>
                                 </div>
                             </div>
 
                             {/* Tier 2 */}
-                            <div className={`relative p-6 py-8 border-2 rounded-xl shadow-2xl border-yellow-400 bg-linear-to-br from-yellow-900 to-yellow-800 hover:from-yellow-900 hover:to-yellow-800/20 transition-all duration-300`}>
+                            <div className={`relative p-6 py-8 border-2 rounded-xl shadow-2xl border-yellow-400 bg-linear-to-br from-yellow-900 to-yellow-800 hover:from-yellow-900 hover:to-yellow-800/20 transition-all duration-300 hover:scale-105 hover:shadow-3xl`}>
                                 <div className="absolute top-0 right-0 bg-yellow-400 text-black px-3 py-1 rounded-bl-lg font-bold text-sm">Segundo Nível</div>
                                 <div className="flex justify-center items-center gap-2 pb-6">
-                                    <Users className="w-6 h-6 text-yellow-400" />
-                                    <h3 className="text-lg font-semibold">30+ Usuários</h3>
+                                    <Users className="w-8 h-8 text-yellow-400" />
+                                    <h3 className="text-xl font-semibold">30+ Usuários</h3>
                                 </div>
                                 <div className="text-center">
-                                    <span className="text-6xl font-black text-yellow-400">40%</span>
-                                    <p className="text-sm text-gray-300 mt-2">Comissão por assinatura</p>
-                                    <p className="mt-3 text-white">Você ganharia: <span className="font-bold">{calcEarnings(40)}</span></p>
+                                    <span className="text-7xl font-black text-yellow-400 block">40%</span>
+                                    <p className="text-base text-neutral-300 mt-3">Comissão por assinatura</p>
+                                    <p className="mt-4 text-white text-lg">Você ganharia: <span className="font-bold text-xl">{calcEarnings(40)}</span></p>
                                 </div>
                             </div>
 
                             {/* Tier 3 - Premium */}
-                            <div className={`relative p-6 py-8 border-2 rounded-xl shadow-2xl border-red-500 bg-linear-to-br from-red-900 to-red-800 hover:from-purple-900 hover:to-purple-800 transition-all duration-300 ring-1 ring-purple-500/50`}>
+                            <div className={`relative p-6 py-8 border-2 rounded-xl shadow-2xl border-red-500 bg-linear-to-br from-red-900 to-red-800 hover:from-purple-900 hover:to-purple-800 transition-all duration-300 hover:scale-105 hover:shadow-3xl ring-2 ring-purple-500/50 lg:transform lg:scale-105`}>
                                 <div className="absolute top-0 right-0 bg-linear-to-r from-red-500 to-red-700 text-white px-4 py-1 rounded-bl-lg font-bold text-sm shadow-lg">Terceiro Nível</div>
                                 <div className="flex justify-center items-center gap-2 pb-6">
-                                    <Users className="w-6 h-6 text-red-400" />
-                                    <h3 className="text-lg font-semibold">100+ Usuários</h3>
+                                    <Users className="w-8 h-8 text-red-400" />
+                                    <h3 className="text-xl font-semibold">100+ Usuários</h3>
                                 </div>
                                 <div className="text-center">
-                                    <span className="text-6xl font-black bg-linear-to-r from-red-400 to-red-700 bg-clip-text text-transparent">50%</span>
-                                    <p className="text-sm text-gray-300 mt-2">Comissão por assinatura</p>
-                                    <p className="mt-3 text-white">Você ganharia: <span className="font-bold">{calcEarnings(50)}</span></p>
+                                    <span className="text-7xl font-black bg-linear-to-r from-red-400 to-red-700 bg-clip-text text-transparent block">50%</span>
+                                    <p className="text-base text-neutral-300 mt-3">Comissão por assinatura</p>
+                                    <p className="mt-4 text-white text-lg">Você ganharia: <span className="font-bold text-xl">{calcEarnings(50)}</span></p>
                                 </div>
                             </div>
                         </div>
-                        <div>
-                            <section className="mt-12 w-full max-w-4xl mx-auto px-6 py-6 rounded-xl">
-                                <h3 className="text-2xl font-bold mb-4">Não tem desculpa pra não anunciar com a gente!</h3>
-                                <p className="text-neutral-300 mb-4">Nossa plataforma foi pensada para maximizar suas conversões — oferecemos ferramentas e suporte para acelerar seus resultados.</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
-                                    <div className="flex flex-col items-start gap-2 p-4 bg-neutral-900 rounded-lg">
-                                        <Folder className="text-red-500" />
+                        <div className="w-full max-w-6xl mx-auto">
+                            <section className="mt-16 px-6 py-8 rounded-xl">
+                                <h3 className="text-2xl font-bold mb-4 lg:text-4xl text-center">Não tem desculpa pra não anunciar com a gente!</h3>
+                                <p className="text-neutral-300 mb-8 lg:text-xl text-center max-w-4xl mx-auto">Nossa plataforma foi pensada para maximizar suas conversões — oferecemos ferramentas e suporte para acelerar seus resultados.</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+                                    <div className="flex flex-col items-start gap-3 p-6 bg-neutral-900 rounded-xl hover:bg-neutral-800 hover:scale-105 transition-transform">
+                                        <Folder className="w-8 h-8 text-red-500" />
                                         <div>
                                             <div className="text-xl font-semibold">Exemplos de criativos</div>
-                                            <div className="text-sm text-neutral-300">Modelos de anúncios prontos e testados que convertem — imagens, textos e vídeos otimizados.</div>
+                                            <div className="text-sm text-neutral-300 mt-2">Modelos de anúncios prontos e testados que convertem — imagens, textos e vídeos otimizados.</div>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col items-start gap-2 p-4 bg-neutral-900 rounded-lg">
-                                        <Play className="text-red-500" />
+                                    <div className="flex flex-col items-start gap-3 p-6 bg-neutral-900 rounded-xl hover:bg-neutral-800 hover:scale-105 transition-transform">
+                                        <Play className="w-8 h-8 text-red-500" />
                                         <div>
                                             <div className="text-xl font-semibold">Tempo de prévias</div>
-                                            <div className="text-sm text-neutral-300">Prévia de conteúdos para prender o usuário nos primeiros segundos — foco em retenção e clique.</div>
+                                            <div className="text-sm text-neutral-300 mt-2">Prévia de conteúdos para prender o usuário nos primeiros segundos — foco em retenção e clique.</div>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col items-start gap-2 p-4 bg-neutral-900 rounded-lg">
-                                        <LayoutDashboard className="text-red-500" />
+                                    <div className="flex flex-col items-start gap-3 p-6 bg-neutral-900 rounded-xl hover:bg-neutral-800 hover:scale-105 transition-transform">
+                                        <LayoutDashboard className="w-8 h-8 text-red-500" />
                                         <div>
                                             <div className="text-xl font-semibold">Dashboard para acompanhar comissões</div>
-                                            <div className="text-sm text-neutral-300">Veja cliques, comissões, impressões, realize saques tudo dentro da plataforma para facilitar sua operação </div>
+                                            <div className="text-sm text-neutral-300 mt-2">Veja cliques, comissões, impressões, realize saques tudo dentro da plataforma para facilitar sua operação </div>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col items-start gap-2 p-4 bg-neutral-900 rounded-lg">
-                                        <MessageCircle className="text-red-500" />
+                                    <div className="flex flex-col items-start gap-3 p-6 bg-neutral-900 rounded-xl hover:bg-neutral-800 hover:scale-105 transition-transform">
+                                        <MessageCircle className="w-8 h-8 text-red-500" />
                                         <div>
                                             <div className="text-xl font-semibold">Suporte 24h</div>
-                                            <div className="text-sm text-neutral-300">Suporte via WhatsApp e Telegram — nossa equipe entra em contato quando precisar.</div>
+                                            <div className="text-sm text-neutral-300 mt-2">Suporte via WhatsApp e Telegram — nossa equipe entra em contato quando precisar.</div>
                                         </div>
                                     </div>
 
@@ -230,14 +237,14 @@ export default function AdsLandingPage() {
                         </div>
                     </div>
 
-                    <div className="p-2 py-4">
+                    <div className="p-2 py-4 w-full max-w-6xl mx-auto">
                         <div className="py-4 px-4">
-                            <h2 className="text-2xl font-bold tracking-tight pb-4">O Jeito mais fácil de comecar no hot de vazados em 2026</h2>
-                            <p className="leading-6 text-lg">Todo o conteúdo e facilidade pro seu lead está aqui, foque apenas em anunciar para a sua base seja no pago ou no orgânico enquanto tem uma plataforma com milhares de vídeos.</p>
-                            <div className="py-6">
+                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">O Jeito mais fácil de comecar no hot de vazados em 2026</h2>
+                            <p className="leading-6 text-lg text-neutral-300 lg:text-xl max-w-4xl mx-auto">Todo o conteúdo e facilidade pro seu lead está aqui, foque apenas em anunciar para a sua base seja no pago ou no orgânico enquanto tem uma plataforma com milhares de vídeos.</p>
+                            <div className="py-6 max-w-md mx-auto">
                                 <button
                                     onClick={() => setIsModalOpen(true)}
-                                    className="p-4 text-lg font-bold rounded bg-red-600 shadow-2xl w-full"
+                                    className="p-4 text-lg font-bold rounded bg-red-600 shadow-2xl w-full hover:bg-red-700 lg:text-xl lg:py-6 cursor-pointer"
                                 >
                                     Me Tornar Afiliado Agora
                                 </button>
@@ -247,9 +254,11 @@ export default function AdsLandingPage() {
                 </main>
                 
                 {/* Footer */}
-                <footer className="relative z-10 py-6 px-4 text-center text-neutral-400 text-sm border-t border-neutral-800/50">
-                    <p>© 2026 Rapidinhas - Todos os direitos reservados</p>
-                    <p className="mt-1">CNPJ: 49.995.652/0001-00</p>
+                <footer className="relative z-10 py-8 px-4 text-center text-neutral-400 text-sm border-t border-neutral-800/50">
+                    <div className="max-w-6xl mx-auto">
+                        <p>© 2026 Rapidinhas - Todos os direitos reservados</p>
+                        <p className="mt-1">CNPJ: 49.995.652/0001-00</p>
+                    </div>
                 </footer>
             </div>
 

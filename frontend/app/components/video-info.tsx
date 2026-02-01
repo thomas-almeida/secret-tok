@@ -60,7 +60,7 @@ export default function VideoInfo({ userName, videoDescription, videoUrl, trigge
 
     return (
         <>
-            <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10" onClick={handleClick}>
+            <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10 lg:max-w-2xl lg:left-1/2 lg:transform lg:-translate-x-1/2" onClick={handleClick}>
                 {/* Background blur gradient */}
                 <div className="absolute inset-0 bg-linear-to-t from-black via-black/70 to-transparent rounded-t-3xl"></div>
                 
@@ -122,11 +122,11 @@ export default function VideoInfo({ userName, videoDescription, videoUrl, trigge
                         }}
                         className="p-2 rounded-full transition-colors"
                     >
-                        <Bookmark className="w-8 h-8 text-white fill-white/0 stroke-2" />
+                        <Bookmark className="w-8 h-8 text-white fill-white/0 stroke-2 cursor-pointer" />
                     </button>
                     <button
                         onClick={handleDownload}
-                        className="p-2 rounded-full transition-colors"
+                        className="p-2 rounded-full transition-colors cursor-pointer"
                     >
                         <Download className="w-8 h-8 text-white fill-white/0 stroke-2" />
                     </button>
@@ -134,7 +134,7 @@ export default function VideoInfo({ userName, videoDescription, videoUrl, trigge
                         isAuthenticated && user?.subscription?.active === true && (
                             <Link href={"/afiliate"}>
                                 <button
-                                    className="p-2 rounded-full transition-colors"
+                                    className="p-2 rounded-full transition-colors cursor-pointer"
                                 >
                                     <div className="bg-red-500 w-12 h-12 rounded-md flex items-center justify-center text-white font-bold text-2xl shadow-4xl shadow-slate-900">
                                         <b className="uppercase">{user?.name?.slice(0, 1)}</b>

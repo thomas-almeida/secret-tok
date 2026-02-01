@@ -193,7 +193,10 @@ export default function VideoCard({
   }, [isDragging, handleMouseMove, handleMouseUp])
 
   return (
-    <div className="relative h-dvh w-full snap-start snap-always bg-black" onClick={toggleMute}>
+    <div 
+      className={`relative ${isActive ? 'h-dvh' : 'h-dvh'} w-full snap-start snap-always bg-black lg:flex lg:items-center lg:justify-center`} 
+      onClick={toggleMute}
+    >
       {/* Overlay de loading */}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
@@ -221,11 +224,11 @@ export default function VideoCard({
         </div>
       )}
 
-      <div className="h-full w-full relative overflow-hidden">
+      <div className="h-full w-full relative overflow-hidden lg:max-w-2xl lg:w-full lg:rounded-xl lg:shadow-2xl">
         <video
           ref={videoRef}
           src={video.videoUrl}
-          className="absolute inset-0 h-[calc(100%-4px)] w-full object-cover"
+          className="absolute inset-0 h-[calc(100%-4px)] w-full object-cover lg:rounded-xl"
           loop
           playsInline
           muted
@@ -256,7 +259,7 @@ export default function VideoCard({
 
       {/* Barra de progresso */}
       <div
-        className="absolute bottom-0 left-0 w-full h-1 bg-gray-800 cursor-pointer z-10"
+        className="absolute bottom-0 left-0 w-full h-1 bg-gray-800 cursor-pointer z-10 lg:max-w-2xl lg:left-1/2 lg:transform lg:-translate-x-1/2"
         ref={progressBarRef}
         onClick={handleProgressBarClick}
         onMouseDown={handleMouseDown}
