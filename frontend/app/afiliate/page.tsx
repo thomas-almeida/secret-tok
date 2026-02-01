@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "../stores/auth-store";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, Wallet, ArrowLeft, ChevronDown, Percent, RotateCcw, MessageCircle } from "lucide-react";
+import { Users, Folder, Eye, Wallet, ArrowLeft, ChevronDown, Percent, RotateCcw, MessageCircle } from "lucide-react";
 import copy from "copy-to-clipboard";
 import { getAfiliateData } from "../services/user-service";
 
@@ -24,6 +24,7 @@ export default function AfiliatePage() {
     const [expandedPix, setExpandedPix] = useState<boolean>(false)
     const [isFetching, setIsFetching] = useState<boolean>(false)
     const [afiliateData, setAfiliateData] = useState<AfiliateData | null>(null)
+    const [disabledWithdraw, setDisableWithdraw] = useState<boolean>(false)
 
     useEffect(() => {
         const savedPixKey = localStorage.getItem('userPixKey')
@@ -52,6 +53,12 @@ export default function AfiliatePage() {
                 associatedUsers: user.revenue.associatedUsers.length
             })
         }
+
+        if (user?.revenue.balance! > 0) {
+            setDisableWithdraw(false)
+        }
+
+        setDisableWithdraw(true)
 
     }, [user])
 
@@ -133,7 +140,8 @@ export default function AfiliatePage() {
 
                             <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-4">
                                 <h2 className="text-2xl font-semibold pb-2">Código de Afiliado</h2>
-                                <p>Ao convidar sua base, use este link abaixo para contabilizar os ganhos.</p>
+                                <p>Ao convidar e anunciar para a sua base, use este link abaixo para contabilizar os ganhos.</p>
+                                <p>Qualquer novo assinante que ingressar usando seu link você será automaticamente comissionado.</p>
                                 <Input
                                     type="text"
                                     placeholder="Seu código de indicação"
@@ -143,7 +151,7 @@ export default function AfiliatePage() {
                                 <button
                                     onClick={handleCopyCode}
                                     className={`mt-2 border text-white px-4 py-3 rounded font-semibold transition-colors text-lg ${copiedLink && 'bg-green-600'}`}>
-                                    {copiedLink ? 'Copiado!' : 'Copiar Link de Afiliado'}
+                                    {copiedLink ? 'Copiado!' : 'Copiar Meu Link'}
                                 </button>
                             </div >
 
@@ -176,12 +184,31 @@ export default function AfiliatePage() {
                                 </div>
 
                                 <div className="flex justify-start items-center p-2 px-4 gap-4 border rounded-md border-neutral-800 bg-neutral-800/50">
+                                    <Eye className="w-8 h-8 text-white" />
+                                    <div className="flex flex-col">
+                                        <p className="text-lg">Impressões no seu link</p>
+                                        <h2 className="text-md font-bold">Em breve</h2>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-start items-center p-2 px-4 gap-4 border rounded-md border-neutral-800 bg-neutral-800/50">
                                     <Percent className="w-8 h-8 text-white" />
                                     <div className="flex flex-col">
                                         <p className="text-lg">Porcentagem de comissão</p>
                                         <h2 className="text-xl font-bold">{getPercentage()}%</h2>
                                     </div>
                                 </div>
+
+                                <Link href={"https://drive.google.com/drive/folders/1s6B_F1QkGLf7vNLxJwD_ybd82De0Flpe?usp=sharing"}>
+                                    <div className="flex justify-start items-center p-2 px-4 gap-4 border rounded-md border-neutral-800 bg-neutral-800/50">
+                                        <Folder className="w-8 h-8 text-white" />
+                                        <div className="flex flex-col">
+                                            <p className="text-lg">Nossos Criativos</p>
+                                            <h2 className="text-lg font-bold">Acesse Aqui</h2>
+                                        </div>
+                                    </div>
+                                </Link>
+
 
                                 <div className="flex flex-col gap-2 border rounded-md p-4 border-neutral-800 bg-neutral-800/50">
                                     <button
@@ -210,12 +237,12 @@ export default function AfiliatePage() {
                                 </div >
 
                                 <Link
-                                    className="flex justify-center items-center bg-green-600 text-white px-4 py-4 rounded font-semibold transition-colors text-lg disabled:bg-gray-600 disabled:cursor-not-allowed disabled:hover:bg-gray-600 disabled:opacity-60"
+                                    className={`flex justify-center items-center ${disabledWithdraw ? 'bg-gray-600 text-slate-00 cursor-not-allowed hover:bg-gray-600 opacity-60' : 'bg-green-600 text-white'} px-4 py-4 rounded font-semibold transition-colors text-lg `}
                                     href={`https://wa.me/5511989008294?text=Ol%C3%A1%2C%20quero%20solicitar%20meu%20saque%2C%20meu%20c%C3%B3digo%20de%20usu%C3%A1rio%20%C3%A9%3A%20${user?._id}`}
                                 >
                                     <button
                                         className="flex justify-center items-center gap-4 "
-                                        disabled={user?.revenue.balance === 0}
+                                        disabled={disabledWithdraw}
                                     >
                                         <p>Solicitar Saque</p>
                                         <img src="/icons/pix-white.png" className="w-6 h-6" alt="" />
