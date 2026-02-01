@@ -246,7 +246,7 @@ export default function VideoCard({
       )}
 
       <VideoInfo
-        userName={video.model}
+        userName={"Rapidinhas"}
         videoDescription={video.description}
         videoUrl={video.videoUrl}
         triggerModal={triggerSubscriptionModal}

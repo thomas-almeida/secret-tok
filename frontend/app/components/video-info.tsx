@@ -61,42 +61,48 @@ export default function VideoInfo({ userName, videoDescription, videoUrl, trigge
     return (
         <>
             <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10" onClick={handleClick}>
-                <div className="flex justify-start items-center gap-2">
-                    <Image
-                        src="https://i.pinimg.com/1200x/b7/73/f8/b773f847134c609f128f93c8b9bc30b1.jpg"
-                        alt=""
-                        width={40}
-                        height={40}
-                        className="rounded-full shadow object-cover max-w-50 max-h-50"
-                    />
-                    <div className="flex justify-start items-center gap-1">
-                        <p className="text-sm font-medium">{userName}</p>
+                {/* Background blur gradient */}
+                <div className="absolute inset-0 bg-linear-to-t from-black via-black/70 to-transparent rounded-t-3xl"></div>
+                
+                {/* Content wrapper */}
+                <div className="relative z-20">
+                    <div className="flex justify-start items-center gap-2">
                         <Image
-                            src={"/icons/verified.png"}
-                            width={10}
-                            height={10}
+                            src="https://res.cloudinary.com/daaj5jf0n/image/upload/v1769753805/rapidinhas-logo_mgbvx2.png"
                             alt=""
-                            className="w-5 h-5"
+                            width={40}
+                            height={40}
+                            className="rounded-full shadow object-cover max-w-50 max-h-50"
                         />
+                        <div className="flex justify-start items-center gap-1">
+                            <p className="text-sm font-medium">{userName}</p>
+                            <Image
+                                src={"/icons/verified.png"}
+                                width={10}
+                                height={10}
+                                alt=""
+                                className="w-5 h-5"
+                            />
+                        </div>
+                        <Button
+                            className="border py-0.5 ml-1 text-sm"
+                            onClick={() => {
+                                if (triggerSubscriptionModal) {
+                                    triggerModal()
+                                } else {
+                                    setIsFollowing(!isFollowing)
+                                }
+                            }}
+                        >
+                            {isFollowing ? "Seguindo" : "Seguir"}
+                        </Button>
                     </div>
-                    <Button
-                        className="border py-0.5 ml-1 text-sm"
-                        onClick={() => {
-                            if (triggerSubscriptionModal) {
-                                triggerModal()
-                            } else {
-                                setIsFollowing(!isFollowing)
-                            }
-                        }}
-                    >
-                        {isFollowing ? "Seguindo" : "Seguir"}
-                    </Button>
-                </div>
-                <p className="mt-1.5 text-sm">{videoDescription}</p>
-                <div className="hidden justify-start gap-3 mt-2 text-xs">
-                    <Tag link="#rj">#rj</Tag>
-                    <Tag link="#vazados-rj">#vazados-rj</Tag>
-                    <Tag link="#loira">#loira</Tag>
+                    <p className="mt-1.5 text-sm">{videoDescription}</p>
+                    <div className="hidden justify-start gap-3 mt-2 text-xs">
+                        <Tag link="#rj">#rj</Tag>
+                        <Tag link="#vazados-rj">#vazados-rj</Tag>
+                        <Tag link="#loira">#loira</Tag>
+                    </div>
                 </div>
 
                 <div className="absolute right-2 bottom-20 flex flex-col items-center gap-2">

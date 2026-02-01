@@ -6,12 +6,25 @@ import TopBar from "./topbar"
 import AdultModal from "./modal/adult-modal"
 import SubscriptionModal from "./modal/subscription-modal"
 import LoginModal from "./modal/login-modal"
-import { videos } from "../utils/mocked-videos"
 import { useAuthStore } from "../stores/auth-store"
 import { useVideoQueue } from "../hooks/useVideoQueue"
 
+// Função para embaralhar array
+const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled
+}
+
 export default function VideoFeedOptimized() {
-    const [feedVideos, setFeedVideos] = useState(() => [...videos])
+
+    const { junkieModel, premiumModels, loading, error } = useVideoQueue()
+    const [feedVideos, setFeedVideos] = useState<any[]>([])
+    const [junkieFeed, setJunkieFeed] = useState<any[]>([])
+    const [premiumFeed, setPremiumFeed] = useState<any[]>([])
 
     const [isAdultModalVisible, setIsAdultModalVisible] = useState(true)
     const [isSubscriptionModalVisible, setIsSubscriptionModalVisible] = useState(false)
@@ -23,15 +36,52 @@ export default function VideoFeedOptimized() {
     const [subscriptionModalInitialStep, setSubscriptionModalInitialStep] = useState<'select' | 'signup' | 'payment'>('select')
     const [isRePayment, setIsRePayment] = useState(false)
     const [hasLoadedMore, setHasLoadedMore] = useState(false)
-
-    const [queueTab, setQueueTab] = useState<string | null>(null)
+    const [queueTab, setQueueTab] = useState<string>('espiar')
+    const [isLoadingFeed, setIsLoadingFeed] = useState(false)
 
     const containerRef = useRef<HTMLDivElement>(null)
     const { isAuthenticated } = useAuthStore()
 
+    // Processar modelos e separar em feeds de junkie e premium
     useEffect(() => {
-        console.log(queueTab)
-    }, [queueTab])
+        if (premiumModels && junkieModel) {
+            const premiumVideos: any[] = []
+            const junkieVideos: any[] = []
+
+            // Coletar videos do modelo junkie
+            if (junkieModel.videos) {
+                junkieVideos.push(...junkieModel.videos)
+            }
+
+            // Coletar videos dos modelos premium
+            premiumModels.forEach(model => {
+                if (model.videos) {
+                    premiumVideos.push(...model.videos)
+                }
+            })
+
+            // Embaralhar os feeds
+            setJunkieFeed(shuffleArray(junkieVideos))
+            setPremiumFeed(shuffleArray(premiumVideos))
+        }
+    }, [premiumModels, junkieModel])
+
+    // Alternar feed baseado na tab selecionada
+    useEffect(() => {
+        setIsLoadingFeed(true)
+        
+        // Simular pequeno delay para mostrar loading
+        const timer = setTimeout(() => {
+            if (queueTab === 'espiar') {
+                setFeedVideos(junkieFeed)
+            } else if (queueTab === 'famosas') {
+                setFeedVideos(premiumFeed)
+            }
+            setIsLoadingFeed(false)
+        }, 300)
+
+        return () => clearTimeout(timer)
+    }, [queueTab, junkieFeed, premiumFeed])
 
     useEffect(() => {
 
@@ -133,8 +183,8 @@ export default function VideoFeedOptimized() {
                                 // Se usuário está autenticado, carregar mais vídeos (scroll infinito)
                                 if (isAuthenticated) {
                                     console.log('Usuário autenticado - carregando mais vídeos')
-                                    // Duplicar os vídeos para criar scroll infinito
-                                    setFeedVideos(prevVideos => [...prevVideos, ...videos])
+                                    // Duplicar os vídeos do feed atual para criar scroll infinito
+                                    setFeedVideos(prevVideos => [...prevVideos, ...prevVideos])
                                     setHasLoadedMore(true)
                                 } else {
                                     // Usuário não autenticado - mostrar modal de subscription
@@ -238,6 +288,15 @@ export default function VideoFeedOptimized() {
                 triggerPaymentModal={handleTriggerPaymentModal}
                 onToggleQueue={setQueueTab}
             />
+
+            {isLoadingFeed && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="w-12 h-12 border-4 border-gray-300 border-t-white rounded-full animate-spin"></div>
+                        <p className="text-white text-sm">Carregando vídeos...</p>
+                    </div>
+                </div>
+            )}
 
             {feedVideos.map((video, index) => {
                 // Determinar se este vídeo deve ser pré-carregado

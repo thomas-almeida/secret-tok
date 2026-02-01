@@ -35,7 +35,7 @@ export const useVideoQueue = () => {
                 if (junkieModel) setJunkieModel(junkieModel)
 
                 const premiumModelArr = getPremiumModels(res?.models)
-                if (premiumModels) setPremiumModels(premiumModelArr)
+                if (premiumModelArr) setPremiumModels(premiumModelArr)
 
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Failed to load videos");
