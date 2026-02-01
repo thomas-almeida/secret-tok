@@ -38,6 +38,7 @@ export default function VideoFeedOptimized() {
     const [hasLoadedMore, setHasLoadedMore] = useState(false)
     const [queueTab, setQueueTab] = useState<string>('espiar')
     const [isLoadingFeed, setIsLoadingFeed] = useState(false)
+    const [scrollCount, setScrollCount] = useState(0)
 
     const containerRef = useRef<HTMLDivElement>(null)
     const { isAuthenticated } = useAuthStore()
@@ -84,34 +85,20 @@ export default function VideoFeedOptimized() {
     }, [queueTab, junkieFeed, premiumFeed])
 
     useEffect(() => {
+        // Reset contador diário se for um novo dia ou usuário for assinante
+        const today = new Date().toDateString()
+        const lastScrollDate = localStorage.getItem('scrolls-date')
+        const isSub = localStorage.getItem('is-subscribed')
 
-        const checkDailyScrolls = () => {
-            const currentScrolls = localStorage.getItem('daily-scrolls') || 'false'
-            const limitReached = currentScrolls === 'true' ? 'true' : 'false'
-            const scrollsDate = localStorage.getItem('scrolls-date')
-            const today = new Date().toDateString()
-            const isSub = localStorage.getItem('is-subscribed')
-
-            if (scrollsDate !== today || isSub === 'true') {
-                localStorage.setItem('daily-scrolls', 'false')
-                localStorage.setItem('scrolls-date', today)
-                localStorage.setItem('last-video-reached', 'false')
-                return
-            }
-
-            localStorage.setItem('daily-scrolls', limitReached)
+        if (lastScrollDate !== today || isSub === 'true') {
+            setScrollCount(0)
+            localStorage.setItem('scroll-count', '0')
             localStorage.setItem('scrolls-date', today)
-            localStorage.setItem('last-video-reached', 'true')
-
-            console.log('Scrolls diários atualizados:', limitReached)
-
-            setSubscriptionModalTitle('Suas Espiadas diárias Acabaram')
-            setDailyLimit(true)
-            setIsSubscriptionModalVisible(true)
+        } else {
+            // Restaurar contador atual do localStorage
+            const savedCount = parseInt(localStorage.getItem('scroll-count') || '0')
+            setScrollCount(savedCount)
         }
-
-        checkDailyScrolls()
-
     }, [])
 
     const preloadNearbyVideos = useCallback((centerIndex: number) => {
@@ -175,30 +162,29 @@ export default function VideoFeedOptimized() {
                         if (videoIndex !== currentIndex) {
                             setCurrentIndex(videoIndex)
 
-                            // Verificar se é o último vídeo
-                            if (videoIndex === feedVideos.length - 1) {
+                            // Incrementar contador de scrolls para usuários não autenticados
+                            if (!isAuthenticated && videoIndex > currentIndex) {
+                                const newScrollCount = scrollCount + 1
+                                setScrollCount(newScrollCount)
+                                localStorage.setItem('scroll-count', newScrollCount.toString())
 
-                                console.log('Último vídeo alcançado - index:', videoIndex)
-
-                                // Se usuário está autenticado, carregar mais vídeos (scroll infinito)
-                                if (isAuthenticated) {
-                                    console.log('Usuário autenticado - carregando mais vídeos')
-                                    // Duplicar os vídeos do feed atual para criar scroll infinito
-                                    setFeedVideos(prevVideos => [...prevVideos, ...prevVideos])
-                                    setHasLoadedMore(true)
-                                } else {
-                                    // Usuário não autenticado - mostrar modal de subscription
-                                    const currentScrolls = localStorage.getItem('daily-scrolls') || 'false'
-                                    const limitReached = currentScrolls === 'true' ? 'true' : 'false'
+                                // Verificar se atingiu o limite de 10 scrolls
+                                if (newScrollCount >= 10) {
                                     const today = new Date().toDateString()
-
-                                    localStorage.setItem('daily-scrolls', limitReached)
                                     localStorage.setItem('scrolls-date', today)
-                                    localStorage.setItem('last-video-reached', 'true')
-                                    console.log('Scrolls diários atualizados:', limitReached)
+                                    
                                     setSubscriptionModalTitle('Suas Espiadas diárias Acabaram')
+                                    setDailyLimit(true)
                                     setIsSubscriptionModalVisible(true)
                                 }
+                            }
+
+                            // Scroll infinito para usuários autenticados
+                            if (isAuthenticated && videoIndex === feedVideos.length - 2) { // -2 para carregar antes do fim
+                                console.log('Usuário autenticado - carregando mais vídeos')
+                                // Duplicar os vídeos do feed atual para criar scroll infinito
+                                setFeedVideos(prevVideos => [...prevVideos, ...prevVideos])
+                                setHasLoadedMore(true)
                             }
                         }
                     }
@@ -215,7 +201,7 @@ export default function VideoFeedOptimized() {
         videoElements.forEach(el => observer.observe(el))
 
         return () => observer.disconnect()
-    }, [currentIndex, feedVideos.length, isAuthenticated])
+    }, [currentIndex, feedVideos.length, isAuthenticated, scrollCount])
 
     // Otimização: Pré-carregar primeiro vídeo imediatamente
     useEffect(() => {
