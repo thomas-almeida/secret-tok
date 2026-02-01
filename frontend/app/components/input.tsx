@@ -7,9 +7,11 @@ interface InputProps {
     icon?: React.ReactNode
     numericOnly?: boolean
     className?: string
+    required?: boolean
+    maxLength?: number
 }
 
-export default function Input({ type, placeholder, value, onChange, icon, numericOnly, className }: InputProps) {
+export default function Input({ type, placeholder, value, onChange, icon, numericOnly, className, required, maxLength }: InputProps) {
     return (
         <>
             <div className={`flex items-center border rounded p-2 gap-2 bg-neutral-800 border-neutral-700 ${className}`}>
@@ -18,6 +20,8 @@ export default function Input({ type, placeholder, value, onChange, icon, numeri
                     type={type || 'text'}
                     placeholder={placeholder || ''}
                     value={value}
+                    required={required}
+                    maxLength={maxLength}
                     onChange={(e) => {
                         if (numericOnly) {
                             const value = e.target.value.replace(/\D/g, '')

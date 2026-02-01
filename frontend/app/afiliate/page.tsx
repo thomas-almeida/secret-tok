@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "../stores/auth-store";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, Wallet, ArrowLeft, ChevronDown, Percent, RotateCcw } from "lucide-react";
+import { Users, Wallet, ArrowLeft, ChevronDown, Percent, RotateCcw, MessageCircle } from "lucide-react";
 import copy from "copy-to-clipboard";
 import { getAfiliateData } from "../services/user-service";
 
@@ -39,7 +39,7 @@ export default function AfiliatePage() {
     }, [pixKey])
 
     useEffect(() => {
-        if (isHydrated && !isAuthenticated || !user?.subscription.active) {
+        if (isHydrated && !isAuthenticated) {
             router.push('/');
         }
     }, [isHydrated, isAuthenticated, router])
@@ -53,7 +53,7 @@ export default function AfiliatePage() {
             })
         }
 
-    }, [])
+    }, [user])
 
     if (!isHydrated) {
         return null;
@@ -249,9 +249,10 @@ export default function AfiliatePage() {
                                 <p>Teve algum problema, bug ou dúvidas de como o app funciona? chama a gente no suporte prioritário para afiliados!</p>
                                 <Link
                                     href={`https://wa.me/5511989008294?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20no%20rapidinhas%2C%20meu%20c%C3%B3digo%20de%20usu%C3%A1rio%20%C3%A9%3A${user?._id}`}
-                                    className={`mt-2 border text-white px-4 py-3 rounded font-semibold transition-colors text-lg text-center ${copiedLink && 'bg-green-600'}`}
+                                    className={`flex justify-center items-center gap-2 mt-2 border text-white px-4 py-3 rounded font-semibold transition-colors text-lg text-center ${copiedLink && 'bg-green-600'}`}
                                 >
                                     Chamar Suporte
+                                    <MessageCircle className="w-5" />
                                 </Link>
                             </div >
                         </div>
