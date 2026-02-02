@@ -2,7 +2,9 @@ import Logo from "../logo"
 import ModelsCarousel from "../models-carousel"
 import ModalContainer from "./modal-container"
 import Accordion from "../accordion"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import Input from "../input"
 import copy from "copy-to-clipboard"
 import { models } from "@/app/utils/models"
@@ -11,7 +13,7 @@ import { Clipboard, Lock, MessageCircle, User, Mail } from "lucide-react"
 import { createUser } from "@/app/services/user-service"
 import { createPaymentIntent, checkTransactionStatus } from "@/app/services/payments-service"
 import { useAuthStore } from "@/app/stores/auth-store"
-import { useEffect } from "react"
+import { userSchema, type UserFormData } from "@/app/schemas/user-schema"
 
 interface SubscriptionModalProps {
     isVisible: boolean
@@ -24,12 +26,7 @@ interface SubscriptionModalProps {
     isRePayment?: boolean
 }
 
-interface FormData {
-    phone: string
-    name: string
-    email: string
-    password: string
-}
+
 
 type Plan = {
     id: string
@@ -71,7 +68,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
     const [isProcessing, setIsProcessing] = useState(false)
     const [expandedPlan, setExpandedPlan] = useState<string | null>(null)
     const [step, setStep] = useState<'select' | 'signup' | 'payment'>(isRePayment ? 'payment' : initialStep)
-    const [newUser, setNewUser] = useState<any>(null)
+    const [newUser, setNewUser] = useState<{ _id: string; name: string; email: string; phone: string } | null>(null)
     const [isLoadingPayment, setIsLoadingPayment] = useState(false)
 
     // Garanta que quando isRePayment muda para true, o step vai direto para pagamento
@@ -82,12 +79,25 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
         }
     }, [isRePayment])
 
-    const [payload, setPayload] = useState<FormData>({
-        phone: '',
-        name: '',
-        email: '',
-        password: ''
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isValid },
+        setValue,
+        watch,
+        trigger
+    } = useForm<UserFormData>({
+        resolver: zodResolver(userSchema),
+        mode: 'onChange',
+        defaultValues: {
+            name: '',
+            email: '',
+            phone: '',
+            password: ''
+        }
     })
+
+    const phoneValue = watch('phone', '')
 
     const [copiedCode, setCopiedCode] = useState(false)
 
@@ -141,19 +151,20 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
         return str.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
     }
 
-    const handlePixPayment = async () => {
+    const handlePixPayment = async (data?: UserFormData) => {
 
         if (step === 'select') {
             setStep('signup')
         } else if (step === 'signup') {
+            if (!data) return
 
             setIsProcessing(true)
 
             const response = await createUser(
-                payload.name,
-                Number(payload.phone),
-                payload.email,
-                payload.password,
+                data.name,
+                Number(data.phone),
+                data.email,
+                data.password,
                 {
                     amount: selectedPlan.name === 'vitalicio' ? prices.forever : prices.monthly,
                     transactionDate: new Date().toISOString(),
@@ -174,9 +185,9 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                 const paymentIntent = await createPaymentIntent({
                     planId: selectedPlan.id,
                     customer: {
-                        name: payload.name,
-                        cellphone: payload.phone,
-                        email: payload.email,
+                        name: data.name,
+                        cellphone: data.phone,
+                        email: data.email,
                         userId: response?.user?._id
                     },
                     referenceId: afiliateCode || 'none'
@@ -210,7 +221,9 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                     if (statusResponse?.transactionStatus === 'PAID') {
                         setInterval(() => {
                             localStorage.setItem('is-subscribed', 'true')
-                            loginUserToStore(newUser)
+                            if (newUser) {
+                                loginUserToStore(newUser as any)
+                            }
                             onAccept()
                         }, 2000)
                     }
@@ -251,7 +264,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
             "Acesso exclusivo à aba FAMOSAS",
             "Assista sem Limites",
             "Ganhe Comissões como afiliado",
-            "Suporte via Telegram",
+            "Suporte via Telegram/Whatsapp",
         ],
         mensal: [
             "Até 50 downloads por mês",
@@ -306,41 +319,77 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
 
                         {
                             step === 'signup' && (
-                                <>
-                                    <div className="grid grid-cols-1 gap-4 w-full">
+                                <form onSubmit={handleSubmit(handlePixPayment)} className="grid grid-cols-1 gap-4 w-full">
+                                    <div>
                                         <Input
                                             icon={<User className="w-5 h-5" />}
                                             type="text"
-                                            placeholder="Nome de usuário"
-                                            onChange={(e) => setPayload({ ...payload, name: e.target.value })}
-                                            value={payload.name}
+                                            placeholder="Nome completo"
+                                            {...register('name', {
+                                                onChange: () => trigger('name')
+                                            })}
                                         />
+                                        {errors.name && (
+                                            <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>
+                                        )}
+                                    </div>
+                                    
+                                    <div>
                                         <Input
                                             icon={<MessageCircle className="w-5 h-5" />}
                                             type="tel"
                                             placeholder="Telefone com DDD"
-                                            onChange={(e) => setPayload({ ...payload, phone: e.target.value })}
-                                            value={payload.phone}
+                                            value={phoneValue}
+                                            onChange={(e) => {
+                                                const value = e.target.value.replace(/\D/g, '')
+                                                if (value.length <= 11) {
+                                                    const formatted = value.length >= 11 
+                                                        ? value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3')
+                                                        : value.length >= 7 
+                                                            ? value.replace(/^(\d{2})(\d{5}).*/, '($1) $2')
+                                                            : value.length >= 2 
+                                                                ? `(${value.slice(0, 2)}`
+                                                                : value
+                                                    setValue('phone', value.replace(/\D/g, ''))
+                                                    e.target.value = formatted
+                                                }
+                                            }}
+                                            maxLength={15}
                                             numericOnly
                                         />
+                                        {errors.phone && (
+                                            <p className="text-red-400 text-xs mt-1">{errors.phone.message}</p>
+                                        )}
+                                    </div>
+                                    
+                                    <div>
                                         <Input
                                             icon={<Mail className="w-5 h-5" />}
                                             type="email"
                                             placeholder="E-mail"
-                                            onChange={(e) => setPayload({ ...payload, email: e.target.value })}
-                                            value={payload.email}
+                                            {...register('email', {
+                                                onChange: () => trigger('email')
+                                            })}
                                         />
+                                        {errors.email && (
+                                            <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>
+                                        )}
+                                    </div>
 
+                                    <div>
                                         <Input
                                             icon={<Lock className="w-5 h-5" />}
                                             type="password"
                                             placeholder="Senha"
-                                            onChange={(e) => setPayload({ ...payload, password: e.target.value })}
-                                            value={payload.password}
+                                            {...register('password', {
+                                                onChange: () => trigger('password')
+                                            })}
                                         />
-
+                                        {errors.password && (
+                                            <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>
+                                        )}
                                     </div>
-                                </>
+                                </form>
                             )
                         }
 
@@ -376,8 +425,8 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
 
                         <button
                             className="bg-green-600 text-white px-4 py-2 mt-4 rounded w-full shadow-2xl shadow-green-600/50 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-60"
-                            onClick={handlePixPayment}
-                            disabled={isProcessing || (step === 'payment' && isLoadingPayment)}
+                            onClick={() => step === 'signup' ? handleSubmit(handlePixPayment)() : handlePixPayment()}
+                            disabled={isProcessing || (step === 'payment' && isLoadingPayment) || (step === 'signup' && !isValid)}
                         >
                             <div className="flex justify-center items-center gap-2">
                                 {isProcessing || (step === 'payment' && isLoadingPayment) ? (
@@ -395,7 +444,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
                                     </>
                                 )}
                             </div>
-                            <p className={`text-xs ${isProcessing || step !== 'select' ? 'hidden' : ''}`}>Insira seu <b>Telegram</b> para continuar</p>
+                            <p className={`text-xs ${isProcessing || step !== 'select' ? 'hidden' : ''}`}>Super rápido e discreto</p>
                         </button>
 
                         {

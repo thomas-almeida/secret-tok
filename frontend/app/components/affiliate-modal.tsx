@@ -2,9 +2,12 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { useAuthStore } from "../stores/auth-store"
 import Input from "./input"
 import { createUser } from "../services/user-service"
+import { affiliateSchema, type AffiliateFormData } from "../schemas/user-schema"
 
 interface AffiliateModalProps {
     isOpen: boolean
@@ -12,28 +15,43 @@ interface AffiliateModalProps {
 }
 
 export default function AffiliateModal({ isOpen, onClose }: AffiliateModalProps) {
-    const [name, setName] = useState('')
-    const [email, setEmail] = useState('')
-    const [phone, setPhone] = useState('')
-    const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     
     const router = useRouter()
     const { login } = useAuthStore()
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+        setValue,
+        watch,
+        trigger
+    } = useForm<AffiliateFormData>({
+        resolver: zodResolver(affiliateSchema),
+        mode: 'onChange',
+        defaultValues: {
+            name: '',
+            email: '',
+            phone: '',
+            password: ''
+        }
+    })
+
+    const phoneValue = watch('phone', '')
+
+    const onSubmit = async (data: AffiliateFormData) => {
         setLoading(true)
         setError('')
 
         try {
             // Criar usuário com os dados necessários para afiliado
             const response = await createUser(
-                name,
-                Number(phone.replace(/\D/g, '')),
-                email,
-                password,
+                data.name,
+                Number(data.phone),
+                data.email,
+                data.password,
                 {
                     amount: 0, // Afiliados não pagam assinatura inicial
                     transactionDate: new Date().toISOString(),
@@ -71,7 +89,7 @@ export default function AffiliateModal({ isOpen, onClose }: AffiliateModalProps)
             <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 w-full max-w-md">
                 <h2 className="text-2xl font-bold text-white mb-6">Tornar-se Afiliado</h2>
                 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-neutral-300 mb-2">
                             Nome completo
@@ -79,11 +97,15 @@ export default function AffiliateModal({ isOpen, onClose }: AffiliateModalProps)
                         <Input
                             type="text"
                             placeholder="Seu nome completo"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            {...register('name', {
+                                onChange: () => trigger('name')
+                            })}
                             className="w-full"
                             required
                         />
+                        {errors.name && (
+                            <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>
+                        )}
                     </div>
 
                     <div>
@@ -93,11 +115,15 @@ export default function AffiliateModal({ isOpen, onClose }: AffiliateModalProps)
                         <Input
                             type="email"
                             placeholder="seu@email.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            {...register('email', {
+                                onChange: () => trigger('email')
+                            })}
                             className="w-full"
                             required
                         />
+                        {errors.email && (
+                            <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>
+                        )}
                     </div>
 
                     <div>
@@ -107,18 +133,29 @@ export default function AffiliateModal({ isOpen, onClose }: AffiliateModalProps)
                         <Input
                             type="tel"
                             placeholder="(11) 99999-9999"
-                            value={phone}
+                            value={phoneValue}
                             onChange={(e) => {
                                 const value = e.target.value.replace(/\D/g, '')
-                                const formatted = value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3')
-                                e.target.value = formatted
-                                setPhone(formatted)
+                                if (value.length <= 11) {
+                                    const formatted = value.length >= 11 
+                                        ? value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3')
+                                        : value.length >= 7 
+                                            ? value.replace(/^(\d{2})(\d{5}).*/, '($1) $2')
+                                            : value.length >= 2 
+                                                ? `(${value.slice(0, 2)}`
+                                                : value
+                                    setValue('phone', value.replace(/\D/g, ''))
+                                    e.target.value = formatted
+                                }
                             }}
                             maxLength={15}
                             className="w-full"
                             numericOnly
                             required
                         />
+                        {errors.phone && (
+                            <p className="text-red-400 text-xs mt-1">{errors.phone.message}</p>
+                        )}
                     </div>
 
                     <div>
@@ -128,11 +165,15 @@ export default function AffiliateModal({ isOpen, onClose }: AffiliateModalProps)
                         <Input
                             type="password"
                             placeholder="Crie uma senha"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            {...register('password', {
+                                onChange: () => trigger('password')
+                            })}
                             className="w-full"
                             required
                         />
+                        {errors.password && (
+                            <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>
+                        )}
                     </div>
 
                     {error && (
