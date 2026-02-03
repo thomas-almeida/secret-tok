@@ -1,5 +1,7 @@
 import User from '../models/User.js';
 import { hashPassword } from '../utils/password.js';
+import notificationService from '../services/notificationService.js';
+import { EVENT_TYPES } from '../config/notificationEvents.js';
 
 export const createUser = async (req, res) => {
   try {
@@ -23,6 +25,14 @@ export const createUser = async (req, res) => {
     });
 
     await user.save();
+    
+    notificationService.sendMessage(EVENT_TYPES.NEW_USER, {
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      userId: user._id
+    });
+    
     res.status(201).json({
       message: 'User created successfully',
       user: user

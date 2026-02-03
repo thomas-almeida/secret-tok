@@ -2,6 +2,8 @@ import { getPlanById } from "../config/plans.js";
 import Transaction from "../models/Transactions.js";
 import axios from "axios";
 import User from "../models/User.js";
+import notificationService from '../services/notificationService.js';
+import { EVENT_TYPES } from '../config/notificationEvents.js';
 
 export const createPaymentIntent = async (req, res) => {
     try {
@@ -106,6 +108,15 @@ export const checkTransactionStatus = async (req, res) => {
                 user.subscription.active = true;
                 user.subscription.transactionDate = new Date();
                 await user.save();
+                
+                notificationService.sendMessage(EVENT_TYPES.SUBSCRIPTION_PAID, {
+                    userId: user._id,
+                    userName: user.name,
+                    planId: user.subscription.planId,
+                    amount: transaction.amount,
+                    transactionId: transaction._id,
+                    gatewayId: gatewayId
+                });
             }
 
             if (transaction.referenceId && transaction.referenceId !== "none") {
@@ -122,6 +133,17 @@ export const checkTransactionStatus = async (req, res) => {
                     }
                     
                     await affiliateUser.save();
+                    
+                    notificationService.sendMessage(EVENT_TYPES.AFFILIATE_COMMISSION, {
+                        affiliateId: affiliateUser._id,
+                        affiliateName: affiliateUser.name,
+                        userId: transaction.userId,
+                        commissionAmount: transaction.amount * commissionPercentage,
+                        percentage: commissionPercentage,
+                        totalAssociated: affiliateUser.revenue.associatedUsers.length,
+                        currentBalance: affiliateUser.revenue.balance,
+                        transactionId: transaction._id
+                    });
 
                     console.log(`Comissão de ${commissionPercentage * 100}% (R$ ${transaction.amount * commissionPercentage}) adicionada ao afiliado ${affiliateUser._id}`);
                 }
