@@ -81,7 +81,7 @@ export default function AdsLandingPage() {
                 <main className="flex flex-col items-center text-center gap-4 py-12 px-4">
                     <div className="max-w-6xl mx-auto">
                         <h1 className="text-center text-3xl tracking-tighter leading-8 font-bold lg:text-5xl lg:leading-[0.9] lg:mx-64">A Primeira Plataforma de Vazados em formato TikTok com você de <i className="underline">Afiliado</i>.</h1>
-                        <p className="text-lg px-4 leading-5 mt-6 lg:text-xl lg:px-8"><b className="text-red-500">Configurar Bots, Grupo VIP, Gateways</b> e todas as burocracias só para manter um lead é <b className="text-yellow-400">coisa do passado!</b> em 3 cliques você tem um base automática de vazados pro seu lead sair satisfeito e você sair <b className="text-green-400">comissionado!</b></p>
+                        <p className="text-lg px-4 leading-5 mt-6 lg:text-xl lg:px-8"><b className="text-red-500">Configurar Bots, Grupo VIP, Gateways</b> e todas as burocracias só para manter um lead é <b className="text-yellow-400">coisa do passado!</b> em 3 cliques você tem uma base automática de vazados pro seu lead sair satisfeito e você sair <b className="text-green-400">comissionado!</b></p>
                         <div className="w-[80%] max-w-md mx-auto mt-8">
                             <button
                                 onClick={() => setIsModalOpen(true)}
@@ -93,7 +93,7 @@ export default function AdsLandingPage() {
                     </div>
 
                     <div className="p-2 py-4 w-full max-w-6xl mx-auto">
-                        <div className="py-4 px-4">
+                        <div className="py-4 px-4 mb-4">
                             <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">Todas Elas Estão Aqui</h2>
                             <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Facilite a vida do seu lead enviando apenas um link da plataforma, ele assiste prévias em formato tiktok, assina vitalício, faz scroll infinito nos melhores vazados da cena enquanto <b className="text-green-400">você fatura sem ter configurado nada!</b></p>
                         </div>
@@ -107,8 +107,7 @@ export default function AdsLandingPage() {
                             <div className="mt-8 w-full flex flex-col items-center gap-6 lg:gap-8">
                                 <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-2xl">
                                     <div className="text-center mb-2">
-                                        <h3 className="text-xl font-semibold mb-2">Calcule seus ganhos</h3>
-                                        <p className="text-lg text-neutral-400">Se você trouxer</p>
+                                        <h3 className="text-xl font-semibold mb-2">Se Você Trazer</h3>
                                     </div>
                                     <div className="flex flex-col items-center gap-2">
                                         <div className="w-full max-w-xs">
@@ -119,7 +118,7 @@ export default function AdsLandingPage() {
                                                 numericOnly
                                                 className="w-full text-center text-white text-xl font-bold py-4"
                                             />
-                                            <p className="text-lg text-red-400 py-2">Leads Pagantes</p>
+                                            <p className="text-lg py-2">Leads Pagantes</p>
                                         </div>
                                         <div className="text-center">
                                             <div className="text-sm text-neutral-300">cada assinatura</div>
@@ -201,7 +200,7 @@ export default function AdsLandingPage() {
                         <div className="w-full max-w-6xl mx-auto">
                             <section className="mt-16 px-6 py-8 rounded-xl">
                                 <h3 className="text-2xl font-bold mb-4 lg:text-4xl text-center leading-6">Coloque o seu tráfego e operação da sua base no lugar certo!</h3>
-                                <p className="mb-8 lg:text-xl text-center max-w-4xl mx-auto">Nossa plataforma foi pensada para maximizar suas conversões — oferecemos ferramentas e suporte para acelerar seus resultados.</p>
+                                <p className="mb-8 lg:text-xl text-center max-w-4xl mx-auto">Nossa plataforma foi pensada para facilitar sua operação e maximizar suas conversões, oferecemos ferramentas e suporte para acelerar seus resultados.</p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
                                     <div className="flex flex-col items-start gap-3 p-6 bg-neutral-900 rounded-xl hover:bg-neutral-800 hover:scale-105 transition-transform">
                                         <Folder className="w-8 h-8 text-red-500" />
