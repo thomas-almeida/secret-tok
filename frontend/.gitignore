@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 package-lock.json
+
+/public/videos/queue/junkie
+/public/videos/queue/premium

@@ -11,7 +11,7 @@ const getPremiumModels = (models: Model[]): Model[] => {
     let premiumModels: Model[] = []
 
     models.forEach((model: Model) => {
-        if (model._id !== '697c4d124eb7932262b7dc68') {
+        if (model._id !== '69892c371760043886588f42') {
             premiumModels.push(model)
         }
     })
