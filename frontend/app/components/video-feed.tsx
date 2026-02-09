@@ -70,7 +70,7 @@ export default function VideoFeedOptimized() {
     // Alternar feed baseado na tab selecionada
     useEffect(() => {
         setIsLoadingFeed(true)
-        
+
         // Simular pequeno delay para mostrar loading
         const timer = setTimeout(() => {
             if (queueTab === 'espiar') {
@@ -172,7 +172,7 @@ export default function VideoFeedOptimized() {
                                 if (newScrollCount >= 10) {
                                     const today = new Date().toDateString()
                                     localStorage.setItem('scrolls-date', today)
-                                    
+
                                     setSubscriptionModalTitle('Suas Espiadas diárias Acabaram')
                                     setDailyLimit(true)
                                     setIsSubscriptionModalVisible(true)

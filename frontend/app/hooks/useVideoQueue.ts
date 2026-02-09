@@ -3,7 +3,7 @@ import { getModels } from "../services/model-service";
 import { Model } from "../stores/model-store";
 
 const getJunkieQueue = (models: Model[]): Model | undefined => {
-    return models.find((model: Model) => model._id === '697c4d124eb7932262b7dc68');
+    return models.find((model: Model) => model._id === '69892c371760043886588f42');
 };
 
 const getPremiumModels = (models: Model[]): Model[] => {
