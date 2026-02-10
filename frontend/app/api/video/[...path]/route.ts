@@ -4,9 +4,12 @@ import { join } from 'path'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  context: { params: Promise<{ path: string[] }> }
 ) {
   try {
+    // Aguardar os parâmetros no Next.js 15
+    const params = await context.params
+    
     // Construir caminho completo do vídeo
     const videoPath = join(...params.path)
     const fullPath = join(process.cwd(), 'public', videoPath)
