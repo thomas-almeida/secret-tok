@@ -102,19 +102,19 @@ export default function VideoFeedOptimized() {
     }, [])
 
     const preloadNearbyVideos = useCallback((centerIndex: number) => {
-        const preloadAhead = 2 // Pré-carregar 2 vídeos à frente
-        const preloadBehind = 1 // Pré-carregar 1 vídeo atrás
+        const preloadAhead = 1 // Apenas próximo vídeo à frente
+        const preloadBehind = 0 // Sem pré-carregamento atrás
 
         const start = Math.max(0, centerIndex - preloadBehind)
         const end = Math.min(feedVideos.length - 1, centerIndex + preloadAhead)
 
         setPreloadRange({ start, end })
 
-        // Pré-carregar URLs
+        // Pré-carregar apenas o próximo vídeo
         const urlsToPreload: string[] = []
 
         for (let i = start; i <= end; i++) {
-            if (i !== centerIndex) {
+            if (i !== centerIndex && i === centerIndex + 1) {
                 urlsToPreload.push(feedVideos[i].videoUrl)
             }
         }

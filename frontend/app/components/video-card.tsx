@@ -36,6 +36,7 @@ export default function VideoCard({
   const [showAudioIndicator, setShowAudioIndicator] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
+  const [showPlaceholder, setShowPlaceholder] = useState(true)
 
   // Estratégia de pré-carregamento inteligente
   useEffect(() => {
@@ -43,8 +44,8 @@ export default function VideoCard({
 
     const videoElement = videoRef.current
 
-    // Configurações otimizadas
-    videoElement.preload = shouldPreload ? "auto" : "metadata"
+    // Configurações otimizadas - lazy loading agressivo
+    videoElement.preload = isActive ? "auto" : (shouldPreload ? "metadata" : "none")
     videoElement.playsInline = true
     videoElement.crossOrigin = "anonymous"
 
@@ -52,13 +53,21 @@ export default function VideoCard({
     const handleCanPlay = () => {
       setIsLoading(false)
       setHasError(false)
+      setShowPlaceholder(false)
     }
 
-    const handleWaiting = () => setIsLoading(true)
-    const handlePlaying = () => setIsLoading(false)
+    const handleWaiting = () => {
+      setIsLoading(true)
+      setShowPlaceholder(false)
+    }
+    const handlePlaying = () => {
+      setIsLoading(false)
+      setShowPlaceholder(false)
+    }
     const handleError = () => {
       setIsLoading(false)
       setHasError(true)
+      setShowPlaceholder(false)
       console.error(`Erro ao carregar vídeo: ${video.videoUrl}`)
     }
 
@@ -67,8 +76,8 @@ export default function VideoCard({
     videoElement.addEventListener('playing', handlePlaying)
     videoElement.addEventListener('error', handleError)
 
-    // Forçar carregamento se necessário
-    if (shouldPreload && videoElement.readyState < 3) {
+    // Forçar carregamento apenas se estiver ativo ou deve pré-carregar
+    if ((isActive || shouldPreload) && videoElement.readyState < 3) {
       videoElement.load()
     }
 
@@ -91,6 +100,7 @@ export default function VideoCard({
       }
 
       videoRef.current.muted = true
+      setShowPlaceholder(false)
 
       // Tentar play com fallback
       const playPromise = videoRef.current.play()
@@ -197,10 +207,20 @@ export default function VideoCard({
       className={`relative ${isActive ? 'h-dvh' : 'h-dvh'} w-full snap-start snap-always bg-black lg:flex lg:items-center lg:justify-center`} 
       onClick={toggleMute}
     >
+      {/* Placeholder enquanto carrega */}
+      {showPlaceholder && !hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-pink-900/20 to-purple-900/20 z-5">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full animate-pulse"></div>
+            <p className="text-white/60 text-sm">Carregando vídeo...</p>
+          </div>
+        </div>
+      )}
+
       {/* Overlay de loading */}
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
-          <Loader2 className="w-12 h-12 text-pink-500 animate-spin" />
+      {isLoading && !showPlaceholder && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
+          <Loader2 className="w-8 h-8 text-pink-500 animate-spin" />
         </div>
       )}
 
@@ -233,7 +253,10 @@ export default function VideoCard({
           playsInline
           muted
           onTimeUpdate={handleTimeUpdate}
-          onLoadedData={() => setIsLoading(false)}
+          onLoadedData={() => {
+        setIsLoading(false)
+        setShowPlaceholder(false)
+      }}
         />
       </div>
 
