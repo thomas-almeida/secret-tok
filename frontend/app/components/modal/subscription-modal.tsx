@@ -46,7 +46,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
 
     const prices = {
         forever: 49.90,
-        monthly: 25.90,
+        monthly: 32.90,
         discountForever: (((5.90 * 12) - 14.90) / (5.90 * 12) * 100)
     }
 
