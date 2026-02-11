@@ -35,7 +35,7 @@ export const createPaymentIntent = async (req, res) => {
             {
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.ABKTPAY_DEV}`
+                    'Authorization': `Bearer ${process.env.ABKTPAY_PROD}`
                 }
             });
 

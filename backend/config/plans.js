@@ -2,7 +2,7 @@ export const SUBSCRIPTION_PLANS = {
   MONTHLY: {
     id: 'RAPIDINHAS_MENSAL',
     name: 'Rapidinhas Mensal',
-    amount: 2599,
+    amount: 3299,
     description: 'O melhor do mundo HOT na palma da sua mão, acesso a melhores modelos da cena a qualquer momento do dia!',
     features: [
       'Download de qualquer vídeo',
