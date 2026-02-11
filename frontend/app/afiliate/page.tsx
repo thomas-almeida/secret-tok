@@ -9,22 +9,51 @@ import Link from "next/link";
 import { Users, Folder, Eye, Wallet, ArrowLeft, ChevronDown, Percent, RotateCcw, MessageCircle } from "lucide-react";
 import copy from "copy-to-clipboard";
 import { getAfiliateData } from "../services/user-service";
+import { useTranslate } from "../hooks/useTranslate";
 
 interface AfiliateData {
     balance: number,
-    associatedUsers: number
+    associatedUsers: number,
+    transactions: any[]
 }
 
 export default function AfiliatePage() {
 
     const { user, isAuthenticated, isHydrated } = useAuthStore();
     const router = useRouter();
+    const { translateStatus } = useTranslate()
     const [copiedLink, setCopiedLink] = useState<boolean>(false)
     const [pixKey, setPixKey] = useState<string>('')
     const [expandedPix, setExpandedPix] = useState<boolean>(false)
     const [isFetching, setIsFetching] = useState<boolean>(false)
     const [afiliateData, setAfiliateData] = useState<AfiliateData | null>(null)
     const [disabledWithdraw, setDisableWithdraw] = useState<boolean>(false)
+
+
+    useEffect(() => {
+
+        const getUpdatedData = async () => {
+
+            setIsFetching(true)
+
+            if (user) {
+                const res = await getAfiliateData(user?._id)
+                setAfiliateData({
+                    balance: res.data?.balance,
+                    associatedUsers: res.data?.associatedUsers,
+                    transactions: res.data?.transactions || []
+                })
+
+                setInterval(() => {
+                    setIsFetching(false)
+                }, 1000)
+            }
+
+
+        }
+
+        getUpdatedData()
+    }, [user])
 
     useEffect(() => {
         const savedPixKey = localStorage.getItem('userPixKey')
@@ -50,7 +79,8 @@ export default function AfiliatePage() {
         if (user) {
             setAfiliateData({
                 balance: user.revenue.balance,
-                associatedUsers: user.revenue.associatedUsers.length
+                associatedUsers: user.revenue.associatedUsers.length,
+                transactions: user.revenue?.transactions || []
             })
         }
 
@@ -90,7 +120,8 @@ export default function AfiliatePage() {
                 console.log(res.data)
                 setAfiliateData({
                     balance: res.data?.balance,
-                    associatedUsers: res.data?.associatedUsers
+                    associatedUsers: res.data?.associatedUsers,
+                    transactions: res.data?.transactions || []
                 })
 
                 setInterval(() => {
@@ -251,6 +282,49 @@ export default function AfiliatePage() {
                                         <img src="/icons/pix-white.png" className="w-6 h-6" alt="" />
                                     </button>
                                 </Link>
+
+                            </div>
+
+                            <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-4 lg:p-6">
+                                <h2 className="text-2xl font-semibold pb-4 lg:text-3xl">Minhas Vendas</h2>
+
+                                {
+                                    isFetching ? (
+                                        <div className="flex justify-center items-center py-10">
+                                            <RotateCcw className={`w-6 h-6 ${isFetching && 'animate-spin'}`} />
+                                        </div>
+                                    ) : (
+
+                                        <div className="flex flex-col gap-2 max-h-120 overflow-y-auto">
+                                            {
+                                                user?.revenue.transactions && user?.revenue.transactions.length! > 0 && afiliateData?.transactions ? (
+
+                                                    afiliateData?.transactions?.map((transaction: any) => (
+                                                        <div key={transaction._id} className="flex justify-between items-center p-4 px-4 gap-4 border rounded-md border-neutral-800 bg-neutral-800/50 hover:bg-neutral-800/70 transition-colors">
+                                                            <div className="flex flex-col">
+                                                                <p className="text-lg text-neutral-300"></p>
+                                                                <h2 className="text-xl font-bold pb-2">{((transaction.amount / 100) * 0.35).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2>
+                                                                <h2 className="text-sm font-bold text-neutral-400"> Assinatura: {(transaction.amount / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 gap-1 text-right justify-end items-end">
+                                                                <p className={`text-sm italic py-1 rounded-full ${transaction?.status === 'PAID' ? 'text-green-400 font-bold' : 'text-yellow-400'}`}>{translateStatus(transaction?.status)}</p>
+                                                                <p className="text-sm text-neutral-500">
+                                                                    {
+                                                                        transaction?.status === 'PAID' ? `Recebido em ${new Date(transaction.updatedAt).toLocaleDateString('pt-BR')}` : `Criado em ${new Date(transaction.createdAt).toLocaleDateString('pt-BR')}`
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ))
+
+                                                ) : (
+                                                    <p className="text-neutral-300 lg:text-base">Você ainda não realizou nenhuma venda, comece a divulgar seu link de afiliado para ganhar suas primeiras comissões!</p>
+                                                )
+
+                                            }
+                                        </div>
+                                    )
+                                }
 
                             </div>
 
