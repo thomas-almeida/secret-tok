@@ -4,6 +4,7 @@ import axios from "axios";
 import User from "../models/User.js";
 import notificationService from '../services/notificationService.js';
 import { EVENT_TYPES } from '../config/notificationEvents.js';
+import { calculateAndApplyCommission, checkTransactionStatusAndProcess } from '../services/commissionService.js';
 
 export const createPaymentIntent = async (req, res) => {
     try {
@@ -34,7 +35,7 @@ export const createPaymentIntent = async (req, res) => {
             {
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.ABKTPAY_PROD}`
+                    'Authorization': `Bearer ${process.env.ABKTPAY_DEV}`
                 }
             });
 
@@ -58,6 +59,15 @@ export const createPaymentIntent = async (req, res) => {
         });
 
         await transaction.save();
+
+        // Se tiver referenceId, salvar também no revenueSchema do afiliado
+        if (referenceId && referenceId !== "none") {
+            const affiliateUser = await User.findById(referenceId);
+            if (affiliateUser) {
+                affiliateUser.revenue.transactions.push(transaction.toObject());
+                await affiliateUser.save();
+            }
+        }
 
         res.status(200).json({
             paymentIntent: abacatePayResponse.data?.data,
@@ -84,74 +94,31 @@ export const checkTransactionStatus = async (req, res) => {
             {
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.ABKTPAY_PROD}`
+                    'Authorization': `Bearer ${process.env.ABKTPAY_DEV}`
                 }
             })
 
 
         if (abacatePayResponse.data?.data?.status === 'PAID') {
+            const result = await checkTransactionStatusAndProcess(gatewayId);
 
-            const transaction = await Transaction.findOne({ gatewayId });
-
-            if (!transaction) {
-                return res.status(404).json({ error: 'Transaction not found' });
+            if (!result) {
+                return res.status(404).json({ error: 'Transaction not found or error processing' });
             }
 
-            console.log('Transaction found:', transaction);
-
-            transaction.status = 'PAID';
-            await transaction.save();
-
-            const user = await User.findById(transaction.userId);
-
-            if (user) {
-                user.subscription.active = true;
-                user.subscription.transactionDate = new Date();
-                await user.save();
-                
-                notificationService.sendMessage(EVENT_TYPES.SUBSCRIPTION_PAID, {
-                    userId: user._id,
-                    userName: user.name,
-                    planId: user.subscription.planId,
-                    amount: transaction.amount,
-                    transactionId: transaction._id,
-                    gatewayId: gatewayId
+            if (result.alreadyPaid) {
+                return res.status(200).json({
+                    message: 'Transaction already processed',
+                    transactionStatus: abacatePayResponse.data?.data?.status
                 });
             }
 
-            if (transaction.referenceId && transaction.referenceId !== "none") {
-                const affiliateUser = await User.findById(transaction.referenceId);
-
-                if (affiliateUser) {
-
-                    const commissionPercentage = affiliateUser.revenue.associatedUsers.length >= 10 ? 0.45 : 0.35;
-
-                    affiliateUser.revenue.balance += transaction.amount * commissionPercentage;
-
-                    if (!affiliateUser.revenue.associatedUsers.includes(transaction.userId)) {
-                        affiliateUser.revenue.associatedUsers.push(transaction.userId);
-                    }
-                    
-                    await affiliateUser.save();
-                    
-                    notificationService.sendMessage(EVENT_TYPES.AFFILIATE_COMMISSION, {
-                        affiliateId: affiliateUser._id,
-                        affiliateName: affiliateUser.name,
-                        userId: transaction.userId,
-                        commissionAmount: transaction.amount * commissionPercentage,
-                        percentage: commissionPercentage,
-                        totalAssociated: affiliateUser.revenue.associatedUsers.length,
-                        currentBalance: affiliateUser.revenue.balance,
-                        transactionId: transaction._id
-                    });
-
-                    console.log(`Comissão de ${commissionPercentage * 100}% (R$ ${transaction.amount * commissionPercentage}) adicionada ao afiliado ${affiliateUser._id}`);
-                }
-            }
+            console.log('Transaction processed successfully:', result);
 
             res.status(200).json({
                 message: 'Assinatura ativada com sucesso',
-                transactionStatus: abacatePayResponse.data?.data?.status
+                transactionStatus: abacatePayResponse.data?.data?.status,
+                commissionData: result.commissionData
             });
         }
 
@@ -185,14 +152,16 @@ export const webhookAbacatePay = async (req, res) => {
         if (event.event === "billing.paid") {
             const gatewayId = event?.pixQrCode?.id;
 
-            const transaction = await Transaction.findOne({ gatewayId });
-
-            if (transaction) {
-                transaction.status = 'PAID';
-                await transaction.save();
-                console.log(`Transaction ${transaction._id} marked as PAID.`);
-            } else {
-                console.log(`No transaction found for gatewayId: ${gatewayId}`);
+            if (gatewayId) {
+                const result = await checkTransactionStatusAndProcess(gatewayId);
+                
+                if (result && !result.alreadyPaid) {
+                    console.log(`✅ Transaction ${result.transaction._id} processed successfully via webhook.`);
+                } else if (result?.alreadyPaid) {
+                    console.log(`ℹ️ Transaction ${gatewayId} already processed.`);
+                } else {
+                    console.log(`❌ No transaction found for gatewayId: ${gatewayId}`);
+                }
             }
         }
 

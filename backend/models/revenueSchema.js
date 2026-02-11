@@ -13,6 +13,11 @@ const revenueSchema = new mongoose.Schema({
         required: true,
         default: 0
     },
+    transactions: [{
+        type: mongoose.Schema.Types.Mixed,
+        required: true,
+        default: []
+    }],
     createdAt: {
         type: Date,
         default: Date.now

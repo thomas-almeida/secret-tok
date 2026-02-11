@@ -1,7 +1,9 @@
 import User from '../models/User.js';
+import Transaction from '../models/Transactions.js';
 import { hashPassword } from '../utils/password.js';
 import notificationService from '../services/notificationService.js';
 import { EVENT_TYPES } from '../config/notificationEvents.js';
+import { checkTransactionStatusAndProcess } from '../services/commissionService.js';
 
 export const createUser = async (req, res) => {
   try {
@@ -25,14 +27,14 @@ export const createUser = async (req, res) => {
     });
 
     await user.save();
-    
+
     notificationService.sendMessage(EVENT_TYPES.NEW_USER, {
       name: user.name,
       email: user.email,
       phone: user.phone,
       userId: user._id
     });
-    
+
     res.status(201).json({
       message: 'User created successfully',
       user: user
@@ -57,21 +59,53 @@ export const getUsers = async (req, res) => {
   }
 };
 
+
+
 export const getAfiliateBalance = async (req, res) => {
   try {
     const { afiliateId } = req.params;
-    const afiliate = await User.findById(afiliateId).select('revenue').lean();
+    const afiliate = await User.findById(afiliateId);
 
     if (!afiliate) {
       return res.status(404).json({ error: 'Afiliado não encontrado' });
     }
 
-    const balance = afiliate.revenue?.balance ?? 0;
-    const associatedUsers = afiliate.revenue?.associatedUsers?.length ?? 0;
+    const transactions = afiliate.revenue?.transactions || [];
+    let newPaidTransactions = [];
+    let processedCommissions = [];
+
+    // Verificar status das transações pendentes
+    if (transactions.length > 0) {
+      for (const transaction of transactions) {
+        if (transaction.status !== 'PAID') {
+          const result = await checkTransactionStatusAndProcess(transaction.gatewayId);
+          
+          if (result && !result.alreadyPaid) {
+            newPaidTransactions.push(result.transaction);
+            if (result.commissionData) {
+              processedCommissions.push(result.commissionData);
+            }
+          }
+        }
+      }
+    }
+
+    // Recarregar os dados atualizados do afiliado após processar transações
+    const updatedAfiliate = await User.findById(afiliateId).select('name email revenue').lean();
+    
+    const balance = updatedAfiliate.revenue?.balance ?? 0;
+    const associatedUsers = updatedAfiliate.revenue?.associatedUsers?.length ?? 0;
+    const allTransactions = updatedAfiliate.revenue?.transactions || [];
 
     return res.status(200).json({
       message: 'success',
-      data: { balance, associatedUsers }
+      data: { 
+        balance, 
+        associatedUsers, 
+        transactions: allTransactions,
+        newPaidTransactions: newPaidTransactions.length > 0 ? newPaidTransactions : undefined,
+        processedCommissions: processedCommissions.length > 0 ? processedCommissions : undefined
+      }
     });
   } catch (error) {
     console.error(error);
