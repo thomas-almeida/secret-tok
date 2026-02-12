@@ -27,7 +27,7 @@ export default function AfiliatePage() {
     const [expandedPix, setExpandedPix] = useState<boolean>(false)
     const [isFetching, setIsFetching] = useState<boolean>(false)
     const [afiliateData, setAfiliateData] = useState<AfiliateData | null>(null)
-    const [disabledWithdraw, setDisableWithdraw] = useState<boolean>(false)
+    const [disabledWithdraw, setDisableWithdraw] = useState<boolean>(true)
 
 
     useEffect(() => {
@@ -82,13 +82,16 @@ export default function AfiliatePage() {
                 associatedUsers: user.revenue.associatedUsers.length,
                 transactions: user.revenue?.transactions || []
             })
-        }
 
-        if (user?.revenue.balance! > 0) {
-            setDisableWithdraw(false)
-        }
+            if (user) {
+                if (user?.revenue?.balance! > 0) {
+                    setDisableWithdraw(false)
+                } else {
+                    setDisableWithdraw(true)
+                }
+            }
 
-        setDisableWithdraw(true)
+        }
 
     }, [user])
 
@@ -146,6 +149,10 @@ export default function AfiliatePage() {
     const formattedBalance = () => {
         const balanceFormatted = afiliateData?.balance! / 100
         return balanceFormatted.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    }
+
+    const requestedWithdraw = () => {
+        router.push(`https://wa.me/5511989008294?text=Ol%C3%A1%2C%20quero%20solicitar%20meu%20saque%2C%20meu%20c%C3%B3digo%20de%20usu%C3%A1rio%20%C3%A9%3A%20${user?._id}`)
     }
 
     return (
@@ -270,18 +277,18 @@ export default function AfiliatePage() {
                                     )}
                                 </div>
 
-                                <Link
-                                    className={`flex justify-center items-center ${disabledWithdraw ? 'bg-gray-600 text-slate-00 cursor-not-allowed hover:bg-gray-600 opacity-60' : 'bg-green-600 hover:bg-green-700'} px-4 py-4 rounded font-semibold transition-colors text-lg `}
-                                    href={`https://wa.me/5511989008294?text=Ol%C3%A1%2C%20quero%20solicitar%20meu%20saque%2C%20meu%20c%C3%B3digo%20de%20usu%C3%A1rio%20%C3%A9%3A%20${user?._id}`}
+                                {
+                                    //href={`https://wa.me/5511989008294?text=Ol%C3%A1%2C%20quero%20solicitar%20meu%20saque%2C%20meu%20c%C3%B3digo%20de%20usu%C3%A1rio%20%C3%A9%3A%20${user?._id}`}
+                                }
+
+                                <button
+                                    className={`flex justify-center items-center ${disabledWithdraw ? 'bg-gray-600 text-slate-00 hover:bg-gray-600 opacity-60' : 'bg-green-600 hover:bg-green-700 cursor-pointer'} px-4 py-4 rounded font-semibold transition-colors text-lg `}
+                                    disabled={disabledWithdraw}
+                                    onClick={() => requestedWithdraw()}
                                 >
-                                    <button
-                                        className="flex justify-center items-center gap-4 "
-                                        disabled={disabledWithdraw}
-                                    >
-                                        <p>Solicitar Saque</p>
-                                        <img src="/icons/pix-white.png" className="w-6 h-6" alt="" />
-                                    </button>
-                                </Link>
+                                    <p>Solicitar Saque</p>
+                                    <img src="/icons/pix-white.png" className="w-6 h-6" alt="" />
+                                </button>
 
                             </div>
 
