@@ -62,13 +62,14 @@ export default function AdsLandingPage() {
                     playsInline
                     preload="auto"
                     style={{
-                        filter: 'blur(8px) brightness(0.3)',
-                        WebkitFilter: 'blur(8px) brightness(0.3)'
+                        filter: 'brightness(0.45)',
+                        WebkitFilter: 'brightness(0.25)'
                     }}
                 >
                     <source src="/videos/bg-video.mp4" type="video/mp4" />
                     <source src="/videos/bg-video.webm" type="video/webm" />
                 </video>
+                <div className="absolute inset-0 bg-black/20 blur-2xl"></div>
             </div>
 
             <div className="relative z-10">
@@ -78,7 +79,7 @@ export default function AdsLandingPage() {
                     </div>
                 </header>
 
-                <main className="flex flex-col items-center text-center gap-4 py-12 px-4">
+                <main className="flex flex-col items-center text-center gap-4 py-12 px-4 text-white">
                     <div className="max-w-6xl mx-auto">
                         <h1 className="text-center text-3xl tracking-tighter leading-8 font-bold lg:text-5xl lg:leading-[0.9] lg:mx-64">A Primeira Plataforma de Vazados em formato TikTok com você de <i className="underline">Afiliado</i>.</h1>
                         <p className="text-lg px-4 leading-5 mt-6 lg:text-xl lg:px-8"><b className="text-red-500">Configurar Bots, Grupo VIP, Gateways</b> e todas as burocracias só para manter um lead é <b className="text-yellow-400">coisa do passado!</b> em 3 cliques você tem uma base automática de vazados pro seu lead sair satisfeito e você sair <b className="text-green-400">comissionado!</b></p>

@@ -33,7 +33,7 @@ export default function RootLayout({
           })(window, document, "clarity", "script", "vaikw4xku5");`}
         </script>
       </head>
-      <body className={`font-sans antialiased`}>
+      <body className={`font-sans antialiased text-white`}>
         {children}
       </body>
     </html>
