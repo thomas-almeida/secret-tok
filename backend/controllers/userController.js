@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import Transaction from '../models/Transactions.js';
-import { hashPassword } from '../utils/password.js';
+import { comparePassword } from '../utils/password.js';
 import notificationService from '../services/notificationService.js';
 import { EVENT_TYPES } from '../config/notificationEvents.js';
 import { checkTransactionStatusAndProcess } from '../services/commissionService.js';
@@ -54,6 +54,75 @@ export const getUsers = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Error fetching users',
+      message: error.message
+    });
+  }
+};
+
+export const getUsersOverview = async (req, res) => {
+  try {
+    const users = await User.find().lean();
+    
+    const overview = users.map(user => {
+      const transactions = user.revenue?.transactions || [];
+      const paidTransactions = transactions.filter(t => t.status === 'PAID');
+      const pendingTransactions = transactions.filter(t => t.status !== 'PAID');
+      const totalInvoiced = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+      
+      return {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        balance: user.revenue?.balance || 0,
+        totalInvoiced: totalInvoiced,
+        paidTransactions: paidTransactions.length,
+        pendingTransactions: pendingTransactions.length,
+        associatedUsers: user.revenue?.associatedUsers?.length || 0
+      };
+    });
+    
+    res.status(200).json(overview);
+  } catch (error) {
+    res.status(500).json({
+      error: 'Error fetching users overview',
+      message: error.message
+    });
+  }
+};
+
+export const validateAdmin = async (req, res) => {
+  try {
+    const { userId, password } = req.body;
+    
+    if (!userId || !password) {
+      return res.status(400).json({ error: 'User ID and password are required' });
+    }
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const isPasswordValid = await comparePassword(password, user.password);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid password' });
+    }
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Authentication successful',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Error validating admin',
       message: error.message
     });
   }
