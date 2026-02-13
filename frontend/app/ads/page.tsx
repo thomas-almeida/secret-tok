@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import Logo from "../components/logo"
 import ModelsCarousel from "../components/models-carousel"
+import TestimonialsCarousel from "../components/testimonials-carousel"
+import { testimonials } from "../utils/testimonials"
 import { models } from "../utils/models"
 import { Users, Folder, Play, LayoutDashboard, MessageCircle } from "lucide-react"
 import Input from "../components/input"
@@ -99,6 +101,14 @@ export default function AdsLandingPage() {
                             <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Facilite a vida do seu lead enviando apenas um link da plataforma, ele assiste prévias em formato tiktok, assina vitalício, faz scroll infinito nos melhores vazados da cena enquanto <b className="text-green-400">você fatura sem ter configurado nada!</b></p>
                         </div>
                         <ModelsCarousel models={models} />
+                    </div>
+
+                    <div className="p-2 py-4 w-full max-w-6xl mx-auto">
+                        <div className="py-4 px-4 mb-4">
+                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">O que dizem os nossos afiliados?</h2>
+                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Veja os resultados reais de quem já está faturando com a gente. pedimos para os melhores players da plataforma falarem por nós!</p>
+                        </div>
+                        <TestimonialsCarousel testimonials={testimonials} />
                     </div>
 
                     <div className="p-2 py-4 w-full max-w-6xl mx-auto">
@@ -239,7 +249,7 @@ export default function AdsLandingPage() {
 
                     <div className="p-2 py-4 w-full max-w-6xl mx-auto">
                         <div className="py-4 px-4">
-                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">O Jeito mais fácil de comecar no hot de vazados em 2026</h2>
+                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">O Jeito mais fácil de começar no hot de vazados em 2026</h2>
                             <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Todo o conteúdo e facilidade pro seu lead está aqui, foque apenas em anunciar para a sua base seja no pago ou no orgânico enquanto tem uma plataforma com milhares de vídeos.</p>
                             <div className="py-6 max-w-md mx-auto">
                                 <button

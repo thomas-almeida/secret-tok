@@ -60,7 +60,7 @@ export default function VideoInfo({ userName, videoDescription, videoUrl, trigge
 
     return (
         <>
-            <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10 lg:max-w-2xl lg:left-1/2 lg:transform lg:-translate-x-1/2" onClick={handleClick}>
+            <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10 lg:max-w-xl lg:left-1/2 lg:transform lg:-translate-x-1/2" onClick={handleClick}>
                 {/* Background blur gradient */}
                 <div className="absolute inset-0 bg-linear-to-t from-black via-black/70 to-transparent rounded-t-3xl"></div>
                 

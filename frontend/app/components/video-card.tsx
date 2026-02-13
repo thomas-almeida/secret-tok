@@ -209,9 +209,9 @@ export default function VideoCard({
     >
       {/* Placeholder enquanto carrega */}
       {showPlaceholder && !hasError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-pink-900/20 to-purple-900/20 z-5">
+        <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-pink-900/20 to-purple-900/20 z-5">
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full animate-pulse"></div>
+            <div className="w-16 h-16 mx-auto mb-4 bg-linear-to-r from-pink-500 to-purple-500 rounded-full animate-pulse"></div>
             <p className="text-white/60 text-sm">Carregando vídeo...</p>
           </div>
         </div>
@@ -244,7 +244,7 @@ export default function VideoCard({
         </div>
       )}
 
-      <div className="h-full w-full relative overflow-hidden lg:max-w-2xl lg:w-full lg:rounded-xl lg:shadow-2xl">
+      <div className="h-full w-full relative overflow-hidden lg:max-w-xl lg:w-full lg:rounded-xl lg:shadow-2xl">
         <video
           ref={videoRef}
           src={video.videoUrl}
@@ -282,7 +282,7 @@ export default function VideoCard({
 
       {/* Barra de progresso */}
       <div
-        className="absolute bottom-0 left-0 w-full h-1 bg-gray-800 cursor-pointer z-10 lg:max-w-2xl lg:left-1/2 lg:transform lg:-translate-x-1/2"
+        className="absolute bottom-0 left-0 w-full h-1 bg-gray-800 cursor-pointer z-10 lg:max-w-xl lg:left-1/2 lg:transform lg:-translate-x-1/2"
         ref={progressBarRef}
         onClick={handleProgressBarClick}
         onMouseDown={handleMouseDown}
