@@ -41,7 +41,6 @@ export const createPaymentIntent = async (req, res) => {
             });
 
         const gatewayId = abacatePayResponse.data?.data?.id;
-        console.log('AbacatePay response:', JSON.stringify(abacatePayResponse.data));
         console.log('Creating transaction with gatewayId:', gatewayId);
 
         // Atualizar assinatura do usuário como pendente
@@ -194,8 +193,6 @@ export const webhookAbacatePay = async (req, res) => {
 const processWebhookEvent = async (event) => {
     const eventId = event?.id;
     const eventType = event?.event;
-
-    console.log(event)
 
     try {
         if (eventType === "billing.paid") {

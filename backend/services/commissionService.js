@@ -47,7 +47,7 @@ export const checkTransactionStatusAndProcess = async (gatewayId) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.ABKTPAY_PROD}`
+          'Authorization': `Bearer ${process.env.ABKTPAY_DEV}`
         }
       }
     );
