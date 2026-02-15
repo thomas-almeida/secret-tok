@@ -41,8 +41,10 @@ export const createPaymentIntent = async (req, res) => {
             });
 
         const gatewayId = abacatePayResponse.data?.data?.id;
+        console.log('AbacatePay response:', JSON.stringify(abacatePayResponse.data));
         console.log('Creating transaction with gatewayId:', gatewayId);
 
+        // Atualizar assinatura do usuário como pendente
         User.findByIdAndUpdate(customer.userId, {
             subscription: {
                 planId: plan.planId,
@@ -56,12 +58,12 @@ export const createPaymentIntent = async (req, res) => {
         const transaction = new Transaction({
             userId: customer.userId,
             amount: plan.amount,
-            userId: customer.userId,
-            gatewayId: abacatePayResponse.data?.data?.id,
+            gatewayId: gatewayId,
             referenceId: referenceId
         });
 
         await transaction.save();
+        console.log('Transaction saved:', transaction._id, 'gatewayId:', transaction.gatewayId);
 
         // Se tiver referenceId, salvar também no revenueSchema do afiliado
         if (referenceId && referenceId !== "none") {
@@ -192,6 +194,8 @@ export const webhookAbacatePay = async (req, res) => {
 const processWebhookEvent = async (event) => {
     const eventId = event?.id;
     const eventType = event?.event;
+
+    console.log(event)
 
     try {
         if (eventType === "billing.paid") {

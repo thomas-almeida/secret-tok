@@ -55,9 +55,14 @@ export const checkTransactionStatusAndProcess = async (gatewayId) => {
     if (abacatePayResponse.data?.data?.status === 'PAID') {
       console.log('Looking for transaction with gatewayId:', gatewayId);
       const transaction = await Transaction.findOne({ gatewayId });
+      console.log('Transaction found:', transaction);
 
       if (!transaction) {
         console.error('Transaction not found for gatewayId:', gatewayId);
+        
+        const allTransactions = await Transaction.find().limit(10).sort({ createdAt: -1 });
+        console.log('Recent transactions:', allTransactions.map(t => ({ _id: t._id, gatewayId: t.gatewayId, status: t.status })));
+        
         return null;
       }
 
