@@ -1,5 +1,6 @@
 import { getPlanById } from "../config/plans.js";
 import Transaction from "../models/Transactions.js";
+import WebhookEvent from "../models/WebhookEvent.js";
 import axios from "axios";
 import User from "../models/User.js";
 import notificationService from '../services/notificationService.js';
@@ -139,7 +140,6 @@ export const checkTransactionStatus = async (req, res) => {
 
 export const webhookAbacatePay = async (req, res) => {
     try {
-
         const webhookSecret = req.query.webhookSecret;
 
         if (webhookSecret !== process.env.ABKTPAY_WEBHOOK_SECRET) {
@@ -147,30 +147,130 @@ export const webhookAbacatePay = async (req, res) => {
         }
 
         const event = req.body;
-        console.log('Received webhook event:', event?.event);
+        const eventId = event?.id;
+        const eventType = event?.event;
 
-        if (event.event === "billing.paid") {
-            const gatewayId = event?.pixQrCode?.id;
+        console.log('Received webhook event:', eventType, 'ID:', eventId);
 
-            if (gatewayId) {
-                const result = await checkTransactionStatusAndProcess(gatewayId);
-                
-                if (result && !result.alreadyPaid) {
-                    console.log(`✅ Transaction ${result.transaction._id} processed successfully via webhook.`);
-                } else if (result?.alreadyPaid) {
-                    console.log(`ℹ️ Transaction ${gatewayId} already processed.`);
-                } else {
-                    console.log(`❌ No transaction found for gatewayId: ${gatewayId}`);
-                }
-            }
+        if (!eventId || !eventType) {
+            return res.status(400).json({ error: 'Missing event ID or type' });
         }
+
+        const existingEvent = await WebhookEvent.findOne({ eventId });
+        if (existingEvent) {
+            console.log(`ℹ️ Event ${eventId} already processed, skipping.`);
+            return res.status(200).json({ received: true, duplicate: true });
+        }
+
+        await WebhookEvent.create({
+            eventId,
+            eventType,
+            gatewayId: event?.data?.pixQrCode?.id || event?.data?.billing?.id,
+            status: 'pending'
+        });
 
         res.status(200).json({ received: true });
 
+        processWebhookEvent(event).catch(async (error) => {
+            console.error('❌ Error processing webhook event:', error);
+            await WebhookEvent.findOneAndUpdate(
+                { eventId },
+                { status: 'failed' }
+            );
+        });
     } catch (error) {
+        console.error('Error in webhook handler:', error);
         res.status(500).json({
             error: 'Error to process webhook',
             message: error.message
-        })
+        });
     }
-}
+};
+
+const processWebhookEvent = async (event) => {
+    const eventId = event?.id;
+    const eventType = event?.event;
+
+    try {
+        if (eventType === "billing.paid") {
+            const gatewayId = event?.data?.pixQrCode?.id;
+
+            if (gatewayId) {
+                const result = await checkTransactionStatusAndProcess(gatewayId);
+
+                if (result && !result.alreadyPaid) {
+                    console.log(`✅ Transaction ${result.transaction._id} processed successfully via webhook.`);
+                    
+                    await notificationService.sendMessage(EVENT_TYPES.WEBHOOK_PROCESSED, {
+                        eventId,
+                        eventType,
+                        gatewayId,
+                        amount: result.transaction.amount,
+                        userId: result.user?._id
+                    });
+
+                    await WebhookEvent.findOneAndUpdate(
+                        { eventId },
+                        { status: 'processed' }
+                    );
+                } else if (result?.alreadyPaid) {
+                    console.log(`ℹ️ Transaction ${gatewayId} already processed.`);
+                    await WebhookEvent.findOneAndUpdate(
+                        { eventId },
+                        { status: 'processed' }
+                    );
+                } else {
+                    console.log(`❌ No transaction found for gatewayId: ${gatewayId}`);
+                    
+                    await notificationService.sendMessage(EVENT_TYPES.WEBHOOK_FAILED, {
+                        eventId,
+                        eventType,
+                        gatewayId,
+                        error: 'Transaction not found'
+                    });
+                }
+            }
+        } else if (eventType === "withdraw.done") {
+            const transaction = event?.data?.transaction;
+            console.log(`💰 Saque realizado: ${transaction?.id}`);
+            
+            await notificationService.sendMessage(EVENT_TYPES.WITHDRAW_DONE, {
+                eventId,
+                transactionId: transaction?.id,
+                amount: transaction?.amount,
+                fee: transaction?.platformFee,
+                receiptUrl: transaction?.receiptUrl
+            });
+            
+            await WebhookEvent.findOneAndUpdate(
+                { eventId },
+                { status: 'processed' }
+            );
+        } else if (eventType === "withdraw.failed") {
+            const transaction = event?.data?.transaction;
+            console.log(`⚠️ Saque falhou: ${transaction?.id}`);
+            
+            await notificationService.sendMessage(EVENT_TYPES.WITHDRAW_FAILED, {
+                eventId,
+                transactionId: transaction?.id,
+                amount: transaction?.amount,
+                status: transaction?.status
+            });
+            
+            await WebhookEvent.findOneAndUpdate(
+                { eventId },
+                { status: 'processed' }
+            );
+        }
+    } catch (error) {
+        console.error('Error in processWebhookEvent:', error);
+        
+        await notificationService.sendMessage(EVENT_TYPES.WEBHOOK_FAILED, {
+            eventId,
+            eventType,
+            error: error.message
+        });
+        
+        throw error;
+    }
+};

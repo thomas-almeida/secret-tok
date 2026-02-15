@@ -77,6 +77,44 @@ class NotificationService {
           `👥 *Referenciados:* ${data.associatedUsers}\n` +
           `📅 *Data:* ${timestamp}`;
 
+      case EVENT_TYPES.WEBHOOK_RECEIVED:
+        return `${emoji} *Webhook Recebido*\n\n` +
+          `🔖 *Evento ID:* ${data.eventId}\n` +
+          `📦 *Tipo:* ${data.eventType}\n` +
+          `🔗 *Gateway ID:* ${data.gatewayId || 'N/A'}\n` +
+          `📅 *Data:* ${timestamp}`;
+
+      case EVENT_TYPES.WEBHOOK_PROCESSED:
+        return `${emoji} *Webhook Processado*\n\n` +
+          `🔖 *Evento ID:* ${data.eventId}\n` +
+          `📦 *Tipo:* ${data.eventType}\n` +
+          `🔗 *Gateway ID:* ${data.gatewayId || 'N/A'}\n` +
+          `💰 *Valor:* ${data.amount ? `R$ ${data.amount}` : 'N/A'}\n` +
+          `👤 *Usuário:* ${data.userId || 'N/A'}\n` +
+          `📅 *Data:* ${timestamp}`;
+
+      case EVENT_TYPES.WEBHOOK_FAILED:
+        return `${emoji} *Webhook Falhou*\n\n` +
+          `🔖 *Evento ID:* ${data.eventId}\n` +
+          `📦 *Tipo:* ${data.eventType}\n` +
+          `❌ *Erro:* ${data.error}\n` +
+          `📅 *Data:* ${timestamp}`;
+
+      case EVENT_TYPES.WITHDRAW_DONE:
+        return `${emoji} *Saque Realizado*\n\n` +
+          `🆔 *Transação:* ${data.transactionId}\n` +
+          `💰 *Valor:* R$ ${data.amount}\n` +
+          `📊 *Taxa:* R$ ${data.fee}\n` +
+          `🔗 *Recibo:* ${data.receiptUrl}\n` +
+          `📅 *Data:* ${timestamp}`;
+
+      case EVENT_TYPES.WITHDRAW_FAILED:
+        return `${emoji} *Saque Falhou*\n\n` +
+          `🆔 *Transação:* ${data.transactionId}\n` +
+          `💰 *Valor:* R$ ${data.amount}\n` +
+          `❌ *Status:* ${data.status}\n` +
+          `📅 *Data:* ${timestamp}`;
+
       default:
         return `${emoji} *Evento:* ${eventType}\n\n` +
           `📊 *Dados:* ${JSON.stringify(data, null, 2)}\n` +
