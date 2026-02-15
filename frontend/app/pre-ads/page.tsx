@@ -1,14 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { ArrowRight, Play, Star, Users } from 'lucide-react';
 import Logo from '../components/logo';
 import ModelsCarousel from '../components/models-carousel';
 import { models } from '../utils/models';
 
-export default function PreAdsPage() {
+function PreAdsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [mounted, setMounted] = useState(false);
@@ -20,7 +19,13 @@ export default function PreAdsPage() {
     }, []);
 
     if (!mounted) {
-        return null;
+        return (
+            <div className="min-h-screen bg-linear-to-b from-neutral-900 via-neutral-800 to-neutral-900 flex items-center justify-center">
+                <div className="animate-pulse">
+                    <div className="w-12 h-12 bg-neutral-700 rounded-full"></div>
+                </div>
+            </div>
+        );
     }
 
     const handleCtaClick = () => {
@@ -79,5 +84,23 @@ export default function PreAdsPage() {
                 <p>© 2024 Rapidinhas. Todos os direitos reservados.</p>
             </footer>
         </div>
+    );
+}
+
+function LoadingFallback() {
+    return (
+        <div className="min-h-screen bg-linear-to-b from-neutral-900 via-neutral-800 to-neutral-900 flex items-center justify-center">
+            <div className="animate-pulse">
+                <div className="w-12 h-12 bg-neutral-700 rounded-full"></div>
+            </div>
+        </div>
+    );
+}
+
+export default function PreAdsPage() {
+    return (
+        <Suspense fallback={<LoadingFallback />}>
+            <PreAdsContent />
+        </Suspense>
     );
 }
