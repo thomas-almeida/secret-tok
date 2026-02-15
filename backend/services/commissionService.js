@@ -53,6 +53,7 @@ export const checkTransactionStatusAndProcess = async (gatewayId) => {
     );
 
     if (abacatePayResponse.data?.data?.status === 'PAID') {
+      console.log('Looking for transaction with gatewayId:', gatewayId);
       const transaction = await Transaction.findOne({ gatewayId });
 
       if (!transaction) {

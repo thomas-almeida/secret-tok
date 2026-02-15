@@ -79,26 +79,15 @@ class NotificationService {
 
       case EVENT_TYPES.WEBHOOK_RECEIVED:
         return `${emoji} *Webhook Recebido*\n\n` +
-          `🔖 *Evento ID:* ${data.eventId}\n` +
-          `📦 *Tipo:* ${data.eventType}\n` +
-          `🔗 *Gateway ID:* ${data.gatewayId || 'N/A'}\n` +
-          `📅 *Data:* ${timestamp}`;
+          `\`\`\`\nEvento: ${data.eventId}\nTipo: ${data.eventType}\nGateway: ${data.gatewayId || 'N/A'}\n\`\`\`\n📅 ${timestamp}`;
 
       case EVENT_TYPES.WEBHOOK_PROCESSED:
         return `${emoji} *Webhook Processado*\n\n` +
-          `🔖 *Evento ID:* ${data.eventId}\n` +
-          `📦 *Tipo:* ${data.eventType}\n` +
-          `🔗 *Gateway ID:* ${data.gatewayId || 'N/A'}\n` +
-          `💰 *Valor:* ${data.amount ? `R$ ${data.amount}` : 'N/A'}\n` +
-          `👤 *Usuário:* ${data.userId || 'N/A'}\n` +
-          `📅 *Data:* ${timestamp}`;
+          `\`\`\`\nEvento: ${data.eventId}\nTipo: ${data.eventType}\nGateway: ${data.gatewayId || 'N/A'}\nValor: ${data.amount ? `R$ ${data.amount}` : 'N/A'}\nUsuario: ${data.userId || 'N/A'}\n\`\`\`\n📅 ${timestamp}`;
 
       case EVENT_TYPES.WEBHOOK_FAILED:
         return `${emoji} *Webhook Falhou*\n\n` +
-          `🔖 *Evento ID:* ${data.eventId}\n` +
-          `📦 *Tipo:* ${data.eventType}\n` +
-          `❌ *Erro:* ${data.error}\n` +
-          `📅 *Data:* ${timestamp}`;
+          `\`\`\`\nEvento: ${data.eventId}\nTipo: ${data.eventType}\nErro: ${data.error}\n\`\`\`\n📅 ${timestamp}`;
 
       case EVENT_TYPES.WITHDRAW_DONE:
         return `${emoji} *Saque Realizado*\n\n` +

@@ -36,10 +36,12 @@ export const createPaymentIntent = async (req, res) => {
             {
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.ABKTPAY_PROD}`
+                    'Authorization': `Bearer ${process.env.ABKTPAY_DEV}`
                 }
             });
 
+        const gatewayId = abacatePayResponse.data?.data?.id;
+        console.log('Creating transaction with gatewayId:', gatewayId);
 
         User.findByIdAndUpdate(customer.userId, {
             subscription: {
@@ -194,6 +196,7 @@ const processWebhookEvent = async (event) => {
     try {
         if (eventType === "billing.paid") {
             const gatewayId = event?.data?.pixQrCode?.id;
+            console.log('Processing webhook - Event ID:', eventId, 'Gateway ID from webhook:', gatewayId);
 
             if (gatewayId) {
                 const result = await checkTransactionStatusAndProcess(gatewayId);
