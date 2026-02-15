@@ -23,6 +23,7 @@ export default function AfiliatePage() {
     const router = useRouter();
     const { translateStatus } = useTranslate()
     const [copiedLink, setCopiedLink] = useState<boolean>(false)
+    const [copiedAdsLink, setCopiedAdsLink] = useState<boolean>(false)
     const [pixKey, setPixKey] = useState<string>('')
     const [expandedPix, setExpandedPix] = useState<boolean>(false)
     const [isFetching, setIsFetching] = useState<boolean>(false)
@@ -112,6 +113,19 @@ export default function AfiliatePage() {
         }
     }
 
+    const handleCopyAdsLink = () => {
+        if (!user?._id) return
+
+        const copied = copy(`https://rapidinhas.vercel.app/pre-ads?ref=${user?._id}`)
+
+        if (copied) {
+            setCopiedAdsLink(true)
+            setTimeout(() => setCopiedAdsLink(false), 3000)
+        } else {
+            console.error('falha ao copiar link')
+        }
+    }
+
     const handleUpdateAfiliateData = async () => {
         try {
 
@@ -190,6 +204,25 @@ export default function AfiliatePage() {
                                     onClick={handleCopyCode}
                                     className={`mt-2 text-white px-4 py-3 rounded font-semibold transition-colors text-lg lg:hover:bg-opacity-80 cursor-pointer ${copiedLink ? 'bg-green-600' : 'bg-neutral-700 hover:bg-neutral-600'}`}>
                                     {copiedLink ? 'Copiado!' : 'Copiar Meu Link'}
+                                </button>
+                            </div >
+
+                            <div className="flex flex-col gap-2 border rounded-md border-red-900/50 p-2 py-4 lg:col-span-2 lg:p-6 bg-red-900/10">
+                                <div className="flex items-center gap-2 pb-2">
+                                    <h2 className="text-2xl font-semibold lg:text-3xl">Link para Anúncios (Pré-Ads)</h2>
+                                </div>
+                                <p className="text-neutral-300 lg:text-lg">Recomendado para uso em anúncios (Facebook, TikTok, Google Ads, etc). Esta página é otimizada para conversão.</p>
+                                <p className="text-neutral-400 lg:text-sm">O usuário verá uma landing page atrativa e ao clicar no CTA será redirecionado para finalizar a assinatura.</p>
+                                <Input
+                                    type="text"
+                                    placeholder="Link para anúncios"
+                                    value={`https://rapidinhas.vercel.app/pre-ads?ref=${user?._id}`}
+                                    className="mt-2 text-xl font-medium lg:text-base"
+                                />
+                                <button
+                                    onClick={handleCopyAdsLink}
+                                    className={`mt-2 text-white px-4 py-3 rounded font-semibold transition-colors text-lg lg:hover:bg-opacity-80 cursor-pointer ${copiedAdsLink ? 'bg-green-600' : 'bg-red-600 hover:bg-red-700'}`}>
+                                    {copiedAdsLink ? 'Copiado!' : 'Copiar Link para Anúncios'}
                                 </button>
                             </div >
 

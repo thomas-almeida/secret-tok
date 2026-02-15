@@ -277,7 +277,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, onAcce
     return (
         <>
             <ModalContainer>
-                <div className="flex flex-col items-center gap-4 bg-neutral-900 p-6 rounded-lg text-center w-[95%] shadow-2xl shadow-black/50">
+                <div className="flex flex-col items-center gap-4 bg-neutral-900 p-6 rounded-lg text-center w-[95%] shadow-2xl shadow-black/50 lg:max-w-xl">
                     <Logo />
                     <div>
                         <h1 className="text-xl font-bold">
