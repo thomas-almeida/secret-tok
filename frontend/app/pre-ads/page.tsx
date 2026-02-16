@@ -50,7 +50,7 @@ function PreAdsContent() {
 
 
                     <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-9 tracking-tighter">
-                        Pronto para espiar as Maiores Modelos da Cena Hot? <br />
+                        O que você quer ver está aqui! <br />
                     </h1>
 
                     <div className="mb-6">
@@ -58,7 +58,7 @@ function PreAdsContent() {
                     </div>
 
                     <p className="text-lg md:text-xl text-neutral-300 mb-10 max-w-xl mx-auto leading-5">
-                        Acesse o maior catálogo de vídeos adultos premium. Novas models adicionadas diariamente. Assista agora mesmo!
+                        Acesse o maior catálogo de mais completo e exclusivo agora!
                     </p>
 
 
