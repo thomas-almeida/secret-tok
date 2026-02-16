@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import Transaction from '../models/Transactions.js';
-import { comparePassword } from '../utils/password.js';
+import { comparePassword, hashPassword } from '../utils/password.js';
 import notificationService from '../services/notificationService.js';
 import { EVENT_TYPES } from '../config/notificationEvents.js';
 import { checkTransactionStatusAndProcess } from '../services/commissionService.js';
