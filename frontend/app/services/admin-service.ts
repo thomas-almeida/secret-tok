@@ -16,3 +16,8 @@ export const validateAdmin = async (userId: string, password: string) => {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_BASEURL}/api/users/validate-admin`, { userId, password });
     return response.data;
 };
+
+export const setAdmin = async (userId: string, makeAdmin: boolean) => {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_BASEURL}/api/users/set-admin`, { userId, makeAdmin });
+    return response.data;
+};
