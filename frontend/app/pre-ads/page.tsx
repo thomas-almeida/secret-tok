@@ -50,7 +50,7 @@ function PreAdsContent() {
 
 
                     <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-9 tracking-tighter">
-                        O que você quer ver está aqui! <br />
+                        O que você quer ver delas está aqui! <br />
                     </h1>
 
                     <div className="mb-6">
@@ -58,11 +58,11 @@ function PreAdsContent() {
                     </div>
 
                     <p className="text-lg md:text-xl text-neutral-300 mb-10 max-w-xl mx-auto leading-5">
-                        Acesse o maior catálogo de mais completo e exclusivo agora!
+                        Bem-vindo ao maior catálogo VIP com tudo de mais completo e exclusivo!
                     </p>
 
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+                    <div className="flex flex-col items-center justify-center gap-4 mb-12">
                         <button
                             onClick={handleCtaClick}
                             className="group w-[80%] flex justify-center items-center gap-3 bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-red-500/25"
@@ -72,8 +72,8 @@ function PreAdsContent() {
                         </button>
 
                         <div className="flex items-center gap-2 text-neutral-400 text-sm">
-                            <Users className="w-4 h-4" />
-                            <span>Mais de 10.000 usuários ativos</span>
+                            <div className="border w-2 h-2 animate-pulse bg-green-500 rounded-full"></div>
+                            <span>Usuários espiando agora: 4689</span>
                         </div>
                     </div>
 
@@ -91,7 +91,7 @@ function LoadingFallback() {
     return (
         <div className="min-h-screen bg-linear-to-b from-neutral-900 via-neutral-800 to-neutral-900 flex items-center justify-center">
             <div className="animate-pulse">
-                <div className="w-12 h-12 bg-neutral-700 rounded-full"></div>
+                <div className="w-12 h-12 bg-greeen-500 rounded-full"></div>
             </div>
         </div>
     );
