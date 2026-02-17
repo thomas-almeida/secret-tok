@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from "react";
-import { getUsersOverview, validateAdmin } from "../services/admin-service";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { getUsersOverview, checkIsAdmin, validateAdmin } from "../services/admin-service";
 import Input from "../components/input";
 import { Loader2, Lock, User, Users, DollarSign, CheckCircle, Clock, TrendingUp, Search, ArrowUpDown, ArrowUp, ArrowDown, Receipt, Copy, Check } from "lucide-react";
 import Link from "next/link";
@@ -22,12 +23,44 @@ interface UserOverview {
 type SortField = 'name' | 'balance' | 'totalInvoiced' | 'paidTransactions' | 'pendingTransactions' | 'associatedUsers';
 type SortOrder = 'asc' | 'desc';
 
-export default function AdminPage() {
+function AdminSkeleton() {
+    return (
+        <div className="min-h-screen bg-neutral-900 text-white p-4">
+            <div className="animate-pulse">
+                <div className="h-8 bg-neutral-800 rounded w-32 mb-8"></div>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                    {[...Array(5)].map((_, i) => (
+                        <div key={i} className="bg-neutral-800 border border-neutral-700 p-4 rounded-lg">
+                            <div className="h-4 bg-neutral-700 rounded w-24 mb-2"></div>
+                            <div className="h-8 bg-neutral-700 rounded w-20"></div>
+                        </div>
+                    ))}
+                </div>
+                <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-4">
+                    <div className="h-6 bg-neutral-700 rounded w-48 mb-4"></div>
+                    <div className="space-y-3">
+                        {[...Array(5)].map((_, i) => (
+                            <div key={i} className="h-16 bg-neutral-700/50 rounded"></div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function AdminContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const userIdFromUrl = searchParams.get('ref');
+
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [showModal, setShowModal] = useState<boolean>(true);
     const [userId, setUserId] = useState<string>('');
+    const [userName, setUserName] = useState<string>('');
     const [password, setPassword] = useState<string>('');
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [isValidatingPassword, setIsValidatingPassword] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
     const [users, setUsers] = useState<UserOverview[]>([]);
     const [isFetchingUsers, setIsFetchingUsers] = useState<boolean>(false);
@@ -35,6 +68,37 @@ export default function AdminPage() {
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
     const [copiedField, setCopiedField] = useState<string | null>(null);
+    const [isAdminCheckComplete, setIsAdminCheckComplete] = useState<boolean>(false);
+    const [isValidAdmin, setIsValidAdmin] = useState<boolean>(false);
+
+    useEffect(() => {
+        const verifyAdmin = async () => {
+            if (!userIdFromUrl) {
+                router.push('/');
+                return;
+            }
+
+            setUserId(userIdFromUrl);
+
+            try {
+                const response = await checkIsAdmin(userIdFromUrl);
+                
+                if (response.isAdmin) {
+                    setIsValidAdmin(true);
+                    setUserName(response.userName || '');
+                } else {
+                    setError('Acesso negado. Você não tem permissão para acessar esta página.');
+                }
+            } catch (err) {
+                setError('Erro ao verificar permissões. Tente novamente.');
+            } finally {
+                setIsAdminCheckComplete(true);
+                setIsLoading(false);
+            }
+        };
+
+        verifyAdmin();
+    }, [userIdFromUrl, router]);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -44,11 +108,11 @@ export default function AdminPage() {
 
     const handleLogin = async () => {
         if (!userId || !password) {
-            setError('Preencha o ID do usuário e a senha');
+            setError('Preencha a senha');
             return;
         }
 
-        setIsLoading(true);
+        setIsValidatingPassword(true);
         setError('');
 
         try {
@@ -59,9 +123,9 @@ export default function AdminPage() {
             }
         } catch (err: unknown) {
             const error = err as { response?: { data?: { error?: string } } };
-            setError(error.response?.data?.error || 'Erro ao validar credenciais');
+            setError(error.response?.data?.error || 'Senha incorreta');
         } finally {
-            setIsLoading(false);
+            setIsValidatingPassword(false);
         }
     };
 
@@ -149,6 +213,27 @@ export default function AdminPage() {
     const totalPaidTransactions = useMemo(() => users.reduce((acc, u) => acc + u.paidTransactions, 0), [users]);
     const totalAssociatedUsers = useMemo(() => users.reduce((acc, u) => acc + u.associatedUsers, 0), [users]);
 
+    if (isLoading || !isAdminCheckComplete) {
+        return <AdminSkeleton />;
+    }
+
+    if (!isValidAdmin) {
+        return (
+            <div className="min-h-screen bg-neutral-900 flex items-center justify-center">
+                <div className="text-center px-4">
+                    <div className="w-16 h-16 rounded-full bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                        <Lock className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-white mb-2">Acesso Negado</h2>
+                    <p className="text-neutral-400 mb-6">{error}</p>
+                    <Link href="/" className="text-red-500 hover:underline">
+                        Voltar para página inicial
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-neutral-900 text-white">
             {showModal && (
@@ -161,26 +246,19 @@ export default function AdminPage() {
                         </div>
 
                         <h2 className="text-2xl font-bold text-center mb-2">Acesso Admin</h2>
-                        <p className="text-neutral-400 text-center mb-6">Digite suas credenciais para acessar</p>
+                        <p className="text-neutral-400 text-center mb-6">
+                            Olá, <span className="text-white font-medium">{userName}</span>. Digite sua senha para continuar.
+                        </p>
 
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm text-neutral-400 mb-2">ID do Usuário</label>
-                                <Input
-                                    type="text"
-                                    placeholder="Digite seu ID de usuário"
-                                    value={userId}
-                                    onChange={(e) => setUserId(e.target.value)}
-                                />
-                            </div>
-
                             <div>
                                 <label className="block text-sm text-neutral-400 mb-2">Senha</label>
                                 <Input
                                     type="password"
                                     placeholder="Digite sua senha"
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                                    onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleLogin()}
                                 />
                             </div>
 
@@ -190,10 +268,10 @@ export default function AdminPage() {
 
                             <button
                                 onClick={handleLogin}
-                                disabled={isLoading}
+                                disabled={isValidatingPassword}
                                 className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-neutral-600 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
                             >
-                                {isLoading ? (
+                                {isValidatingPassword ? (
                                     <>
                                         <Loader2 className="w-5 h-5 animate-spin" />
                                         Validando...
@@ -451,5 +529,13 @@ export default function AdminPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function AdminPage() {
+    return (
+        <Suspense fallback={<AdminSkeleton />}>
+            <AdminContent />
+        </Suspense>
     );
 }
