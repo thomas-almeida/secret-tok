@@ -91,6 +91,34 @@ export const getUsersOverview = async (req, res) => {
   }
 };
 
+export const checkIsAdmin = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required', isAdmin: false });
+    }
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found', isAdmin: false });
+    }
+    
+    res.status(200).json({ 
+      isAdmin: user.isAdmin || false,
+      userId: user._id,
+      userName: user.name
+    });
+    
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Error checking admin status',
+      isAdmin: false 
+    });
+  }
+};
+
 export const validateAdmin = async (req, res) => {
   try {
     const { userId, password } = req.body;
