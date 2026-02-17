@@ -14,7 +14,7 @@ import AffiliateModal from "../components/affiliate-modal"
 export default function AdsLandingPage() {
 
     const [sales, setSales] = useState<string>('10')
-    const [selectedPercent, setSelectedPercent] = useState<number>(30)
+    const [selectedPercent, setSelectedPercent] = useState<number>(50)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -51,7 +51,7 @@ export default function AdsLandingPage() {
         const earned = salesCount * price * (percent / 100)
         return fmt.format(earned)
     }
-    const levelColor = selectedPercent === 30 ? 'text-green-400' : selectedPercent === 40 ? 'text-yellow-400' : 'text-red-500'
+    const levelColor = selectedPercent === 50 ? 'text-green-400' : selectedPercent === 65 ? 'text-yellow-400' : 'text-red-500'
 
     return (
         <>
@@ -140,19 +140,19 @@ export default function AdsLandingPage() {
                                     {/* Level selector buttons */}
                                     <div className="w-full mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                                         <button
-                                            onClick={() => setSelectedPercent(30)}
-                                            className={`px-4 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-all ${selectedPercent === 30 ? 'bg-white text-black shadow-lg scale-105' : 'bg-transparent border border-neutral-700 hover:border-neutral-600'}`}>
-                                            Primeiro Nivel
-                                        </button>
-                                        <button
-                                            onClick={() => setSelectedPercent(40)}
-                                            className={`px-4 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-all ${selectedPercent === 40 ? 'bg-white text-black shadow-lg scale-105' : 'bg-transparent border border-neutral-700 hover:border-neutral-600'}`}>
-                                            Segundo Nível
-                                        </button>
-                                        <button
                                             onClick={() => setSelectedPercent(50)}
                                             className={`px-4 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-all ${selectedPercent === 50 ? 'bg-white text-black shadow-lg scale-105' : 'bg-transparent border border-neutral-700 hover:border-neutral-600'}`}>
-                                            Terceiro Nível
+                                            Primeiro Nivel (50%)
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedPercent(65)}
+                                            className={`px-4 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-all ${selectedPercent === 65 ? 'bg-white text-black shadow-lg scale-105' : 'bg-transparent border border-neutral-700 hover:border-neutral-600'}`}>
+                                            Segundo Nível (65%)
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedPercent(80)}
+                                            className={`px-4 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-all ${selectedPercent === 80 ? 'bg-white text-black shadow-lg scale-105' : 'bg-transparent border border-neutral-700 hover:border-neutral-600'}`}>
+                                            Terceiro Nível (80%)
                                         </button>
                                     </div>
                                 </div>
@@ -171,12 +171,12 @@ export default function AdsLandingPage() {
                                 <div className="absolute top-0 right-0 bg-green-400 text-black px-3 py-1 rounded-bl-lg rounded-tr-lg font-bold text-sm">Primeiro Nível</div>
                                 <div className="flex justify-center items-center gap-2 pb-6">
                                     <Users className="w-8 h-8 text-green-400" />
-                                    <h3 className="text-xl font-semibold">10+ Usuários</h3>
+                                    <h3 className="text-xl font-semibold">0-9 Usuários</h3>
                                 </div>
                                 <div className="text-center">
-                                    <span className="text-7xl font-black text-green-400 block">30%</span>
+                                    <span className="text-7xl font-black text-green-400 block">50%</span>
                                     <p className="text-base mt-3">Comissão por assinatura</p>
-                                    <p className="mt-4 text-white text-lg">Você ganharia: <span className="font-bold text-xl">{calcEarnings(30)}</span></p>
+                                    <p className="mt-4 text-white text-lg">Você ganharia: <span className="font-bold text-xl">{calcEarnings(50)}</span></p>
                                 </div>
                             </div>
 
@@ -185,12 +185,12 @@ export default function AdsLandingPage() {
                                 <div className="absolute top-0 right-0 bg-yellow-400 text-black px-3 py-1 rounded-bl-lg font-bold text-sm rounded-tr-lg">Segundo Nível</div>
                                 <div className="flex justify-center items-center gap-2 pb-6">
                                     <Users className="w-8 h-8 text-yellow-400" />
-                                    <h3 className="text-xl font-semibold">30+ Usuários</h3>
+                                    <h3 className="text-xl font-semibold">10-24 Usuários</h3>
                                 </div>
                                 <div className="text-center">
-                                    <span className="text-7xl font-black text-yellow-400 block">40%</span>
+                                    <span className="text-7xl font-black text-yellow-400 block">65%</span>
                                     <p className="text-base mt-3">Comissão por assinatura</p>
-                                    <p className="mt-4 text-white text-lg">Você ganharia: <span className="font-bold text-xl">{calcEarnings(40)}</span></p>
+                                    <p className="mt-4 text-white text-lg">Você ganharia: <span className="font-bold text-xl">{calcEarnings(65)}</span></p>
                                 </div>
                             </div>
 
@@ -199,12 +199,12 @@ export default function AdsLandingPage() {
                                 <div className="absolute top-0 right-0 bg-linear-to-r from-red-500 to-red-700 text-white px-4 py-1 rounded-bl-lg rounded-tr-lg font-bold text-sm shadow-lg">Terceiro Nível</div>
                                 <div className="flex justify-center items-center gap-2 pb-6">
                                     <Users className="w-8 h-8 text-red-400" />
-                                    <h3 className="text-xl font-semibold">100+ Usuários</h3>
+                                    <h3 className="text-xl font-semibold">25+ Usuários</h3>
                                 </div>
                                 <div className="text-center">
-                                    <span className="text-7xl font-black bg-linear-to-r from-red-400 to-red-700 bg-clip-text text-transparent block">50%</span>
+                                    <span className="text-7xl font-black bg-linear-to-r from-red-400 to-red-700 bg-clip-text text-transparent block">80%</span>
                                     <p className="text-base mt-3">Comissão por assinatura</p>
-                                    <p className="mt-4 text-white text-lg">Você ganharia: <span className="font-bold text-xl">{calcEarnings(50)}</span></p>
+                                    <p className="mt-4 text-white text-lg">Você ganharia: <span className="font-bold text-xl">{calcEarnings(80)}</span></p>
                                 </div>
                             </div>
                         </div>

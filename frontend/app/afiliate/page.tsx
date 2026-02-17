@@ -153,11 +153,13 @@ export default function AfiliatePage() {
     }
 
     const getPercentage = () => {
-        if (user?.revenue?.associatedUsers?.length! >= 10) {
-            return 45
+        const total = user?.revenue?.associatedUsers?.length || 0;
+        if (total >= 25) {
+            return 80;
+        } else if (total >= 10) {
+            return 65;
         }
-
-        return 35
+        return 50;
     }
 
     const formattedBalance = () => {
@@ -343,7 +345,7 @@ export default function AfiliatePage() {
                                                         <div key={transaction._id} className="flex justify-between items-center p-4 px-4 gap-4 border rounded-md border-neutral-800 bg-neutral-800/50 hover:bg-neutral-800/70 transition-colors">
                                                             <div className="flex flex-col">
                                                                 <p className="text-lg text-neutral-300"></p>
-                                                                <h2 className="text-xl font-bold pb-2">{((transaction.amount / 100) * 0.35).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2>
+                                                                <h2 className="text-xl font-bold pb-2">{((transaction.amount / 100) * (getPercentage() / 100)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2>
                                                                 <h2 className="text-sm font-bold text-neutral-400"> Assinatura: {(transaction.amount / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2>
                                                             </div>
                                                             <div className="grid grid-cols-1 gap-1 text-right justify-end items-end">
@@ -373,13 +375,17 @@ export default function AfiliatePage() {
 
                                 <div className="space-y-4">
                                     <div className="border-l-4 border-green-600 pl-4 hover:bg-neutral-800/30 p-4 rounded transition-colors">
-                                        <h3 className="font-semibold text-lg mb-2 lg:text-xl">Como ser comissionado?</h3>
-                                        <p className="text-neutral-300 lg:text-base">Você começa como afiliado com <span className="text-green-400 font-bold">35% de comissão</span> em cada venda que realizar através do seu código de indicação.</p>
+                                        <h3 className="font-semibold text-lg mb-2 lg:text-xl">Como funciona o comissionamento?</h3>
+                                        <p className="text-neutral-300 lg:text-base">Você começa como afiliado com <span className="text-green-400 font-bold">50% de comissão</span> em cada venda que realizar através do seu código de indicação.</p>
                                     </div>
 
                                     <div className="border-l-4 border-green-600 pl-4 hover:bg-neutral-800/30 p-4 rounded transition-colors">
-                                        <h3 className="font-semibold text-lg mb-2 lg:text-xl">Como aumentar minha comissão?</h3>
-                                        <p className="text-neutral-300 lg:text-base">Após realizar <span className="text-green-400 font-bold">10 vendas</span>, sua comissão sobe automaticamente para <span className="text-green-400 font-bold">45%</span>.</p>
+                                        <h3 className="font-semibold text-lg mb-2 lg:text-xl">Como subir de nível?</h3>
+                                        <ul className="text-neutral-300 lg:text-base space-y-1 mt-2">
+                                            <li>• <span className="text-green-400 font-bold">50%</span> - Iniciante (0-9 vendas)</li>
+                                            <li>• <span className="text-green-400 font-bold">65%</span> - Intermediário (10-24 vendas)</li>
+                                            <li>• <span className="text-green-400 font-bold">80%</span> - Expert (25+ vendas)</li>
+                                        </ul>
                                     </div>
 
                                     <div className="border-l-4 border-green-600 pl-4 hover:bg-neutral-800/30 p-4 rounded transition-colors">
