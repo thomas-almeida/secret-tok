@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema({
   revenue: {
     type: revenueSchema,
     required: false
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
   }
 
 }, {
