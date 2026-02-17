@@ -156,6 +156,36 @@ export const validateAdmin = async (req, res) => {
   }
 };
 
+export const setAdmin = async (req, res) => {
+  try {
+    const { userId, makeAdmin } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    user.isAdmin = makeAdmin === true;
+    await user.save();
+    
+    res.status(200).json({ 
+      success: true, 
+      message: makeAdmin ? 'User is now an admin' : 'Admin privileges removed',
+      userId: user._id,
+      isAdmin: user.isAdmin
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Error setting admin status',
+      message: error.message
+    });
+  }
+};
 
 
 export const getAfiliateBalance = async (req, res) => {
