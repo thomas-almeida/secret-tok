@@ -5,7 +5,17 @@ import { EVENT_TYPES } from '../config/notificationEvents.js';
 import axios from 'axios';
 
 export const calculateAndApplyCommission = async (transaction, affiliateUser) => {
-  const commissionPercentage = affiliateUser.revenue.associatedUsers.length >= 10 ? 0.45 : 0.35;
+  const totalAssociated = affiliateUser.revenue.associatedUsers.length;
+  
+  let commissionPercentage;
+  if (totalAssociated >= 25) {
+    commissionPercentage = 0.80;
+  } else if (totalAssociated >= 10) {
+    commissionPercentage = 0.65;
+  } else {
+    commissionPercentage = 0.50;
+  }
+  
   const commissionAmount = transaction.amount * commissionPercentage;
   
   // Adicionar comissão ao balance
