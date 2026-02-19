@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import Transaction from '../models/Transactions.js';
 import notificationService from '../services/notificationService.js';
+import emailService from '../services/email/emailService.js';
 import { EVENT_TYPES } from '../config/notificationEvents.js';
 import axios from 'axios';
 
@@ -41,6 +42,16 @@ export const calculateAndApplyCommission = async (transaction, affiliateUser) =>
   });
 
   console.log(`Comissão de ${commissionPercentage * 100}% (R$ ${commissionAmount}) adicionada ao afiliado ${affiliateUser._id}`);
+  
+  // Enviar email de comissão para o afiliado
+  try {
+    await emailService.sendAffiliateCommissionEmail(affiliateUser, {
+      newBalance: affiliateUser.revenue.balance,
+      totalAssociated: affiliateUser.revenue.associatedUsers.length
+    });
+  } catch (emailError) {
+    console.error('❌ Failed to send commission email:', emailError.message);
+  }
   
   return {
     commissionAmount,
