@@ -20,9 +20,10 @@ interface LoginModalProps {
     onAccept: () => void
     onDecline: () => void
     onNeedSubscription?: () => void
+    onCreateAccount?: () => void
 }
 
-export default function LoginModal({ isVisible, onAccept, onDecline, onNeedSubscription }: LoginModalProps) {
+export default function LoginModal({ isVisible, onAccept, onDecline, onNeedSubscription, onCreateAccount }: LoginModalProps) {
 
     const [loginPayload, setLoginPayload] = useState<LoginPayload>({ phone: 0, password: '' })
     const [isProcessing, setIsProcessing] = useState(false)
@@ -101,7 +102,8 @@ export default function LoginModal({ isVisible, onAccept, onDecline, onNeedSubsc
                         >
                             Voltar
                         </button>
-                        <div className="text-sm text-neutral-400 mt-2">
+                        <div className="flex justify-between text-sm text-neutral-400 mt-2">
+                            <button onClick={onCreateAccount} className="hover:underline text-white font-medium">Criar conta</button>
                             <a href="#" className="hover:underline">Esqueceu sua senha?</a>
                         </div>
                     </div>

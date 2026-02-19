@@ -40,9 +40,9 @@ export default function AfiliatePage() {
             if (user) {
                 const res = await getAfiliateData(user?._id)
                 setAfiliateData({
-                    balance: res.data?.balance,
-                    associatedUsers: res.data?.associatedUsers,
-                    transactions: res.data?.transactions || []
+                    balance: res?.data?.balance ?? 0,
+                    associatedUsers: res?.data?.associatedUsers ?? 0,
+                    transactions: res?.data?.transactions || []
                 })
 
                 setInterval(() => {
@@ -77,24 +77,15 @@ export default function AfiliatePage() {
 
     useEffect(() => {
 
-        if (user) {
-            setAfiliateData({
-                balance: user.revenue.balance,
-                associatedUsers: user.revenue.associatedUsers.length,
-                transactions: user.revenue?.transactions || []
-            })
-
-            if (user) {
-                if (user?.revenue?.balance! > 0) {
-                    setDisableWithdraw(false)
-                } else {
-                    setDisableWithdraw(true)
-                }
+        if (afiliateData) {
+            if (afiliateData.balance > 0) {
+                setDisableWithdraw(false)
+            } else {
+                setDisableWithdraw(true)
             }
-
         }
 
-    }, [user])
+    }, [afiliateData])
 
     if (!isHydrated) {
         return null;
@@ -339,7 +330,7 @@ export default function AfiliatePage() {
 
                                         <div className="flex flex-col gap-2 max-h-120 overflow-y-auto">
                                             {
-                                                user?.revenue.transactions && user?.revenue.transactions.length! > 0 && afiliateData?.transactions ? (
+                                                afiliateData?.transactions && afiliateData?.transactions.length > 0 ? (
 
                                                     afiliateData?.transactions?.map((transaction: any) => (
                                                         <div key={transaction._id} className="flex justify-between items-center p-4 px-4 gap-4 border rounded-md border-neutral-800 bg-neutral-800/50 hover:bg-neutral-800/70 transition-colors">

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import Button from "./button"
-import { Heart, Bookmark, MessageCircle, Download } from "lucide-react"
+import { Heart, Bookmark, MessageCircle, Download, LogIn } from "lucide-react"
 import Tag from "./tag"
 
 import Link from "next/link"
@@ -17,9 +17,10 @@ interface VideoInfoProps {
     triggerModal: () => void
     triggerSubscriptionModal: boolean
     triggerPaymentModal?: () => void
+    triggerLoginModal?: () => void
 }
 
-export default function VideoInfo({ userName, videoDescription, videoUrl, triggerModal, triggerSubscriptionModal, triggerPaymentModal }: VideoInfoProps) {
+export default function VideoInfo({ userName, videoDescription, videoUrl, triggerModal, triggerSubscriptionModal, triggerPaymentModal, triggerLoginModal }: VideoInfoProps) {
     const [isFollowing, setIsFollowing] = useState(false)
     const handleClick = (e: React.MouseEvent) => {
         e.stopPropagation() // Prevent click from reaching the parent VideoCard
@@ -130,20 +131,37 @@ export default function VideoInfo({ userName, videoDescription, videoUrl, trigge
                     >
                         <Download className="w-8 h-8 text-white fill-white/0 stroke-2" />
                     </button>
-                    {
-                        isAuthenticated && user?.subscription?.active === true && (
-                            <Link href={"/afiliate"}>
-                                <button
-                                    className="p-2 rounded-full transition-colors cursor-pointer"
-                                >
-                                    <div className="bg-red-500 w-12 h-12 rounded-md flex items-center justify-center text-white font-bold text-2xl shadow-4xl shadow-slate-900">
-                                        <b className="uppercase">{user?.name?.slice(0, 1)}</b>
-                                    </div>
-                                </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            if (!isAuthenticated && triggerLoginModal) {
+                                triggerLoginModal()
+                                return
+                            }
+                            if (!isAuthenticated) {
+                                triggerModal()
+                                return
+                            }
+                            // Se autenticado mas sem subscription, mostrar pagamento
+                            if (user?.subscription?.active !== true && triggerPaymentModal) {
+                                triggerPaymentModal()
+                                return
+                            }
+                        }}
+                        className="p-2 rounded-full transition-colors cursor-pointer"
+                    >
+                        {isAuthenticated && user?.subscription?.active === true ? (
+                            <Link href="/afiliate">
+                                <div className="bg-red-500 w-12 h-12 rounded-md flex items-center justify-center text-white font-bold text-2xl shadow-4xl shadow-slate-900">
+                                    <b className="uppercase">{user?.name?.slice(0, 1)}</b>
+                                </div>
                             </Link>
-
-                        )
-                    }
+                        ) : (
+                            <div className="bg-neutral-700 w-12 h-12 rounded-md flex items-center justify-center text-white">
+                                <LogIn className="w-6 h-6" />
+                            </div>
+                        )}
+                    </button>
                 </div>
             </div>
         </>

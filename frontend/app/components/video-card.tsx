@@ -19,6 +19,7 @@ interface VideoCardProps {
   shouldPreload: boolean // Novo: indica se deve pré-carregar
   triggerSubscriptionModal: () => void
   triggerPaymentModal?: () => void
+  triggerLoginModal?: () => void
 }
 
 export default function VideoCard({
@@ -27,6 +28,7 @@ export default function VideoCard({
   shouldPreload,
   triggerSubscriptionModal,
   triggerPaymentModal,
+  triggerLoginModal,
 }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const progressBarRef = useRef<HTMLDivElement>(null)
@@ -278,6 +280,7 @@ export default function VideoCard({
         triggerModal={triggerSubscriptionModal}
         triggerSubscriptionModal={true}
         triggerPaymentModal={triggerPaymentModal}
+        triggerLoginModal={triggerLoginModal}
       />
 
       {/* Barra de progresso */}

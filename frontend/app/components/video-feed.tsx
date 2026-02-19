@@ -305,6 +305,10 @@ export default function VideoFeedOptimized() {
                         setIsRePayment(true)
                         setIsSubscriptionModalVisible(true)
                     }}
+                    onCreateAccount={() => {
+                        setLoginVisible(false)
+                        setIsSubscriptionModalVisible(true)
+                    }}
                 />
             )}
 
@@ -353,6 +357,7 @@ export default function VideoFeedOptimized() {
                             shouldPreload={shouldPreload}
                             triggerSubscriptionModal={handleTriggerSubscriptionModal}
                             triggerPaymentModal={handleTriggerPaymentModal}
+                            triggerLoginModal={() => setLoginVisible(true)}
                         />
                     </div>
                 )
