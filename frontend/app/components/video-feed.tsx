@@ -154,8 +154,8 @@ export default function VideoFeedOptimized() {
     }, [])
 
     const preloadNearbyVideos = useCallback((centerIndex: number) => {
-        const preloadAhead = 1
-        const preloadBehind = 0
+        const preloadAhead = 3
+        const preloadBehind = 1
 
         const start = Math.max(0, centerIndex - preloadBehind)
         const end = Math.min(feedVideos.length - 1, centerIndex + preloadAhead)

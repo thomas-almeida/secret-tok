@@ -47,7 +47,7 @@ export default function VideoCard({
     const videoElement = videoRef.current
 
     // Configurações otimizadas - lazy loading agressivo
-    videoElement.preload = isActive ? "auto" : (shouldPreload ? "metadata" : "none")
+    videoElement.preload = isActive ? "auto" : (shouldPreload ? "auto" : "none")
     videoElement.playsInline = true
     videoElement.crossOrigin = "anonymous"
 
