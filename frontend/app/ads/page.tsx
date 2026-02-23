@@ -19,6 +19,7 @@ export default function AdsLandingPage() {
     const [selectedPercent, setSelectedPercent] = useState<number>(50)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isLoginModalVisible, setLoginVisible] = useState(false)
+    const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
     const router = useRouter()
     const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -272,6 +273,58 @@ export default function AdsLandingPage() {
                         </div>
                     </div>
                 </main>
+
+                {/* FAQ Section */}
+                <section className="px-4">
+                    <div className="max-w-3xl mx-auto">
+                        <h2 className="text-3xl font-bold text-white text-center mb-8">Perguntas Frequentes</h2>
+                        <div className="flex flex-col gap-4">
+                            {[
+                                {
+                                    question: "Da pra implementar no meu fluxo atual?",
+                                    answer: "100%! Não importa se você gerencia VIP, Faz X1, Upsell, Order bump, Faz X, Instagram ou qualquer outro canal, nosso sistema é flexível para se encaixar no seu modelo de negócio. Você só precisa user seu link de afiliado no seu fluxo de CTA, o resto é por nossa conta."
+                                },
+                                {
+                                    question: "Como recebo minha comissão?",
+                                    answer: "As comissões são creditadas automaticamente no seu saldo após a confirmação do pagamento do cliente. Você pode solicitar o saque sempre no D+1 da transação."
+                                },
+                                {
+                                    question: "Preciso ter experiência no Hot?",
+                                    answer: "Não! Nosso sistema é completamente automatizado para prender o lead com prévias, VIP, Gateway, Saque D+1, Criativos. Tudo depende do seu esforço de divulgação e do seu tráfego seja ele pago ou orgânico."
+                                },
+                                {
+                                    question: "Como faz pro meu lead assinar?",
+                                    answer: "Quando ele entra no seu link, após assistir poucas prévias, ele visualiza a oferta para assinatura, no instante que ele assina sua comissão é automaticamente creditada no seu saldo, você pode acompanhar tudo pelo nosso dashboard de afiliados."
+                                }
+                            ].map((faq, index) => (
+                                <div
+                                    key={index}
+                                    className="border border-neutral-700 rounded-lg overflow-hidden"
+                                >
+                                    <button
+                                        onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
+                                        className="w-full flex justify-between items-center p-4 text-left bg-neutral-800 hover:bg-neutral-750 transition-colors"
+                                    >
+                                        <span className="font-medium text-white">{faq.question}</span>
+                                        <svg
+                                            className={`w-5 h-5 text-neutral-400 transform transition-transform duration-200 ${expandedFaq === index ? 'rotate-180' : ''}`}
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedFaq === index && (
+                                        <div className="p-4 bg-neutral-800/50 text-neutral-300">
+                                            {faq.answer}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
 
                 {/* Footer */}
                 <footer className="relative z-10 py-8 px-4 text-center text-neutral-400 text-sm border-t border-neutral-800/50">
