@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { getModels } from "../services/model-service";
+import { allVideos } from "../utils/mocked-videos";
 import { Model } from "../stores/model-store";
 
 const CACHE_KEY = 'video_queue_cache';
@@ -70,10 +70,12 @@ export const useVideoQueue = () => {
             }
             
             setLoading(true);
-            const res = await getModels();
 
-            const junkieModel = getJunkieQueue(res?.models)
-            const premiumModelArr = getPremiumModels(res?.models)
+            // Usar dados locais em vez de API - muito mais rápido!
+            const models = allVideos as Model[];
+
+            const junkieModel = getJunkieQueue(models)
+            const premiumModelArr = getPremiumModels(models)
 
             if (junkieModel) setJunkieModel(junkieModel)
             if (premiumModelArr) setPremiumModels(premiumModelArr)
