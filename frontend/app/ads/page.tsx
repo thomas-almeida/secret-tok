@@ -9,6 +9,8 @@ import { models } from "../utils/models"
 import { Users, Folder, Play, LayoutDashboard, MessageCircle } from "lucide-react"
 import Input from "../components/input"
 import AffiliateModal from "../components/affiliate-modal"
+import LoginModal from "../components/modal/login-modal"
+import { useRouter } from "next/navigation"
 
 
 export default function AdsLandingPage() {
@@ -16,6 +18,8 @@ export default function AdsLandingPage() {
     const [sales, setSales] = useState<string>('10')
     const [selectedPercent, setSelectedPercent] = useState<number>(50)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isLoginModalVisible, setLoginVisible] = useState(false)
+    const router = useRouter()
     const videoRef = useRef<HTMLVideoElement>(null)
 
     useEffect(() => {
@@ -91,6 +95,12 @@ export default function AdsLandingPage() {
                                 className="p-4 text-lg font-bold rounded bg-red-600 shadow-2xl w-full hover:bg-red-700 lg:text-xl lg:py-6 cursor-pointer"
                             >
                                 Me Tornar Afiliado Agora
+                            </button>
+                            <button
+                                onClick={() => setLoginVisible(true)}
+                                className="mt-4 p-4 text-lg font-bold rounded border border-white/30 bg-transparent w-full hover:bg-white/10 lg:text-xl lg:py-4 cursor-pointer"
+                            >
+                                Já tenho conta - Entrar
                             </button>
                         </div>
                     </div>
@@ -276,6 +286,25 @@ export default function AdsLandingPage() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
             />
+
+            {isLoginModalVisible && (
+                <LoginModal
+                    isVisible={isLoginModalVisible}
+                    onAccept={() => {
+                        setLoginVisible(false)
+                        router.push('/afiliate')
+                    }}
+                    onDecline={() => setLoginVisible(false)}
+                    onNeedSubscription={() => {
+                        setLoginVisible(false)
+                        setIsModalOpen(true)
+                    }}
+                    onCreateAccount={() => {
+                        setLoginVisible(false)
+                        setIsModalOpen(true)
+                    }}
+                />
+            )}
 
             {/* Botão flutuante do WhatsApp */}
             <a
