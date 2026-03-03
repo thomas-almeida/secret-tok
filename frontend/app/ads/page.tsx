@@ -37,13 +37,16 @@ export default function AdsLandingPage() {
 
         video.addEventListener('timeupdate', handleTimeUpdate)
 
-        // Force play on iOS
-        const playPromise = video.play()
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log('Autoplay prevented:', error)
-            })
+        const tryPlay = () => {
+            const playPromise = video.play()
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    setTimeout(tryPlay, 1000)
+                })
+            }
         }
+
+        setTimeout(tryPlay, 500)
 
         return () => {
             video.removeEventListener('timeupdate', handleTimeUpdate)
@@ -54,14 +57,16 @@ export default function AdsLandingPage() {
         const video = videoRefDemo.current
         if (!video) return
 
-        // Force play on iOS
-        const playPromise = video.play()
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log('Autoplay prevented:', error)
-            })
+        const tryPlay = () => {
+            const playPromise = video.play()
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    setTimeout(tryPlay, 1000)
+                })
+            }
         }
 
+        setTimeout(tryPlay, 500)
     }, [])
 
     const price = 49.90
@@ -83,6 +88,12 @@ export default function AdsLandingPage() {
                     muted
                     playsInline
                     preload="auto"
+                    onCanPlay={() => {
+                        videoRef.current?.play().catch(() => {})
+                    }}
+                    onLoadedMetadata={() => {
+                        videoRef.current?.play().catch(() => {})
+                    }}
                     style={{
                         filter: 'brightness(0.45)',
                         WebkitFilter: 'brightness(0.25)'
@@ -137,6 +148,12 @@ export default function AdsLandingPage() {
                                     playsInline
                                     loop
                                     preload="auto"
+                                    onCanPlay={() => {
+                                        videoRefDemo.current?.play().catch(() => {})
+                                    }}
+                                    onLoadedMetadata={() => {
+                                        videoRefDemo.current?.play().catch(() => {})
+                                    }}
                                 >
                                     <source src="/videos/demo.mp4" type="video/mp4" />
                                 </video>
