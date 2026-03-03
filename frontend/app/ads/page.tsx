@@ -37,11 +37,18 @@ export default function AdsLandingPage() {
 
         video.addEventListener('timeupdate', handleTimeUpdate)
 
+        let retryCount = 0
+        const maxRetries = 8
+
         const tryPlay = () => {
+            if (retryCount >= maxRetries) return
+
             const playPromise = video.play()
             if (playPromise !== undefined) {
                 playPromise.catch(() => {
-                    setTimeout(tryPlay, 1000)
+                    retryCount++
+                    const delay = Math.min(1000 * Math.pow(1.5, retryCount), 5000)
+                    setTimeout(tryPlay, delay)
                 })
             }
         }
@@ -57,11 +64,18 @@ export default function AdsLandingPage() {
         const video = videoRefDemo.current
         if (!video) return
 
+        let retryCount = 0
+        const maxRetries = 8
+
         const tryPlay = () => {
+            if (retryCount >= maxRetries) return
+
             const playPromise = video.play()
             if (playPromise !== undefined) {
                 playPromise.catch(() => {
-                    setTimeout(tryPlay, 1000)
+                    retryCount++
+                    const delay = Math.min(1000 * Math.pow(1.5, retryCount), 5000)
+                    setTimeout(tryPlay, delay)
                 })
             }
         }
@@ -89,10 +103,28 @@ export default function AdsLandingPage() {
                     playsInline
                     preload="auto"
                     onCanPlay={() => {
-                        videoRef.current?.play().catch(() => {})
+                        let retryCount = 0
+                        const maxRetries = 5
+                        const tryPlay = () => {
+                            if (retryCount >= maxRetries) return
+                            videoRef.current?.play().catch(() => {
+                                retryCount++
+                                setTimeout(tryPlay, 500)
+                            })
+                        }
+                        tryPlay()
                     }}
                     onLoadedMetadata={() => {
-                        videoRef.current?.play().catch(() => {})
+                        let retryCount = 0
+                        const maxRetries = 5
+                        const tryPlay = () => {
+                            if (retryCount >= maxRetries) return
+                            videoRef.current?.play().catch(() => {
+                                retryCount++
+                                setTimeout(tryPlay, 500)
+                            })
+                        }
+                        tryPlay()
                     }}
                     style={{
                         filter: 'brightness(0.45)',
@@ -149,10 +181,28 @@ export default function AdsLandingPage() {
                                     loop
                                     preload="auto"
                                     onCanPlay={() => {
-                                        videoRefDemo.current?.play().catch(() => {})
+                                        let retryCount = 0
+                                        const maxRetries = 5
+                                        const tryPlay = () => {
+                                            if (retryCount >= maxRetries) return
+                                            videoRefDemo.current?.play().catch(() => {
+                                                retryCount++
+                                                setTimeout(tryPlay, 500)
+                                            })
+                                        }
+                                        tryPlay()
                                     }}
                                     onLoadedMetadata={() => {
-                                        videoRefDemo.current?.play().catch(() => {})
+                                        let retryCount = 0
+                                        const maxRetries = 5
+                                        const tryPlay = () => {
+                                            if (retryCount >= maxRetries) return
+                                            videoRefDemo.current?.play().catch(() => {
+                                                retryCount++
+                                                setTimeout(tryPlay, 500)
+                                            })
+                                        }
+                                        tryPlay()
                                     }}
                                 >
                                     <source src="/videos/demo.mp4" type="video/mp4" />

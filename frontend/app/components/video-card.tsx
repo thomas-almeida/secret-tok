@@ -91,46 +91,57 @@ export default function VideoCard({
     }
   }, [video.videoUrl, shouldPreload])
 
-  // Controle de play/pause
+  // Controle de play/pause com retry robusto para iOS
   useEffect(() => {
     if (!videoRef.current) return
 
-    if (isActive) {
-      // Reset do vídeo se estiver no final
-      if (videoRef.current.currentTime >= videoRef.current.duration - 0.5) {
-        videoRef.current.currentTime = 0
+    const videoElement = videoRef.current
+    let retryCount = 0
+    const maxRetries = 8
+    let retryTimeout: NodeJS.Timeout | undefined
+
+    const attemptPlay = () => {
+      if (retryCount >= maxRetries) {
+        console.log('Max retries reached for video autoplay')
+        return
       }
 
-      videoRef.current.muted = true
-      setShowPlaceholder(false)
-
-      // Tentar play com fallback
-      const playPromise = videoRef.current.play()
+      const playPromise = videoElement.play()
 
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
             setIsLoading(false)
+            retryCount = 0
           })
-          .catch(error => {
-            console.log("Autoplay bloqueado:", error)
-            // Tentar novamente silenciado
-            videoRef.current!.muted = true
-            videoRef.current!.play().catch(() => {
-              // Se ainda falhar, mostrar estado de carregamento
-              setIsLoading(true)
-            })
+          .catch(() => {
+            retryCount++
+            const delay = Math.min(1000 * Math.pow(1.5, retryCount), 5000)
+            retryTimeout = setTimeout(attemptPlay, delay)
           })
       }
-    } else {
-      // Pausar vídeo não ativo
-      videoRef.current.pause()
+    }
 
-      // Manter buffer se estiver pré-carregado
-      if (!shouldPreload && videoRef.current.readyState >= 3) {
-        // Manter vídeo carregado mas pausado
-        videoRef.current.currentTime = 0
+    if (isActive) {
+      if (videoElement.currentTime >= videoElement.duration - 0.5 || !videoElement.duration) {
+        videoElement.currentTime = 0
       }
+
+      videoElement.muted = true
+      setShowPlaceholder(false)
+
+      setTimeout(attemptPlay, 300)
+    } else {
+      videoElement.pause()
+      if (!shouldPreload && videoElement.readyState >= 3) {
+        videoElement.currentTime = 0
+      }
+      clearTimeout(retryTimeout)
+      retryCount = 0
+    }
+
+    return () => {
+      if (retryTimeout) clearTimeout(retryTimeout)
     }
   }, [isActive, shouldPreload])
 
@@ -251,14 +262,30 @@ export default function VideoCard({
           ref={videoRef}
           src={video.videoUrl}
           className="absolute inset-0 h-[calc(100%-4px)] w-full object-cover lg:rounded-xl"
+          autoPlay
+          muted
           loop
           playsInline
-          muted
+          preload="auto"
+          onCanPlay={() => {
+            setIsLoading(false)
+            setShowPlaceholder(false)
+            if (isActive) {
+              videoRef.current?.play().catch(() => {})
+            }
+          }}
+          onLoadedMetadata={() => {
+            setIsLoading(false)
+            setShowPlaceholder(false)
+            if (isActive) {
+              videoRef.current?.play().catch(() => {})
+            }
+          }}
           onTimeUpdate={handleTimeUpdate}
           onLoadedData={() => {
-        setIsLoading(false)
-        setShowPlaceholder(false)
-      }}
+            setIsLoading(false)
+            setShowPlaceholder(false)
+          }}
         />
       </div>
 
