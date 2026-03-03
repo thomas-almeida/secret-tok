@@ -22,6 +22,7 @@ export default function AdsLandingPage() {
     const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
     const router = useRouter()
     const videoRef = useRef<HTMLVideoElement>(null)
+    const videoRefDemo = useRef<HTMLVideoElement>(null)
 
     useEffect(() => {
         const video = videoRef.current
@@ -47,6 +48,20 @@ export default function AdsLandingPage() {
         return () => {
             video.removeEventListener('timeupdate', handleTimeUpdate)
         }
+    }, [])
+
+    useEffect(() => {
+        const video = videoRefDemo.current
+        if (!video) return
+
+        // Force play on iOS
+        const playPromise = video.play()
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.log('Autoplay prevented:', error)
+            })
+        }
+
     }, [])
 
     const price = 49.90
@@ -103,6 +118,29 @@ export default function AdsLandingPage() {
                             >
                                 Já tenho conta - Entrar
                             </button>
+                        </div>
+                    </div>
+
+                    <div className="w-full max-w-md lg:max-w-lg mx-auto p-4 lg:p-8">
+                        <div className="relative">
+                            <img 
+                                src="/phone-mockup.webp" 
+                                alt="Phone mockup" 
+                                className="w-full h-full relative z-10"
+                            />
+                            <div className="absolute top-0 left-[6.5%] w-[88%] h-full overflow-hidden rounded-[2.5rem] p-4.5">
+                                <video
+                                    ref={videoRefDemo}
+                                    className="w-full h-full object-cover rounded-4xl"
+                                    autoPlay
+                                    muted
+                                    playsInline
+                                    loop
+                                    preload="auto"
+                                >
+                                    <source src="/videos/demo.mp4" type="video/mp4" />
+                                </video>
+                            </div>
                         </div>
                     </div>
 
