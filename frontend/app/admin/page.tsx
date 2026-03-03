@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { getUsersOverview, checkIsAdmin, validateAdmin } from "../services/admin-service";
+import { getUsersOverview, checkIsAdmin, validateAdmin, updateUserCRM, ContactStatus, Funil } from "../services/admin-service";
 import Input from "../components/input";
 import { Loader2, Lock, User, Users, DollarSign, CheckCircle, Clock, TrendingUp, Search, ArrowUpDown, ArrowUp, ArrowDown, Receipt, Copy, Check } from "lucide-react";
 import Link from "next/link";
@@ -18,9 +18,11 @@ interface UserOverview {
     paidTransactions: number;
     pendingTransactions: number;
     associatedUsers: number;
+    contactStatus: ContactStatus;
+    funil: Funil;
 }
 
-type SortField = 'name' | 'balance' | 'totalInvoiced' | 'paidTransactions' | 'pendingTransactions' | 'associatedUsers';
+type SortField = 'name' | 'balance' | 'totalInvoiced' | 'paidTransactions' | 'pendingTransactions' | 'associatedUsers' | 'contactStatus' | 'funil';
 type SortOrder = 'asc' | 'desc';
 
 function AdminSkeleton() {
@@ -70,6 +72,7 @@ function AdminContent() {
     const [copiedField, setCopiedField] = useState<string | null>(null);
     const [isAdminCheckComplete, setIsAdminCheckComplete] = useState<boolean>(false);
     const [isValidAdmin, setIsValidAdmin] = useState<boolean>(false);
+    const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
 
     useEffect(() => {
         const verifyAdmin = async () => {
@@ -138,6 +141,31 @@ function AdminContent() {
             console.error('Error fetching users:', err);
         } finally {
             setIsFetchingUsers(false);
+        }
+    };
+
+    const handleCRMUpdate = async (userId: string, field: 'contactStatus' | 'funil', value: ContactStatus | Funil) => {
+        setUpdatingUserId(userId);
+        try {
+            const currentUser = users.find(u => u._id === userId);
+            if (!currentUser) return;
+
+            const updatedUser = {
+                ...currentUser,
+                [field]: value
+            };
+
+            await updateUserCRM(
+                userId,
+                field === 'contactStatus' ? value as ContactStatus : undefined,
+                field === 'funil' ? value as Funil : undefined
+            );
+
+            setUsers(users.map(u => u._id === userId ? updatedUser : u));
+        } catch (err) {
+            console.error('Error updating CRM:', err);
+        } finally {
+            setUpdatingUserId(null);
         }
     };
 
@@ -419,7 +447,19 @@ function AdminContent() {
                                             className="text-center p-4 text-sm font-semibold text-neutral-300 cursor-pointer hover:text-white"
                                             onClick={() => handleSort('associatedUsers')}
                                         >
-                                            Usuários Trazidos {getSortIcon('associatedUsers')}
+                                            Trazidos {getSortIcon('associatedUsers')}
+                                        </th>
+                                        <th
+                                            className="text-center p-4 text-sm font-semibold text-neutral-300 cursor-pointer hover:text-white"
+                                            onClick={() => handleSort('contactStatus')}
+                                        >
+                                            Contato {getSortIcon('contactStatus')}
+                                        </th>
+                                        <th
+                                            className="text-center p-4 text-sm font-semibold text-neutral-300 cursor-pointer hover:text-white"
+                                            onClick={() => handleSort('funil')}
+                                        >
+                                            Funil {getSortIcon('funil')}
                                         </th>
                                     </tr>
                                 </thead>
@@ -512,6 +552,38 @@ function AdminContent() {
                                                     <TrendingUp className="w-3 h-3" />
                                                     {user.associatedUsers}
                                                 </span>
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <select
+                                                    value={user.contactStatus}
+                                                    onChange={(e) => handleCRMUpdate(user._id, 'contactStatus', e.target.value as ContactStatus)}
+                                                    disabled={updatingUserId === user._id}
+                                                    className={`px-2 py-1 rounded-full text-sm border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 ${
+                                                        user.contactStatus === 'respondido' ? 'bg-green-500/30 text-green-400' :
+                                                        user.contactStatus === 'enviado' ? 'bg-blue-500/30 text-blue-400' :
+                                                        'bg-neutral-600/50 text-neutral-300'
+                                                    }`}
+                                                >
+                                                    <option value="a iniciar">A iniciar</option>
+                                                    <option value="enviado">Enviado</option>
+                                                    <option value="respondido">Respondido</option>
+                                                </select>
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <select
+                                                    value={user.funil}
+                                                    onChange={(e) => handleCRMUpdate(user._id, 'funil', e.target.value as Funil)}
+                                                    disabled={updatingUserId === user._id}
+                                                    className={`px-2 py-1 rounded-full text-sm border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 ${
+                                                        user.funil === 'positivo' ? 'bg-green-500/30 text-green-400' :
+                                                        user.funil === 'negativo' ? 'bg-red-500/30 text-red-400' :
+                                                        'bg-neutral-600/50 text-neutral-300'
+                                                    }`}
+                                                >
+                                                    <option value="indiferente">Indiferente</option>
+                                                    <option value="negativo">Negativo</option>
+                                                    <option value="positivo">Positivo</option>
+                                                </select>
                                             </td>
                                         </tr>
                                     ))}
