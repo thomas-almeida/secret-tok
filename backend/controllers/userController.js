@@ -78,7 +78,9 @@ export const getUsersOverview = async (req, res) => {
         totalInvoiced: totalInvoiced,
         paidTransactions: paidTransactions.length,
         pendingTransactions: pendingTransactions.length,
-        associatedUsers: user.revenue?.associatedUsers?.length || 0
+        associatedUsers: user.revenue?.associatedUsers?.length || 0,
+        contactStatus: user.contactStatus || 'a iniciar',
+        funil: user.funil || 'indiferente'
       };
     });
     
@@ -241,4 +243,51 @@ export const getAfiliateBalance = async (req, res) => {
       message: error.message
     });
   }
-}
+};
+
+export const updateUserCRM = async (req, res) => {
+  try {
+    const { userId, contactStatus, funil } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    if (contactStatus !== undefined) {
+      if (!['a iniciar', 'enviado', 'respondido'].includes(contactStatus)) {
+        return res.status(400).json({ error: 'Invalid contact status' });
+      }
+      user.contactStatus = contactStatus;
+    }
+    
+    if (funil !== undefined) {
+      if (!['indiferente', 'negativo', 'positivo'].includes(funil)) {
+        return res.status(400).json({ error: 'Invalid funil value' });
+      }
+      user.funil = funil;
+    }
+    
+    await user.save();
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'CRM updated successfully',
+      user: {
+        _id: user._id,
+        contactStatus: user.contactStatus,
+        funil: user.funil
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Error updating user CRM',
+      message: error.message
+    });
+  }
+};

@@ -35,6 +35,16 @@ const userSchema = new mongoose.Schema({
   isAdmin: {
     type: Boolean,
     default: false
+  },
+  contactStatus: {
+    type: String,
+    enum: ['a iniciar', 'enviado', 'respondido'],
+    default: 'a iniciar'
+  },
+  funil: {
+    type: String,
+    enum: ['indiferente', 'negativo', 'positivo'],
+    default: 'indiferente'
   }
 
 }, {
