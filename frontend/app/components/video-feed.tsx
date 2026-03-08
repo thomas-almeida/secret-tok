@@ -8,6 +8,8 @@ import SubscriptionModal from "./modal/subscription-modal"
 import LoginModal from "./modal/login-modal"
 import { useAuthStore } from "../stores/auth-store"
 import { useVideoQueue } from "../hooks/useVideoQueue"
+import { useRouter, useSearchParams } from "next/navigation"
+import { getAfiliateData } from "../services/user-service"
 
 const shuffleArray = <T,>(array: T[]): T[] => {
     const shuffled = [...array]
@@ -90,9 +92,12 @@ export default function VideoFeedOptimized() {
     const [queueTab, setQueueTab] = useState<string>('espiar')
     const [isLoadingFeed, setIsLoadingFeed] = useState(false)
     const [scrollCount, setScrollCount] = useState(0)
+    const [customValues, setCustomValues] = useState<{ lifetime: number; monthly: number } | null>(null)
 
     const containerRef = useRef<HTMLDivElement>(null)
     const { isAuthenticated } = useAuthStore()
+    const searchParams = useSearchParams()
+    const ref = searchParams.get('ref')
 
     const canChangeTab = !loading && !isRetrying && initialLoadComplete && (junkieFeed.length > 0 || premiumFeed.length > 0)
 
@@ -152,6 +157,26 @@ export default function VideoFeedOptimized() {
             setScrollCount(savedCount)
         }
     }, [])
+
+    useEffect(() => {
+        const fetchAfiliateData = async () => {
+            if (ref) {
+                try {
+                    const response = await getAfiliateData(ref as string)
+                    if (response?.data?.customPlans) {
+                        setCustomValues({
+                            lifetime: response.data.customPlans.lifetime,
+                            monthly: response.data.customPlans.monthly,
+                        })
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar dados do afiliado:", error)
+                }
+            }
+        }
+
+        fetchAfiliateData()
+    }, [ref])
 
     const preloadNearbyVideos = useCallback((centerIndex: number) => {
         const preloadAhead = 3
@@ -271,22 +296,23 @@ export default function VideoFeedOptimized() {
             )}
 
             {isSubscriptionModalVisible && (
-                <SubscriptionModal
-                    title={subscriptionModalTitle}
-                    isVisible={isSubscriptionModalVisible}
-                    dailyLimit={dailyLimit}
-                    onAccept={() => {
-                        setIsSubscriptionModalVisible(false)
-                        setIsRePayment(false)
-                    }}
-                    onDecline={() => {
-                        setIsSubscriptionModalVisible(false)
-                        setIsRePayment(false)
-                    }}
-                    onShowLogin={() => setLoginVisible(true)}
-                    initialStep={subscriptionModalInitialStep}
-                    isRePayment={isRePayment}
-                />
+                    <SubscriptionModal
+                        title={subscriptionModalTitle}
+                        isVisible={isSubscriptionModalVisible}
+                        dailyLimit={dailyLimit}
+                        customValues={customValues}
+                        onAccept={() => {
+                            setIsSubscriptionModalVisible(false)
+                            setIsRePayment(false)
+                        }}
+                        onDecline={() => {
+                            setIsSubscriptionModalVisible(false)
+                            setIsRePayment(false)
+                        }}
+                        onShowLogin={() => setLoginVisible(true)}
+                        initialStep={subscriptionModalInitialStep}
+                        isRePayment={isRePayment}
+                    />
             )}
 
             {isLoginModalVisible && (

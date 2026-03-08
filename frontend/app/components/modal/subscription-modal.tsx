@@ -20,6 +20,7 @@ interface SubscriptionModalProps {
     isVisible: boolean
     title: string
     dailyLimit: boolean
+    customValues?: any
     onAccept: () => void
     onDecline: () => void
     onShowLogin?: () => void
@@ -39,27 +40,26 @@ type PixData = {
     status: string
 }
 
-export default function SubscriptionModal({ isVisible, title, dailyLimit, onAccept, onDecline, onShowLogin, initialStep = 'select', isRePayment = false }: SubscriptionModalProps) {
+export default function SubscriptionModal({ isVisible, title, dailyLimit, customValues, onAccept, onDecline, onShowLogin, initialStep = 'select', isRePayment = false }: SubscriptionModalProps) {
 
     const { isCustomerAuthenticated, customer, loginCustomer: loginUserToStore } = useCustomerStore()
 
     const prices = {
-        forever: 49.90,
-        monthly: 29.90,
-        discountForever: (((5.90 * 12) - 14.90) / (5.90 * 12) * 100)
+        forever: customValues?.lifetime / 100 || 49.90,
+        monthly: customValues?.monthly / 100 || 29.90,
     }
 
-    const [selectedPlan, setSelectedPlan] = useState<Plan>({ id: 'RAPIDINHAS_VITALICIO', name: 'vitalicio' })
+    const [selectedPlan, setSelectedPlan] = useState<Plan>({ id: 'lifetime', name: 'vitalicio' })
     const [pixData, setPixData] = useState<PixData>()
     const afiliateCode = localStorage.getItem("afiliate-code")
 
     const plans = [
         {
-            id: 'RAPIDINHAS_VITALICIO',
+            id: 'lifetime',
             name: 'vitalicio',
         },
         {
-            id: 'RAPIDINHAS_MENSAL',
+            id: 'monthly',
             name: 'mensal',
         }
     ]
