@@ -133,8 +133,8 @@ export default function AdsLandingPage() {
 
                     <div className="p-2 py-4 w-full max-w-6xl mx-auto">
                         <div className="py-4 px-4 mb-4">
-                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">Sua Operacão Agradece!</h2>
-                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Aumente sua oferta oferecendo um novo formato estilo TikTok, seja para <b>Order Bump</b>, <b>Upsell e Downsell</b> seja em grupos VIPs ou com modelo própria, nossa estrutuar é flexível para se encaixar em qualquer pedaćo da sua operacao.</p>
+                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">Sua Operação Agradece!</h2>
+                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Aumente sua oferta oferecendo um novo formato estilo TikTok, seja para <b>Order Bump</b>, <b>Upsell e Downsell</b> seja em grupos VIPs ou com modelo própria, nossa estrutura é flexível para se encaixar em qualquer pedaço da sua operação.</p>
                         </div>
                         <ModelsCarousel models={models} />
                     </div>
@@ -150,9 +150,9 @@ export default function AdsLandingPage() {
                     <div className="p-2 py-4 w-full max-w-6xl mx-auto">
                         <div className="py-4 px-4">
                             <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">Eles assinam, você ganha!</h2>
-                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Seja comissionado por cada assinatura de plano da plataforma que seu lead escolher, quanto mais pessoas virem de você maior sua porcentagem</p>
+                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Seja comissionado por cada assinatura de plano da plataforma que seu lead escolher, quanto mais pessoas virem de você maior será sua porcentagem</p>
                             <br />
-                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Os valores de assinatura são completamente customizáveis a sua escolha</p>
+                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Os valores de assinatura são completamente customizáveis à sua escolha</p>
                             <div className="mt-8 w-full flex flex-col items-center gap-6 lg:gap-8">
                                 <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-2xl">
                                     <div className="text-center mb-2">
@@ -222,7 +222,7 @@ export default function AdsLandingPage() {
                                         <Venus className="w-8 h-8 text-red-500" />
                                         <div>
                                             <div className="text-xl font-semibold">Tela Checkout para Modelos</div>
-                                            <div className="text-sm mt-2">Usa modelos na operacao? sem problemas leve seu lead para um checkout como se sua modelo estivesse no App</div>
+                                            <div className="text-sm mt-2">Usa modelos na operação? Sem problemas, leve seu lead para um checkout como se sua modelo estivesse no App</div>
                                         </div>
                                     </div>
                                     <div className="flex flex-col items-start gap-3 p-6 bg-neutral-900 rounded-xl hover:bg-neutral-800 hover:scale-105 transition-transform">
@@ -241,7 +241,7 @@ export default function AdsLandingPage() {
                     <div className="p-2 py-4 w-full max-w-6xl mx-auto">
                         <div className="py-4 px-4">
                             <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">O Jeito mais fácil de começar no hot de vazados em 2026</h2>
-                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Todo o conteúdo e facilidade pro seu lead está aqui, foque apenas em anunciar para a sua base seja no pago ou no orgânico enquanto tem uma plataforma com milhares de vídeos.</p>
+                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Todo o conteúdo e facilidade para o seu lead está aqui, foque apenas em anunciar para a sua base seja no pago ou no orgânico enquanto tem uma plataforma com milhares de vídeos.</p>
                             <div className="py-6 max-w-md mx-auto">
                                 <button
                                     onClick={() => setIsModalOpen(true)}
@@ -261,8 +261,8 @@ export default function AdsLandingPage() {
                         <div className="flex flex-col gap-4">
                             {[
                                 {
-                                    question: "Da pra implementar no meu fluxo atual?",
-                                    answer: "100%! Não importa se você gerencia VIP, Faz X1, Upsell, Order bump, Faz X, Instagram ou qualquer outro canal, nosso sistema é flexível para se encaixar no seu modelo de negócio. Você só precisa user seu link de afiliado no seu fluxo de CTA, o resto é por nossa conta."
+                                    question: "Dá para implementar no meu fluxo atual?",
+                                    answer: "100%! Não importa se você gerencia VIP, Faz X1, Upsell, Order bump, Faz X, Instagram ou qualquer outro canal, nosso sistema é flexível para se encaixar no seu modelo de negócio. Você só precisa usar seu link de afiliado no seu fluxo de CTA, o resto é por nossa conta."
                                 },
                                 {
                                     question: "Como recebo minha comissão?",
@@ -273,8 +273,8 @@ export default function AdsLandingPage() {
                                     answer: "Não! Nosso sistema é completamente automatizado para prender o lead com prévias, VIP, Gateway, Saque D+1, Criativos. Tudo depende do seu esforço de divulgação e do seu tráfego seja ele pago ou orgânico."
                                 },
                                 {
-                                    question: "Como faz pro meu lead assinar?",
-                                    answer: "Quando ele entra no seu link, após assistir poucas prévias, ele visualiza a oferta para assinatura, no instante que ele assina sua comissão é automaticamente creditada no seu saldo, você pode acompanhar tudo pelo nosso dashboard de afiliados."
+                                    question: "Como faz para o meu lead assinar?",
+                                    answer: "Quando ele entra no seu link, após assistir poucas prévias, ele visualiza a oferta para assinatura, no instante em que ele assina sua comissão é automaticamente creditada no seu saldo, você pode acompanhar tudo pelo nosso dashboard de afiliados."
                                 }
                             ].map((faq, index) => (
                                 <div
