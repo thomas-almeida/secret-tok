@@ -114,7 +114,9 @@ export const getUsersOverview = async (req, res) => {
         pendingTransactions: pendingTransactions.length,
         associatedUsers: user.revenue?.associatedUsers?.length || 0,
         contactStatus: user.contactStatus || 'a iniciar',
-        funil: user.funil || 'indiferente'
+        funil: user.funil || 'indiferente',
+        customModel: user.revenue?.customModel || null,
+        customPlans: user.revenue?.customPlans || null
       };
     });
 
@@ -124,6 +126,132 @@ export const getUsersOverview = async (req, res) => {
       error: 'Error fetching users overview',
       message: error.message
     });
+  }
+};
+
+// Busca os dados da modelo fake pelo username
+export const getModelByUsername = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const user = await User.findOne({ 'revenue.customModel.username': username });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Modelo não encontrada' });
+    }
+
+    res.status(200).json({
+      model: user.revenue.customModel,
+      customPlans: user.revenue.customPlans
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar modelo', message: error.message });
+  }
+};
+
+// Atualiza os valores personalizados dos planos
+export const updateCustomPlans = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { lifetime, monthly } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID é obrigatório' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    if (lifetime !== undefined) user.revenue.customPlans.lifetime = lifetime;
+    if (monthly !== undefined) user.revenue.customPlans.monthly = monthly;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Valores personalizados atualizados com sucesso',
+      customPlans: user.revenue.customPlans
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao atualizar planos personalizados', message: error.message });
+  }
+};
+
+// Atualiza os dados da modelo fake
+export const updateCustomModel = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { username, displayName, description, profilePicture, coverPicture, instagramLink } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID é obrigatório' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    const customModel = user.revenue.customModel;
+    
+    // Verifica se username ou displayName estão sendo alterados
+    if (username !== undefined && customModel.username && customModel.username !== username) {
+      return res.status(400).json({
+        error: 'O username não pode ser alterado após a criação da modelo.'
+      });
+    }
+    
+    if (displayName !== undefined && customModel.displayName && customModel.displayName !== displayName) {
+      return res.status(400).json({
+        error: 'O nome exibido não pode ser alterado após a criação da modelo.'
+      });
+    }
+    
+    // Atualiza apenas os campos permitidos
+    if (username !== undefined && !customModel.username) customModel.username = username;
+    if (displayName !== undefined && !customModel.displayName) customModel.displayName = displayName;
+    if (description !== undefined) customModel.description = description;
+    if (profilePicture !== undefined) customModel.profilePicture = profilePicture;
+    if (coverPicture !== undefined) customModel.coverPicture = coverPicture;
+    if (instagramLink !== undefined) customModel.instagramLink = instagramLink;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Dados da modelo fake atualizados com sucesso',
+      customModel: user.revenue.customModel
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao atualizar modelo fake', message: error.message });
+  }
+};
+
+// Registra uma nova sessão para o afiliado
+export const registerSession = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID é obrigatório' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    user.revenue.sessions += 1;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Sessão registrada com sucesso',
+      sessions: user.revenue.sessions
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao registrar sessão', message: error.message });
   }
 };
 
@@ -259,15 +387,19 @@ export const getAfiliateBalance = async (req, res) => {
     const balance = updatedAfiliate.revenue?.balance ?? 0;
     const associatedUsers = updatedAfiliate.revenue?.associatedUsers?.length ?? 0;
     const allTransactions = updatedAfiliate.revenue?.transactions || [];
+    const conversionRate = updatedAfiliate.revenue?.conversionRate ?? 0;
 
     return res.status(200).json({
       message: 'success',
       data: {
         balance,
         associatedUsers,
+        conversionRate,
         transactions: allTransactions,
         newPaidTransactions: newPaidTransactions.length > 0 ? newPaidTransactions : undefined,
-        processedCommissions: processedCommissions.length > 0 ? processedCommissions : undefined
+        processedCommissions: processedCommissions.length > 0 ? processedCommissions : undefined,
+        customModel: updatedAfiliate.revenue?.customModel || null,
+        customPlans: updatedAfiliate.revenue?.customPlans || null
       }
     });
   } catch (error) {
@@ -276,6 +408,43 @@ export const getAfiliateBalance = async (req, res) => {
       error: 'Error fetching affiliate balance',
       message: error.message
     });
+  }
+};
+
+// Registra uma transação vinculada ao username da modelo fake
+export const createModelTransaction = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const { amount, gatewayId, referenceId } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ error: 'Username é obrigatório' });
+    }
+
+    const user = await User.findOne({ 'revenue.customModel.username': username });
+    if (!user) {
+      return res.status(404).json({ error: 'Modelo não encontrada' });
+    }
+
+    // Criar transação vinculada ao usuário afiliado (dono da modelo fake)
+    const transaction = new Transaction({
+      userId: user._id,
+      amount,
+      gatewayId,
+      referenceId,
+      modelUsername: username,
+      status: 'PENDING'
+    });
+
+    await transaction.save();
+
+    // Adicionar transação ao revenue do afiliado
+    user.revenue.transactions.push(transaction.toObject());
+    await user.save();
+
+    res.status(201).json({ transaction });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao criar transação', message: error.message });
   }
 };
 

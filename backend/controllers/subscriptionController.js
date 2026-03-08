@@ -19,8 +19,18 @@ export const createPaymentIntent = async (req, res) => {
             return res.status(400).json({ error: 'Invalid plan ID' });
         }
 
+        let planAmount = plan.amount;
+        
+        // Verificar se o afiliado possui valores personalizados para os planos
+        if (referenceId && referenceId !== "none") {
+          const affiliateUser = await User.findById(referenceId);
+          if (affiliateUser?.revenue?.customPlans) {
+            planAmount = affiliateUser.revenue.customPlans[plan.id] || plan.amount;
+          }
+        }
+
         const paymentIntent = {
-            amount: plan.amount,
+            amount: planAmount,
             expiresIn: 100000,
             description: plan.description,
             customer: {
@@ -50,7 +60,7 @@ export const createPaymentIntent = async (req, res) => {
         Customer.findByIdAndUpdate(customer?._id, {
             subscription: {
                 planId: plan.planId,
-                amount: plan.amount,
+                amount: planAmount,
                 active: false,
                 transactionDate: new Date()
             }
@@ -60,7 +70,7 @@ export const createPaymentIntent = async (req, res) => {
 
         const transaction = new Transaction({
             userId: customer?.customerId,
-            amount: plan.amount,
+            amount: planAmount,
             gatewayId: gatewayId,
             referenceId: referenceId
         });

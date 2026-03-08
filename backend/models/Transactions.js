@@ -30,6 +30,10 @@ const transactionSchema = new mongoose.Schema({
     referenceId: {
         type: String,
         required: false
+    },
+    modelUsername: {
+        type: String,
+        required: false
     }
 })
 

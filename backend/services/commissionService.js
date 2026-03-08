@@ -9,14 +9,7 @@ import Customer from '../models/Customer.js';
 export const calculateAndApplyCommission = async (transaction, affiliateUser) => {
   const totalAssociated = affiliateUser.revenue.associatedUsers.length;
   
-  let commissionPercentage;
-  if (totalAssociated >= 25) {
-    commissionPercentage = 0.80;
-  } else if (totalAssociated >= 10) {
-    commissionPercentage = 0.65;
-  } else {
-    commissionPercentage = 0.50;
-  }
+   const commissionPercentage = 0.90;
   
   const commissionAmount = transaction.amount * commissionPercentage;
   
@@ -27,6 +20,11 @@ export const calculateAndApplyCommission = async (transaction, affiliateUser) =>
   if (!affiliateUser.revenue.associatedUsers.includes(transaction.userId)) {
     affiliateUser.revenue.associatedUsers.push(transaction.userId);
   }
+
+  // Atualizar taxa de conversão (transações pagas / sessões)
+  const paidTransactions = affiliateUser.revenue.transactions.filter(t => t.status === 'PAID').length;
+  const sessions = affiliateUser.revenue.sessions || 1; // Evitar divisão por zero
+  affiliateUser.revenue.conversionRate = paidTransactions / sessions;
 
   await affiliateUser.save();
 
@@ -39,7 +37,8 @@ export const calculateAndApplyCommission = async (transaction, affiliateUser) =>
     percentage: commissionPercentage,
     totalAssociated: affiliateUser.revenue.associatedUsers.length,
     currentBalance: affiliateUser.revenue.balance,
-    transactionId: transaction._id
+    transactionId: transaction._id,
+    modelUsername: transaction.modelUsername || null
   });
 
   console.log(`Comissão de ${commissionPercentage * 100}% (R$ ${commissionAmount}) adicionada ao afiliado ${affiliateUser._id}`);
@@ -48,7 +47,8 @@ export const calculateAndApplyCommission = async (transaction, affiliateUser) =>
   try {
     await emailService.sendAffiliateCommissionEmail(affiliateUser, {
       newBalance: affiliateUser.revenue.balance,
-      totalAssociated: affiliateUser.revenue.associatedUsers.length
+      totalAssociated: affiliateUser.revenue.associatedUsers.length,
+      conversionRate: affiliateUser.revenue.conversionRate
     });
   } catch (emailError) {
     console.error('❌ Failed to send commission email:', emailError.message);
@@ -58,7 +58,8 @@ export const calculateAndApplyCommission = async (transaction, affiliateUser) =>
     commissionAmount,
     commissionPercentage,
     totalAssociated: affiliateUser.revenue.associatedUsers.length,
-    newBalance: affiliateUser.revenue.balance
+    newBalance: affiliateUser.revenue.balance,
+    conversionRate: affiliateUser.revenue.conversionRate
   };
 };
 
@@ -110,27 +111,32 @@ export const checkTransactionStatusAndProcess = async (gatewayId) => {
           });
         }
 
-        // Processar comissão do afiliado se existir
+        // Processar comissão do afiliado ou modelo fake
+        let affiliateUser = null;
         if (transaction.referenceId && transaction.referenceId !== "none") {
-          const affiliateUser = await User.findById(transaction.referenceId);
-          if (affiliateUser) {
-            const transactionIndex = affiliateUser.revenue.transactions.findIndex(
-              t => t._id.toString() === transaction._id.toString()
-            );
-            
-            if (transactionIndex !== -1) {
-              affiliateUser.revenue.transactions[transactionIndex] = transaction.toObject();
-            }
+          affiliateUser = await User.findById(transaction.referenceId);
+        } else if (transaction.modelUsername) {
+          // Buscar afiliado dono da modelo fake
+          affiliateUser = await User.findOne({ 'revenue.customModel.username': transaction.modelUsername });
+        }
 
-            const commissionData = await calculateAndApplyCommission(transaction, affiliateUser);
-            
-            return {
-              transaction,
-              commissionData,
-              user: user?.toObject(),
-              affiliate: affiliateUser.toObject()
-            };
+        if (affiliateUser) {
+          const transactionIndex = affiliateUser.revenue.transactions.findIndex(
+            t => t._id.toString() === transaction._id.toString()
+          );
+          
+          if (transactionIndex !== -1) {
+            affiliateUser.revenue.transactions[transactionIndex] = transaction.toObject();
           }
+
+          const commissionData = await calculateAndApplyCommission(transaction, affiliateUser);
+          
+          return {
+            transaction,
+            commissionData,
+            user: user?.toObject(),
+            affiliate: affiliateUser.toObject()
+          };
         }
 
         return { transaction, user: user?.toObject() };
