@@ -6,7 +6,7 @@ import ModelsCarousel from "../components/models-carousel"
 import TestimonialsCarousel from "../components/testimonials-carousel"
 import { testimonials } from "../utils/testimonials"
 import { models } from "../utils/models"
-import { Users, Folder, Play, LayoutDashboard, MessageCircle } from "lucide-react"
+import { Users, Venus, Folder, Play, LayoutDashboard, MessageCircle } from "lucide-react"
 import Input from "../components/input"
 import AffiliateModal from "../components/affiliate-modal"
 import LoginModal from "../components/modal/login-modal"
@@ -21,44 +21,7 @@ export default function AdsLandingPage() {
     const [isLoginModalVisible, setLoginVisible] = useState(false)
     const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
     const router = useRouter()
-    const videoRef = useRef<HTMLVideoElement>(null)
     const videoRefDemo = useRef<HTMLVideoElement>(null)
-
-    useEffect(() => {
-        const video = videoRef.current
-        if (!video) return
-
-        const handleTimeUpdate = () => {
-            if (video.currentTime >= 3) {
-                video.currentTime = 0
-                video.play()
-            }
-        }
-
-        video.addEventListener('timeupdate', handleTimeUpdate)
-
-        let retryCount = 0
-        const maxRetries = 8
-
-        const tryPlay = () => {
-            if (retryCount >= maxRetries) return
-
-            const playPromise = video.play()
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    retryCount++
-                    const delay = Math.min(1000 * Math.pow(1.5, retryCount), 5000)
-                    setTimeout(tryPlay, delay)
-                })
-            }
-        }
-
-        setTimeout(tryPlay, 500)
-
-        return () => {
-            video.removeEventListener('timeupdate', handleTimeUpdate)
-        }
-    }, [])
 
     useEffect(() => {
         const video = videoRefDemo.current
@@ -94,50 +57,7 @@ export default function AdsLandingPage() {
 
     return (
         <>
-            <div className="fixed inset-0 w-full h-full object-cover z-0">
-                <video
-                    ref={videoRef}
-                    className="w-full h-full object-cover"
-                    autoPlay
-                    muted
-                    playsInline
-                    preload="auto"
-                    onCanPlay={() => {
-                        let retryCount = 0
-                        const maxRetries = 5
-                        const tryPlay = () => {
-                            if (retryCount >= maxRetries) return
-                            videoRef.current?.play().catch(() => {
-                                retryCount++
-                                setTimeout(tryPlay, 500)
-                            })
-                        }
-                        tryPlay()
-                    }}
-                    onLoadedMetadata={() => {
-                        let retryCount = 0
-                        const maxRetries = 5
-                        const tryPlay = () => {
-                            if (retryCount >= maxRetries) return
-                            videoRef.current?.play().catch(() => {
-                                retryCount++
-                                setTimeout(tryPlay, 500)
-                            })
-                        }
-                        tryPlay()
-                    }}
-                    style={{
-                        filter: 'brightness(0.45)',
-                        WebkitFilter: 'brightness(0.25)'
-                    }}
-                >
-                    <source src="/videos/bg-video.mp4" type="video/mp4" />
-                    <source src="/videos/bg-video.webm" type="video/webm" />
-                </video>
-                <div className="absolute inset-0 bg-black/20 blur-2xl"></div>
-            </div>
-
-            <div className="relative z-10">
+            <div className="bg-linear-to-b from-neutral-900 via-neutral-800 to-neutral-900">
                 <header className="w-full flex justify-center p-4">
                     <div className="p-1 rounded-full px-4 border-red-400/80 shadow-2xl">
                         <Logo />
@@ -146,9 +66,9 @@ export default function AdsLandingPage() {
 
                 <main className="flex flex-col items-center text-center gap-4 py-12 px-4 text-white">
                     <div className="max-w-6xl mx-auto">
-                        <h1 className="text-center text-3xl tracking-tighter leading-8 font-bold lg:text-5xl lg:leading-[0.9] lg:mx-64">A Primeira Plataforma de Vazados em formato TikTok com você de <i className="underline">Afiliado</i>.</h1>
-                        <p className="text-lg px-4 leading-5 mt-6 lg:text-xl lg:px-8"><b className="text-red-500">Configurar Bots, Grupo VIP, Gateways</b> e todas as burocracias só para manter um lead é <b className="text-yellow-400">coisa do passado!</b> em 3 cliques você tem uma base automática de vazados pro seu lead sair satisfeito e você sair <b className="text-green-400">comissionado!</b></p>
-                        <div className="w-[80%] max-w-md mx-auto mt-8">
+                        <h1 className="text-center text-3xl tracking-tighter leading-8 font-bold lg:text-5xl lg:leading-[0.9] lg:mx-64">Criar estrutura no hot leva tempo, mas não precisa ser o seu.</h1>
+                        <p className="text-lg px-4 leading-5 mt-6 lg:text-xl lg:px-8"><b className="text-red-400">Configurar Bots, Grupo VIP, Gateways</b> só para manter um lead <b className="text-yellow-400">já saturou!</b> em 3 cliques você tem uma base automática de vazados pro seu lead sair satisfeito e você sair <b className="text-green-400">comissionado!</b></p>
+                        <div className="w-[80%] md:w-full max-w-md md:max-w-xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <button
                                 onClick={() => setIsModalOpen(true)}
                                 className="p-4 text-lg font-bold rounded bg-red-600 shadow-2xl w-full hover:bg-red-700 lg:text-xl lg:py-6 cursor-pointer"
@@ -157,7 +77,7 @@ export default function AdsLandingPage() {
                             </button>
                             <button
                                 onClick={() => setLoginVisible(true)}
-                                className="mt-4 p-4 text-lg font-bold rounded border border-white/30 bg-transparent w-full hover:bg-white/10 lg:text-xl lg:py-4 cursor-pointer"
+                                className="p-4 text-lg font-bold rounded border border-white/30 bg-transparent w-full hover:bg-white/10 lg:text-xl lg:py-4 cursor-pointer"
                             >
                                 Já tenho conta - Entrar
                             </button>
@@ -213,8 +133,8 @@ export default function AdsLandingPage() {
 
                     <div className="p-2 py-4 w-full max-w-6xl mx-auto">
                         <div className="py-4 px-4 mb-4">
-                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">Todas Elas Estão Aqui</h2>
-                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Facilite a vida do seu lead enviando apenas um link da plataforma, ele assiste prévias em formato tiktok, assina vitalício, faz scroll infinito nos melhores vazados da cena enquanto <b className="text-green-400">você fatura sem ter configurado nada!</b></p>
+                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">Sua Operacão Agradece!</h2>
+                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Aumente sua oferta oferecendo um novo formato estilo TikTok, seja para <b>Order Bump</b>, <b>Upsell e Downsell</b> seja em grupos VIPs ou com modelo própria, nossa estrutuar é flexível para se encaixar em qualquer pedaćo da sua operacao.</p>
                         </div>
                         <ModelsCarousel models={models} />
                     </div>
@@ -231,94 +151,35 @@ export default function AdsLandingPage() {
                         <div className="py-4 px-4">
                             <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">Eles assinam, você ganha!</h2>
                             <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Seja comissionado por cada assinatura de plano da plataforma que seu lead escolher, quanto mais pessoas virem de você maior sua porcentagem</p>
+                            <br />
+                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Os valores de assinatura são completamente customizáveis a sua escolha</p>
                             <div className="mt-8 w-full flex flex-col items-center gap-6 lg:gap-8">
                                 <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-2xl">
                                     <div className="text-center mb-2">
-                                        <h3 className="text-xl font-semibold mb-2">Se Você Trazer</h3>
+                                        <h3 className="text-lg font-semibold mb-2">Se Você Trazer (Leads)</h3>
                                     </div>
                                     <div className="flex flex-col items-center gap-2">
-                                        <div className="w-full max-w-xs">
+                                        <div className="flex justify-center items-center">
                                             <Input
                                                 placeholder="0"
                                                 value={sales}
                                                 onChange={(e) => setSales(e.target.value)}
                                                 numericOnly
-                                                className="w-full text-center text-white text-xl font-bold py-4"
+                                                className="w-[30%] text-center text-white text-xl font-bold py-2"
                                             />
-                                            <p className="text-lg py-2">Leads Pagantes</p>
                                         </div>
                                         <div className="text-center">
                                             <div className="text-sm text-neutral-300">cada assinatura</div>
                                             <div className="text-white font-bold text-lg">{fmt.format(price)}</div>
                                         </div>
                                     </div>
-
-                                    {/* Level selector buttons */}
-                                    <div className="w-full mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-                                        <button
-                                            onClick={() => setSelectedPercent(50)}
-                                            className={`px-4 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-all ${selectedPercent === 50 ? 'bg-white text-black shadow-lg scale-105' : 'bg-transparent border border-neutral-700 hover:border-neutral-600'}`}>
-                                            Primeiro Nivel (50%)
-                                        </button>
-                                        <button
-                                            onClick={() => setSelectedPercent(65)}
-                                            className={`px-4 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-all ${selectedPercent === 65 ? 'bg-white text-black shadow-lg scale-105' : 'bg-transparent border border-neutral-700 hover:border-neutral-600'}`}>
-                                            Segundo Nível (65%)
-                                        </button>
-                                        <button
-                                            onClick={() => setSelectedPercent(80)}
-                                            className={`px-4 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-all ${selectedPercent === 80 ? 'bg-white text-black shadow-lg scale-105' : 'bg-transparent border border-neutral-700 hover:border-neutral-600'}`}>
-                                            Terceiro Nível (80%)
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="w-full max-w-2xl bg-linear-to-r from-black to-neutral-900 border-2 border-neutral-800 rounded-xl p-6 shadow-2xl">
-                                    <div className="text-center">
-                                        <div className="text-sm mb-2">Sua comissão:</div>
-                                        <div className={`text-5xl lg:text-6xl font-extrabold mt-2 ${levelColor}`}>{calcEarnings(selectedPercent)}</div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-6 mt-8 max-w-6xl mx-auto">
-                            {/* Tier 1 */}
-                            <div className={`relative p-6 py-8 border-2 rounded-xl shadow-2xl border-green-400 transition-all duration-300 hover:scale-105 hover:shadow-3xl`}>
-                                <div className="absolute top-0 right-0 bg-green-400 text-black px-3 py-1 rounded-bl-lg rounded-tr-lg font-bold text-sm">Primeiro Nível</div>
-                                <div className="flex justify-center items-center gap-2 pb-6">
-                                    <Users className="w-8 h-8 text-green-400" />
-                                    <h3 className="text-xl font-semibold">0-9 Usuários</h3>
-                                </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 px-6 mt-2 max-w-6xl mx-auto">
+                            <div className={`relative p-6 py-6 border-2 rounded-xl shadow-2xl border-red-600 md:border-none md:shadow-none transition-all duration-300 hover:scale-105 hover:shadow-3xl lg:transform lg:scale-105`}>
                                 <div className="text-center">
-                                    <span className="text-7xl font-black text-green-400 block">50%</span>
-                                    <p className="text-base mt-3">Comissão por assinatura</p>
-                                    <p className="mt-4 text-white text-lg">Você ganharia: <span className="font-bold text-xl">{calcEarnings(50)}</span></p>
-                                </div>
-                            </div>
-
-                            {/* Tier 2 */}
-                            <div className={`relative p-6 py-8 border-2 rounded-xl shadow-2xl border-yellow-400 transition-all duration-300 hover:scale-105 hover:shadow-3xl`}>
-                                <div className="absolute top-0 right-0 bg-yellow-400 text-black px-3 py-1 rounded-bl-lg font-bold text-sm rounded-tr-lg">Segundo Nível</div>
-                                <div className="flex justify-center items-center gap-2 pb-6">
-                                    <Users className="w-8 h-8 text-yellow-400" />
-                                    <h3 className="text-xl font-semibold">10-24 Usuários</h3>
-                                </div>
-                                <div className="text-center">
-                                    <span className="text-7xl font-black text-yellow-400 block">65%</span>
-                                    <p className="text-base mt-3">Comissão por assinatura</p>
-                                    <p className="mt-4 text-white text-lg">Você ganharia: <span className="font-bold text-xl">{calcEarnings(65)}</span></p>
-                                </div>
-                            </div>
-
-                            {/* Tier 3 - Premium */}
-                            <div className={`relative p-6 py-8 border-2 rounded-xl shadow-2xl border-red-600 transition-all duration-300 hover:scale-105 hover:shadow-3xl lg:transform lg:scale-105`}>
-                                <div className="absolute top-0 right-0 bg-linear-to-r from-red-500 to-red-700 text-white px-4 py-1 rounded-bl-lg rounded-tr-lg font-bold text-sm shadow-lg">Terceiro Nível</div>
-                                <div className="flex justify-center items-center gap-2 pb-6">
-                                    <Users className="w-8 h-8 text-red-400" />
-                                    <h3 className="text-xl font-semibold">25+ Usuários</h3>
-                                </div>
-                                <div className="text-center">
-                                    <span className="text-7xl font-black bg-linear-to-r from-red-400 to-red-700 bg-clip-text text-transparent block">80%</span>
+                                    <span className="text-7xl font-black bg-linear-to-r from-red-400 to-red-700 bg-clip-text text-transparent block">90%</span>
                                     <p className="text-base mt-3">Comissão por assinatura</p>
                                     <p className="mt-4 text-white text-lg">Você ganharia: <span className="font-bold text-xl">{calcEarnings(80)}</span></p>
                                 </div>
@@ -328,7 +189,7 @@ export default function AdsLandingPage() {
                             <section className="mt-16 px-6 py-8 rounded-xl">
                                 <h3 className="text-2xl font-bold mb-4 lg:text-4xl text-center leading-6">Coloque o seu tráfego e operação da sua base no lugar certo!</h3>
                                 <p className="mb-8 lg:text-xl text-center max-w-4xl mx-auto">Nossa plataforma foi pensada para facilitar sua operação e maximizar suas conversões, oferecemos ferramentas e suporte para acelerar seus resultados.</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
                                     <div className="flex flex-col items-start gap-3 p-6 bg-neutral-900 rounded-xl hover:bg-neutral-800 hover:scale-105 transition-transform">
                                         <Folder className="w-8 h-8 text-red-500" />
                                         <div>
@@ -348,6 +209,20 @@ export default function AdsLandingPage() {
                                         <div>
                                             <div className="text-xl font-semibold">Dashboard para acompanhar comissões</div>
                                             <div className="text-sm mt-2">Veja cliques, comissões, impressões, realize saques tudo dentro da plataforma para facilitar sua operação </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-start gap-3 p-6 bg-neutral-900 rounded-xl hover:bg-neutral-800 hover:scale-105 transition-transform">
+                                        <Users className="w-8 h-8 text-red-500" />
+                                        <div>
+                                            <div className="text-xl font-semibold">Página de Pré-Ads</div>
+                                            <div className="text-sm mt-2">Leve seu lead para uma página de alta conversão e copy agressiva perfeita para usar no seu tráfego pago sem cair.</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-start gap-3 p-6 bg-neutral-900 rounded-xl hover:bg-neutral-800 hover:scale-105 transition-transform">
+                                        <Venus className="w-8 h-8 text-red-500" />
+                                        <div>
+                                            <div className="text-xl font-semibold">Tela Checkout para Modelos</div>
+                                            <div className="text-sm mt-2">Usa modelos na operacao? sem problemas leve seu lead para um checkout como se sua modelo estivesse no App</div>
                                         </div>
                                     </div>
                                     <div className="flex flex-col items-start gap-3 p-6 bg-neutral-900 rounded-xl hover:bg-neutral-800 hover:scale-105 transition-transform">
