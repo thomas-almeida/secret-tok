@@ -166,9 +166,9 @@ export default function AdsLandingPage() {
 
                     <div className="w-full max-w-md lg:max-w-lg mx-auto p-4 lg:p-8">
                         <div className="relative">
-                            <img 
-                                src="/phone-mockup.webp" 
-                                alt="Phone mockup" 
+                            <img
+                                src="/phone-mockup.webp"
+                                alt="Phone mockup"
                                 className="w-full h-full relative z-10"
                             />
                             <div className="absolute top-0 left-[6.5%] w-[88%] h-full overflow-hidden rounded-[2.5rem] p-4.5">
@@ -447,6 +447,7 @@ export default function AdsLandingPage() {
 
             {isLoginModalVisible && (
                 <LoginModal
+                    isCustomer={false}
                     isVisible={isLoginModalVisible}
                     onAccept={() => {
                         setLoginVisible(false)

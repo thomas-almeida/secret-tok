@@ -6,43 +6,73 @@ import ModalContainer from "./modal-container"
 import Logo from "../logo"
 import Input from "../input"
 import { loginUser } from "@/app/services/user-service"
-import { useAuthStore } from "@/app/stores/auth-store"
+import { useAuthStore, useCustomerStore } from "@/app/stores/auth-store"
 
-import { Phone, MessageCircle, Lock } from "lucide-react"
+import { Phone, Mail, MessageCircle, Lock } from "lucide-react"
 
 interface LoginPayload {
     phone: number
     password: string
 }
 
+interface CustomerLoginPayload {
+    email: string
+}
+
 interface LoginModalProps {
     isVisible: boolean
+    isCustomer: boolean
     onAccept: () => void
     onDecline: () => void
     onNeedSubscription?: () => void
     onCreateAccount?: () => void
 }
 
-export default function LoginModal({ isVisible, onAccept, onDecline, onNeedSubscription, onCreateAccount }: LoginModalProps) {
+export default function LoginModal({ isVisible, isCustomer, onAccept, onDecline, onNeedSubscription, onCreateAccount }: LoginModalProps) {
 
     const [loginPayload, setLoginPayload] = useState<LoginPayload>({ phone: 0, password: '' })
+    const [customerLoginPayload, setCustomerLoginPayload] = useState<CustomerLoginPayload>({ email: '' })
+
     const [isProcessing, setIsProcessing] = useState(false)
     const { login: loginUserToStore } = useAuthStore()
+    const { loginCustomer: loginCustomerToStore } = useCustomerStore()
 
     const handleLogin = async () => {
 
-        if (loginPayload.phone === 0 || loginPayload.password === '') {
-            alert('Por favor, preencha todos os campos de login.')
-            return
+        if (!isCustomer) {
+            if (loginPayload.phone === 0 || loginPayload.password === '') {
+                alert('Por favor, preencha todos os campos de login.')
+                return
+            }
+        } else {
+            if (customerLoginPayload.email === '') {
+                alert('Por favor, preencha o e-mail.')
+                return
+            }
         }
 
         setIsProcessing(true)
 
         try {
-            const loginResponse = await loginUser(loginPayload.phone, loginPayload.password)
+
+            let loginParams: { phone?: number, password?: string, email?: string } = {}
+
+            if (!isCustomer) {
+                loginParams.phone = loginPayload.phone
+                loginParams.password = loginPayload.password
+            } else {
+                loginParams.email = customerLoginPayload.email
+            }
+
+            let loginResponse = await loginUser(loginParams)
+
             console.log('Login successful:', loginResponse)
             console.log('Subscription active:', loginResponse?.user?.subscription?.active)
-            loginUserToStore(loginResponse?.user)
+            if (!isCustomer) {
+                loginUserToStore(loginResponse?.user)
+            } else {
+                loginCustomerToStore(loginResponse?.user)
+            }
 
             // Verificar se subscription está ativa
             if (loginResponse?.user?.subscription?.active !== true) {
@@ -72,21 +102,33 @@ export default function LoginModal({ isVisible, onAccept, onDecline, onNeedSubsc
                     <p>Insira seus dados de login abaixo para voltar a espiar as maiores modelos da cena hot!</p>
 
                     <div className="grid grid-cols-1 gap-4 w-full">
+
+                        <Input
+                            type="text"
+                            placeholder="Seu E-mail"
+                            icon={<Mail className="w-5 h-5" />}
+                            onChange={(e) => setCustomerLoginPayload({ email: e.target.value })}
+                            className={`text-lg ${!isCustomer && 'hidden'}`}
+                        />
+
                         <Input
                             type="text"
                             placeholder="Seu Telefone (Com DDD)"
                             icon={<Phone className="w-5 h-5" />}
                             onChange={(e) => setLoginPayload({ ...loginPayload, phone: Number(e.target.value) })}
                             numericOnly
-                            className="text-lg"
+                            className={`text-lg ${isCustomer && 'hidden'}`}
                         />
+
                         <Input
                             type="password"
                             placeholder="Insira sua Senha"
                             icon={<Lock className="w-5 h-5" />}
                             onChange={(e) => setLoginPayload({ ...loginPayload, password: e.target.value })}
-                            className="text-lg"
+                            className={`text-lg ${isCustomer && 'hidden'}`}
                         />
+
+
                         <button
                             onClick={handleLogin}
                             className="flex justify-center items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 text-lg rounded w-full shadow-2xl transition-all"
@@ -102,7 +144,7 @@ export default function LoginModal({ isVisible, onAccept, onDecline, onNeedSubsc
                         >
                             Voltar
                         </button>
-                        <div className="flex justify-between text-sm text-neutral-400 mt-2">
+                        <div className={`flex justify-between text-sm text-neutral-400 mt-2 ${isCustomer && 'hidden'}`}>
                             <button onClick={onCreateAccount} className="hover:underline text-white font-medium">Criar conta</button>
                             <a href="#" className="hover:underline">Esqueceu sua senha?</a>
                         </div>

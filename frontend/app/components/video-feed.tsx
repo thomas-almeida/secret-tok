@@ -84,7 +84,7 @@ export default function VideoFeedOptimized() {
     const [currentIndex, setCurrentIndex] = useState(0)
     const [preloadRange, setPreloadRange] = useState({ start: 0, end: 2 })
     const [dailyLimit, setDailyLimit] = useState(false)
-    const [subscriptionModalInitialStep, setSubscriptionModalInitialStep] = useState<'select' | 'signup' | 'payment'>('select')
+    const [subscriptionModalInitialStep, setSubscriptionModalInitialStep] = useState<'select' | 'payment'>('select')
     const [isRePayment, setIsRePayment] = useState(false)
     const [hasLoadedMore, setHasLoadedMore] = useState(false)
     const [queueTab, setQueueTab] = useState<string>('espiar')
@@ -215,11 +215,11 @@ export default function VideoFeedOptimized() {
                                 setScrollCount(newScrollCount)
                                 localStorage.setItem('scroll-count', newScrollCount.toString())
 
-                                if (newScrollCount >= 10) {
+                                if (newScrollCount >= 4) {
                                     const today = new Date().toDateString()
                                     localStorage.setItem('scrolls-date', today)
 
-                                    setSubscriptionModalTitle('Suas Espiadas diárias Acabaram')
+                                    setSubscriptionModalTitle('Continue Espiando')
                                     setDailyLimit(true)
                                     setIsSubscriptionModalVisible(true)
                                 }
@@ -291,6 +291,7 @@ export default function VideoFeedOptimized() {
 
             {isLoginModalVisible && (
                 <LoginModal
+                    isCustomer
                     isVisible={isLoginModalVisible}
                     onAccept={() => {
                         setLoginVisible(false)

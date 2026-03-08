@@ -18,8 +18,13 @@ export const createUser = async (name: string, phone: number, email: string, pas
     return response.data;
 }
 
-export const loginUser = async (phone: number, password: string) => {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_BASEURL}/api/auth/login`, { phone, password });
+export const createCustomer = async (email: string, subscription: Subscription) => {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_BASEURL}/api/users/customer`, { email, subscription });
+    return response.data
+}
+
+export const loginUser = async (params: { phone?: number, password?: string, email?: string }) => {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_BASEURL}/api/auth/login`, params);
     return response.data;
 }
 

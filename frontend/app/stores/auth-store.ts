@@ -22,11 +22,31 @@ export interface User {
   }
 }
 
+export interface Customer {
+  _id: string
+  email: string
+  subscription: {
+    amount: number
+    active: boolean
+    transactionDate: string
+    _id: string
+  },
+}
+
 interface AuthStore {
   user: User | null
   isAuthenticated: boolean
   isHydrated: boolean
   login: (userData: User) => void
+  logout: () => void
+  setHydrated: () => void
+}
+
+interface CustomerStore {
+  customer: Customer | null
+  isCustomerAuthenticated: boolean
+  isHydrated: boolean
+  loginCustomer: (customerData: Customer) => void
   logout: () => void
   setHydrated: () => void
 }
@@ -51,3 +71,25 @@ export const useAuthStore = create<AuthStore>()(
     }
   )
 )
+
+export const useCustomerStore = create<CustomerStore>()(
+  persist(
+    (set) => ({
+      customer: null,
+      isCustomerAuthenticated: false,
+      isHydrated: false,
+      loginCustomer: (customerData) => set({ customer: customerData, isCustomerAuthenticated: true }),
+      logout: () => set({ customer: null, isCustomerAuthenticated: false }),
+      setHydrated: () => set({ isHydrated: true }),
+    }),
+    {
+      name: 'customer-storage',
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.setHydrated()
+        }
+      },
+    }
+  )
+)
+

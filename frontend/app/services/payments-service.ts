@@ -3,10 +3,8 @@ import axios from 'axios';
 interface PaymentIntenPayload {
     planId: string;
     customer: {
-        name: string;
-        cellphone: string;
         email: string;
-        userId: string;
+        customerId: string
     },
     referenceId: string
 }

@@ -1,7 +1,7 @@
 import { Flame } from "lucide-react"
 import { useState } from "react"
 import Logo from "./logo"
-import { useAuthStore } from "../stores/auth-store"
+import { useAuthStore, useCustomerStore } from "../stores/auth-store"
 
 interface TopBarProps {
     triggerSubscriptionModal: (title: string) => void
@@ -13,17 +13,18 @@ interface TopBarProps {
 export default function TopBar({ triggerSubscriptionModal, triggerPaymentModal, onToggleQueue, disabledToggle = false }: TopBarProps) {
     const [selectedTab, setSelectedTab] = useState("espiar")
     const { user, isAuthenticated } = useAuthStore()
+    const { customer, isCustomerAuthenticated } = useCustomerStore()
 
     const handleTabClick = (tab: string) => {
         if (disabledToggle) return;
 
         if (tab === "famosas") {
-            if (!isAuthenticated) {
+            if (!isAuthenticated && !isCustomerAuthenticated) {
                 triggerSubscriptionModal("Acesso às Famosas")
                 return
             }
 
-            if (user?.subscription?.active !== true) {
+            if (user?.subscription?.active !== true && customer?.subscription?.active !== true) {
                 if (triggerPaymentModal) {
                     triggerPaymentModal()
                 }
