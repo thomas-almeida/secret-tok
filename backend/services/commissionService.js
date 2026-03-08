@@ -4,6 +4,7 @@ import notificationService from '../services/notificationService.js';
 import emailService from '../services/email/emailService.js';
 import { EVENT_TYPES } from '../config/notificationEvents.js';
 import axios from 'axios';
+import Customer from '../models/Customer.js';
 
 export const calculateAndApplyCommission = async (transaction, affiliateUser) => {
   const totalAssociated = affiliateUser.revenue.associatedUsers.length;
@@ -92,7 +93,7 @@ export const checkTransactionStatusAndProcess = async (gatewayId) => {
         await transaction.save();
 
         // Ativar assinatura do usuário
-        const user = await User.findById(transaction.userId);
+        const user = await Customer.findById(transaction.userId);
         if (user) {
           user.subscription.active = true;
           user.subscription.transactionDate = new Date();
@@ -101,7 +102,7 @@ export const checkTransactionStatusAndProcess = async (gatewayId) => {
           // Enviar notificação de pagamento aprovado
           notificationService.sendMessage(EVENT_TYPES.SUBSCRIPTION_PAID, {
             userId: user._id,
-            userName: user.name,
+            userName: user.email,
             planId: user.subscription.planId,
             amount: transaction.amount,
             transactionId: transaction._id,

@@ -4,6 +4,7 @@ import { comparePassword, hashPassword } from '../utils/password.js';
 import notificationService from '../services/notificationService.js';
 import { EVENT_TYPES } from '../config/notificationEvents.js';
 import { checkTransactionStatusAndProcess } from '../services/commissionService.js';
+import Customer from '../models/Customer.js';
 
 export const createUser = async (req, res) => {
   try {
@@ -47,6 +48,39 @@ export const createUser = async (req, res) => {
   }
 };
 
+export const createCustomer = async (req, res) => {
+  try {
+
+    const { email, subscription } = req.body
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'insira um email válido necessário!'
+      });
+    }
+
+    const customer = new Customer({
+      email,
+      subscription
+    })
+
+    await customer.save()
+
+    res.status(201).json({
+      message: 'new customer created successfully',
+      customer: customer
+    });
+
+
+  } catch (error) {
+    res.status(500).json({
+      error: 'Error creating user',
+      message: error.message
+    });
+  }
+}
+
+
 export const getUsers = async (req, res) => {
   try {
     const users = await User.find();
@@ -62,13 +96,13 @@ export const getUsers = async (req, res) => {
 export const getUsersOverview = async (req, res) => {
   try {
     const users = await User.find().lean();
-    
+
     const overview = users.map(user => {
       const transactions = user.revenue?.transactions || [];
       const paidTransactions = transactions.filter(t => t.status === 'PAID');
       const pendingTransactions = transactions.filter(t => t.status !== 'PAID');
       const totalInvoiced = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-      
+
       return {
         _id: user._id,
         name: user.name,
@@ -83,7 +117,7 @@ export const getUsersOverview = async (req, res) => {
         funil: user.funil || 'indiferente'
       };
     });
-    
+
     res.status(200).json(overview);
   } catch (error) {
     res.status(500).json({
@@ -96,27 +130,27 @@ export const getUsersOverview = async (req, res) => {
 export const checkIsAdmin = async (req, res) => {
   try {
     const { userId } = req.body;
-    
+
     if (!userId) {
       return res.status(400).json({ error: 'User ID is required', isAdmin: false });
     }
-    
+
     const user = await User.findById(userId);
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found', isAdmin: false });
     }
-    
-    res.status(200).json({ 
+
+    res.status(200).json({
       isAdmin: user.isAdmin || false,
       userId: user._id,
       userName: user.name
     });
-    
+
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Error checking admin status',
-      isAdmin: false 
+      isAdmin: false
     });
   }
 };
@@ -124,25 +158,25 @@ export const checkIsAdmin = async (req, res) => {
 export const validateAdmin = async (req, res) => {
   try {
     const { userId, password } = req.body;
-    
+
     if (!userId || !password) {
       return res.status(400).json({ error: 'User ID and password are required' });
     }
-    
+
     const user = await User.findById(userId);
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
     const isPasswordValid = await comparePassword(password, user.password);
-    
+
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid password' });
     }
-    
-    res.status(200).json({ 
-      success: true, 
+
+    res.status(200).json({
+      success: true,
       message: 'Authentication successful',
       user: {
         _id: user._id,
@@ -161,22 +195,22 @@ export const validateAdmin = async (req, res) => {
 export const setAdmin = async (req, res) => {
   try {
     const { userId, makeAdmin } = req.body;
-    
+
     if (!userId) {
       return res.status(400).json({ error: 'User ID is required' });
     }
-    
+
     const user = await User.findById(userId);
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
     user.isAdmin = makeAdmin === true;
     await user.save();
-    
-    res.status(200).json({ 
-      success: true, 
+
+    res.status(200).json({
+      success: true,
       message: makeAdmin ? 'User is now an admin' : 'Admin privileges removed',
       userId: user._id,
       isAdmin: user.isAdmin
@@ -208,7 +242,7 @@ export const getAfiliateBalance = async (req, res) => {
       for (const transaction of transactions) {
         if (transaction.status !== 'PAID') {
           const result = await checkTransactionStatusAndProcess(transaction.gatewayId);
-          
+
           if (result && !result.alreadyPaid) {
             newPaidTransactions.push(result.transaction);
             if (result.commissionData) {
@@ -221,16 +255,16 @@ export const getAfiliateBalance = async (req, res) => {
 
     // Recarregar os dados atualizados do afiliado após processar transações
     const updatedAfiliate = await User.findById(afiliateId).select('name email revenue').lean();
-    
+
     const balance = updatedAfiliate.revenue?.balance ?? 0;
     const associatedUsers = updatedAfiliate.revenue?.associatedUsers?.length ?? 0;
     const allTransactions = updatedAfiliate.revenue?.transactions || [];
 
     return res.status(200).json({
       message: 'success',
-      data: { 
-        balance, 
-        associatedUsers, 
+      data: {
+        balance,
+        associatedUsers,
         transactions: allTransactions,
         newPaidTransactions: newPaidTransactions.length > 0 ? newPaidTransactions : undefined,
         processedCommissions: processedCommissions.length > 0 ? processedCommissions : undefined
@@ -248,35 +282,35 @@ export const getAfiliateBalance = async (req, res) => {
 export const updateUserCRM = async (req, res) => {
   try {
     const { userId, contactStatus, funil } = req.body;
-    
+
     if (!userId) {
       return res.status(400).json({ error: 'User ID is required' });
     }
-    
+
     const user = await User.findById(userId);
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
     if (contactStatus !== undefined) {
       if (!['a iniciar', 'enviado', 'respondido'].includes(contactStatus)) {
         return res.status(400).json({ error: 'Invalid contact status' });
       }
       user.contactStatus = contactStatus;
     }
-    
+
     if (funil !== undefined) {
       if (!['indiferente', 'negativo', 'positivo'].includes(funil)) {
         return res.status(400).json({ error: 'Invalid funil value' });
       }
       user.funil = funil;
     }
-    
+
     await user.save();
-    
-    res.status(200).json({ 
-      success: true, 
+
+    res.status(200).json({
+      success: true,
       message: 'CRM updated successfully',
       user: {
         _id: user._id,

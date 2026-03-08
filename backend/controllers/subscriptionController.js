@@ -6,6 +6,7 @@ import User from "../models/User.js";
 import notificationService from '../services/notificationService.js';
 import { EVENT_TYPES } from '../config/notificationEvents.js';
 import { calculateAndApplyCommission, checkTransactionStatusAndProcess } from '../services/commissionService.js';
+import Customer from "../models/Customer.js";
 
 export const createPaymentIntent = async (req, res) => {
     try {
@@ -23,12 +24,14 @@ export const createPaymentIntent = async (req, res) => {
             expiresIn: 100000,
             description: plan.description,
             customer: {
-                name: customer.name,
-                cellphone: customer.cellphone,
+                name: 'SHELBY TECH',
+                cellphone: '5511949098312',
                 email: customer.email,
                 taxId: '50780598814'
             }
         };
+
+        console.log(customer)
 
         const abacatePayResponse = await axios.post(
             'https://api.abacatepay.com/v1/pixQrCode/create',
@@ -44,7 +47,7 @@ export const createPaymentIntent = async (req, res) => {
         console.log('Creating transaction with gatewayId:', gatewayId);
 
         // Atualizar assinatura do usuário como pendente
-        User.findByIdAndUpdate(customer.userId, {
+        Customer.findByIdAndUpdate(customer?._id, {
             subscription: {
                 planId: plan.planId,
                 amount: plan.amount,
@@ -54,12 +57,15 @@ export const createPaymentIntent = async (req, res) => {
         }).exec();
 
         // Salvar a transação no banco de dados
+
         const transaction = new Transaction({
-            userId: customer.userId,
+            userId: customer?.customerId,
             amount: plan.amount,
             gatewayId: gatewayId,
             referenceId: referenceId
         });
+
+        console.log(transaction.userId)
 
         await transaction.save();
         console.log('Transaction saved:', transaction._id, 'gatewayId:', transaction.gatewayId);
@@ -204,7 +210,7 @@ const processWebhookEvent = async (event) => {
 
                 if (result && !result.alreadyPaid) {
                     console.log(`✅ Transaction ${result.transaction._id} processed successfully via webhook.`);
-                    
+
                     await notificationService.sendMessage(EVENT_TYPES.WEBHOOK_PROCESSED, {
                         eventId,
                         eventType,
@@ -225,7 +231,7 @@ const processWebhookEvent = async (event) => {
                     );
                 } else {
                     console.log(`❌ No transaction found for gatewayId: ${gatewayId}`);
-                    
+
                     await notificationService.sendMessage(EVENT_TYPES.WEBHOOK_FAILED, {
                         eventId,
                         eventType,
@@ -237,7 +243,7 @@ const processWebhookEvent = async (event) => {
         } else if (eventType === "withdraw.done") {
             const transaction = event?.data?.transaction;
             console.log(`💰 Saque realizado: ${transaction?.id}`);
-            
+
             await notificationService.sendMessage(EVENT_TYPES.WITHDRAW_DONE, {
                 eventId,
                 transactionId: transaction?.id,
@@ -245,7 +251,7 @@ const processWebhookEvent = async (event) => {
                 fee: transaction?.platformFee,
                 receiptUrl: transaction?.receiptUrl
             });
-            
+
             await WebhookEvent.findOneAndUpdate(
                 { eventId },
                 { status: 'processed' }
@@ -253,14 +259,14 @@ const processWebhookEvent = async (event) => {
         } else if (eventType === "withdraw.failed") {
             const transaction = event?.data?.transaction;
             console.log(`⚠️ Saque falhou: ${transaction?.id}`);
-            
+
             await notificationService.sendMessage(EVENT_TYPES.WITHDRAW_FAILED, {
                 eventId,
                 transactionId: transaction?.id,
                 amount: transaction?.amount,
                 status: transaction?.status
             });
-            
+
             await WebhookEvent.findOneAndUpdate(
                 { eventId },
                 { status: 'processed' }
@@ -268,13 +274,13 @@ const processWebhookEvent = async (event) => {
         }
     } catch (error) {
         console.error('Error in processWebhookEvent:', error);
-        
+
         await notificationService.sendMessage(EVENT_TYPES.WEBHOOK_FAILED, {
             eventId,
             eventType,
             error: error.message
         });
-        
+
         throw error;
     }
 };

@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { createUser, getUsers, getAfiliateBalance, getUsersOverview, validateAdmin, checkIsAdmin, setAdmin, updateUserCRM } from '../controllers/userController.js';
+import { createUser, createCustomer, getUsers, getAfiliateBalance, getUsersOverview, validateAdmin, checkIsAdmin, setAdmin, updateUserCRM } from '../controllers/userController.js';
 import { logAffiliatePageAccess } from '../middleware/notificationLogger.js';
 
 const router = Router();
 
 router.post('/create', createUser);
+router.post('/customer', createCustomer);
 router.get('/overview', getUsersOverview);
 router.post('/check-admin', checkIsAdmin);
 router.post('/set-admin', setAdmin);
