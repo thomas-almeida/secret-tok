@@ -45,26 +45,28 @@ export default function AfiliatePage() {
     const [afiliateData, setAfiliateData] = useState<AfiliateData | null>(null)
     const [disabledWithdraw, setDisableWithdraw] = useState<boolean>(true)
     const [customPlans, setCustomPlans] = useState<{ lifetime: number; monthly: number }>({ lifetime: 0, monthly: 0 });
-const [customModel, setCustomModel] = useState<{
-    username: string;
-    displayName: string;
-    description: string;
-    profilePicture: string;
-    coverPicture: string;
-    instagramLink?: string;
-}>({
-    username: '',
-    displayName: '',
-    description: '',
-    profilePicture: '',
-    coverPicture: '',
-    instagramLink: ''
-});
+    const [customModel, setCustomModel] = useState<{
+        username: string;
+        displayName: string;
+        description: string;
+        profilePicture: string;
+        coverPicture: string;
+        instagramLink?: string;
+    }>({
+        username: '',
+        displayName: '',
+        description: '',
+        profilePicture: '',
+        coverPicture: '',
+        instagramLink: ''
+    });
 
     const [isModelSaved, setIsModelSaved] = useState<boolean>(false);
     const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
     const [coverPictureFile, setCoverPictureFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState<boolean>(false);
+
+    const isToday = (date: string) => new Date(date).toDateString() === new Date().toDateString();
 
     const handleSaveModel = async () => {
         if (user?._id) {
@@ -337,7 +339,7 @@ const [customModel, setCustomModel] = useState<{
                                         {
                                             afiliateData?.transactions && afiliateData?.transactions.length > 0 ? (
 
-                                                afiliateData?.transactions?.map((transaction: any) => (
+                                                afiliateData?.transactions?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())?.map((transaction: any) => (
                                                     <div key={transaction._id} className="flex justify-between items-center p-4 px-4 gap-4 border rounded-md border-neutral-800 bg-neutral-800/50 hover:bg-neutral-800/70 transition-colors">
                                                         <div className="flex flex-col">
                                                             <p className="text-lg text-neutral-300"></p>
@@ -348,7 +350,7 @@ const [customModel, setCustomModel] = useState<{
                                                             <p className={`text-sm italic py-1 rounded-full ${transaction?.status === 'PAID' ? 'text-green-400 font-bold' : 'text-yellow-400'}`}>{translateStatus(transaction?.status)}</p>
                                                             <p className="text-sm text-neutral-500">
                                                                 {
-                                                                    transaction?.status === 'PAID' ? `Recebido em ${new Date(transaction.updatedAt).toLocaleDateString('pt-BR')}` : `Criado em ${new Date(transaction.createdAt).toLocaleDateString('pt-BR')}`
+                                                                    transaction?.status === 'PAID' ? `Recebido ${isToday(transaction.updatedAt) ? 'hoje' : `em ${new Date(transaction.updatedAt).toLocaleDateString('pt-BR')}`}` : `Criado ${isToday(transaction.createdAt) ? 'hoje' : `em ${new Date(transaction.createdAt).toLocaleDateString('pt-BR')}`}`
                                                                 }
                                                             </p>
                                                         </div>
@@ -523,26 +525,26 @@ const [customModel, setCustomModel] = useState<{
                                     <p className="text-xs text-neutral-400 italic">O nome exibido não pode ser alterado após a criação.</p>
                                 )}
                             </div>
-                             <div className="flex flex-col gap-2">
-                                 <label className="text-lg text-neutral-300">Descrição</label>
-                                 <Input
-                                     type="text"
-                                     placeholder="Descrição"
-                                     value={customModel.description}
-                                     onChange={(e) => setCustomModel({ ...customModel, description: e.target.value })}
-                                     className="text-lg font-medium"
-                                 />
-                             </div>
-                             <div className="flex flex-col gap-2">
-                                 <label className="text-lg text-neutral-300">Link do Instagram</label>
-                                 <Input
-                                     type="text"
-                                     placeholder="https://www.instagram.com/username/"
-                                     value={customModel.instagramLink || ''}
-                                     onChange={(e) => setCustomModel({ ...customModel, instagramLink: e.target.value })}
-                                     className="text-lg font-medium"
-                                 />
-                             </div>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-lg text-neutral-300">Descrição</label>
+                                <Input
+                                    type="text"
+                                    placeholder="Descrição"
+                                    value={customModel.description}
+                                    onChange={(e) => setCustomModel({ ...customModel, description: e.target.value })}
+                                    className="text-lg font-medium"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-lg text-neutral-300">Link do Instagram</label>
+                                <Input
+                                    type="text"
+                                    placeholder="https://www.instagram.com/username/"
+                                    value={customModel.instagramLink || ''}
+                                    onChange={(e) => setCustomModel({ ...customModel, instagramLink: e.target.value })}
+                                    className="text-lg font-medium"
+                                />
+                            </div>
                             <div className="flex flex-col gap-2">
                                 <label className="text-lg text-neutral-300">Foto de Perfil</label>
                                 <div className="flex items-center gap-4">
@@ -644,50 +646,6 @@ const [customModel, setCustomModel] = useState<{
                                 </div>
                             </div>
                         )}
-                    </div>
-
-
-                    <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-4 lg:p-6 mb-8">
-                        <h2 className="text-2xl font-semibold pb-4 lg:text-3xl">Minhas Vendas</h2>
-
-                        {
-                            isFetching ? (
-                                <div className="flex justify-center items-center py-10">
-                                    <RotateCcw className={`w-6 h-6 ${isFetching && 'animate-spin'}`} />
-                                </div>
-                            ) : (
-
-                                <div className="flex flex-col gap-2 max-h-120 overflow-y-auto">
-                                    {
-                                        afiliateData?.transactions && afiliateData?.transactions.length > 0 ? (
-
-                                            afiliateData?.transactions?.map((transaction: any) => (
-                                                <div key={transaction._id} className="flex justify-between items-center p-4 px-4 gap-4 border rounded-md border-neutral-800 bg-neutral-800/50 hover:bg-neutral-800/70 transition-colors">
-                                                    <div className="flex flex-col">
-                                                        <p className="text-lg text-neutral-300"></p>
-                                                        <h2 className="text-xl font-bold pb-2">{((transaction.amount / 100) * (90 / 100)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2>
-                                                        <h2 className="text-sm font-bold text-neutral-400"> Assinatura: {(transaction.amount / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2>
-                                                    </div>
-                                                    <div className="grid grid-cols-1 gap-1 text-right justify-end items-end">
-                                                        <p className={`text-sm italic py-1 rounded-full ${transaction?.status === 'PAID' ? 'text-green-400 font-bold' : 'text-yellow-400'}`}>{translateStatus(transaction?.status)}</p>
-                                                        <p className="text-sm text-neutral-500">
-                                                            {
-                                                                transaction?.status === 'PAID' ? `Recebido em ${new Date(transaction.updatedAt).toLocaleDateString('pt-BR')}` : `Criado em ${new Date(transaction.createdAt).toLocaleDateString('pt-BR')}`
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            ))
-
-                                        ) : (
-                                            <p className="text-neutral-300 lg:text-base">Você ainda não realizou nenhuma venda, comece a divulgar seu link de afiliado para ganhar suas primeiras comissões!</p>
-                                        )
-
-                                    }
-                                </div>
-                            )
-                        }
-
                     </div>
 
                     <div className="flex flex-col gap-2 border rounded-md border-neutral-800 p-2 py-4 lg:p-6 mb-8">
