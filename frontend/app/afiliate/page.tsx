@@ -108,6 +108,19 @@ export default function AfiliatePage() {
     const [conversionRate, setConversionRate] = useState<number>(0);
     const [sessions, setSessions] = useState<number>(0);
 
+    const formatCentsToDisplay = (cents: number): string => {
+        if (cents === 0) return '';
+        const reais = Math.floor(cents / 100);
+        const centavos = cents % 100;
+        return `${reais},${centavos.toString().padStart(2, '0')}`;
+    };
+
+    const handlePlanValueChange = (value: string, planType: 'monthly' | 'lifetime') => {
+        const cleanValue = value.replace(/\D/g, '');
+        const cents = parseInt(cleanValue) || 0;
+        setCustomPlans({ ...customPlans, [planType]: cents });
+    };
+
 
     useEffect(() => {
         const getUpdatedData = async () => {
@@ -461,24 +474,30 @@ export default function AfiliatePage() {
                         <h2 className="text-2xl font-semibold pb-4 lg:text-3xl">Customizar Planos</h2>
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-2">
-                                <label className="text-lg text-neutral-300">Valor do Plano Mensal (R$)</label>
+                                <label className="text-lg text-neutral-300">Valor do Plano Mensal (em centavos)</label>
                                 <Input
-                                    type="number"
-                                    placeholder="Valor do plano mensal"
-                                    value={String(customPlans.monthly / 100)}
-                                    onChange={(e) => setCustomPlans({ ...customPlans, monthly: Number(e.target.value) * 100 })}
+                                    type="text"
+                                    placeholder="Ex: 2990 (R$ 29,90)"
+                                    value={formatCentsToDisplay(customPlans.monthly)}
+                                    onChange={(e) => handlePlanValueChange(e.target.value, 'monthly')}
                                     className="text-lg font-medium"
                                 />
+                                {customPlans.monthly > 0 && (
+                                    <p className="text-xs text-neutral-400">= R$ {formatCentsToDisplay(customPlans.monthly)}</p>
+                                )}
                             </div>
                             <div className="flex flex-col gap-2">
-                                <label className="text-lg text-neutral-300">Valor do Plano Vitalício (R$)</label>
+                                <label className="text-lg text-neutral-300">Valor do Plano Vitalício (em centavos)</label>
                                 <Input
-                                    type="number"
-                                    placeholder="Valor do plano vitalício"
-                                    value={String(customPlans.lifetime / 100)}
-                                    onChange={(e) => setCustomPlans({ ...customPlans, lifetime: Number(e.target.value) * 100 })}
+                                    type="text"
+                                    placeholder="Ex: 9990 (R$ 99,90)"
+                                    value={formatCentsToDisplay(customPlans.lifetime)}
+                                    onChange={(e) => handlePlanValueChange(e.target.value, 'lifetime')}
                                     className="text-lg font-medium"
                                 />
+                                {customPlans.lifetime > 0 && (
+                                    <p className="text-xs text-neutral-400">= R$ {formatCentsToDisplay(customPlans.lifetime)}</p>
+                                )}
                             </div>
                             <button
                                 onClick={async () => {
