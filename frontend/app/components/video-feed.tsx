@@ -14,8 +14,10 @@ import { getAfiliateData } from "../services/user-service"
 const shuffleArray = <T,>(array: T[]): T[] => {
     const shuffled = [...array]
     for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+        const j = Math.floor(Math.random() * (i + 1))
+        const temp = shuffled[i]
+        shuffled[i] = shuffled[j]
+        shuffled[j] = temp
     }
     return shuffled
 }
@@ -72,22 +74,17 @@ function ErrorDisplay({ error, onRetry }: { error: string; onRetry: () => void }
     )
 }
 
-export default function VideoFeedOptimized() {
-
+function VideoFeedContent() {
+    const searchParams = useSearchParams()
+    const ref = searchParams.get('ref')
+    const { isAuthenticated } = useAuthStore()
     const { junkieModel, premiumModels, loading, error, retry, isRetrying, initialLoadComplete } = useVideoQueue()
     const [feedVideos, setFeedVideos] = useState<any[]>([])
     const [junkieFeed, setJunkieFeed] = useState<any[]>([])
     const [premiumFeed, setPremiumFeed] = useState<any[]>([])
-
-    const [isAdultModalVisible, setIsAdultModalVisible] = useState(true)
-    const [isSubscriptionModalVisible, setIsSubscriptionModalVisible] = useState(false)
-    const [isLoginModalVisible, setLoginVisible] = useState(false)
-    const [subscriptionModalTitle, setSubscriptionModalTitle] = useState("Seja VIP")
     const [currentIndex, setCurrentIndex] = useState(0)
     const [preloadRange, setPreloadRange] = useState({ start: 0, end: 2 })
     const [dailyLimit, setDailyLimit] = useState(false)
-    const [subscriptionModalInitialStep, setSubscriptionModalInitialStep] = useState<'select' | 'payment'>('select')
-    const [isRePayment, setIsRePayment] = useState(false)
     const [hasLoadedMore, setHasLoadedMore] = useState(false)
     const [queueTab, setQueueTab] = useState<string>('espiar')
     const [isLoadingFeed, setIsLoadingFeed] = useState(false)
@@ -95,9 +92,6 @@ export default function VideoFeedOptimized() {
     const [customValues, setCustomValues] = useState<{ lifetime: number; monthly: number } | null>(null)
 
     const containerRef = useRef<HTMLDivElement>(null)
-    const { isAuthenticated } = useAuthStore()
-    const searchParams = useSearchParams()
-    const ref = searchParams.get('ref')
 
     const canChangeTab = !loading && !isRetrying && initialLoadComplete && (junkieFeed.length > 0 || premiumFeed.length > 0)
 
@@ -137,11 +131,6 @@ export default function VideoFeedOptimized() {
 
         return () => clearTimeout(timer)
     }, [queueTab, junkieFeed, premiumFeed, canChangeTab])
-
-    const handleTabChange = (tab: string) => {
-        if (!canChangeTab) return
-        setQueueTab(tab)
-    }
 
     useEffect(() => {
         const today = new Date().toDateString()
@@ -209,20 +198,6 @@ export default function VideoFeedOptimized() {
         preloadNearbyVideos(currentIndex)
     }, [currentIndex, preloadNearbyVideos])
 
-    const handleTriggerSubscriptionModal = (title?: string) => {
-        if (title) {
-            setSubscriptionModalTitle(title)
-        }
-        setIsSubscriptionModalVisible(true)
-    }
-
-    const handleTriggerPaymentModal = () => {
-        setSubscriptionModalTitle('Complete seu Pagamento')
-        setSubscriptionModalInitialStep('select')
-        setIsRePayment(true)
-        setIsSubscriptionModalVisible(true)
-    }
-
     useEffect(() => {
         const container = containerRef.current
         if (!container) return
@@ -240,14 +215,11 @@ export default function VideoFeedOptimized() {
                                 setScrollCount(newScrollCount)
                                 localStorage.setItem('scroll-count', newScrollCount.toString())
 
-                                if (newScrollCount >= 4) {
-                                    const today = new Date().toDateString()
-                                    localStorage.setItem('scrolls-date', today)
-
-                                    setSubscriptionModalTitle('Continue Espiando')
-                                    setDailyLimit(true)
-                                    setIsSubscriptionModalVisible(true)
-                                }
+                                 if (newScrollCount >= 4) {
+                                     const today = new Date().toDateString()
+                                     localStorage.setItem('scrolls-date', today)
+                                     setDailyLimit(true)
+                                 }
                             }
 
                             if (isAuthenticated && videoIndex === feedVideos.length - 2) {
@@ -279,8 +251,72 @@ export default function VideoFeedOptimized() {
         }
     }, [feedVideos])
 
+    return {
+        containerRef,
+        feedVideos,
+        currentIndex,
+        preloadRange,
+        dailyLimit,
+        hasLoadedMore,
+        queueTab,
+        isLoadingFeed,
+        scrollCount,
+        customValues,
+        canChangeTab,
+        handleTabChange: (tab: string) => {
+            if (!canChangeTab) return
+            setQueueTab(tab)
+        },
+        handleTriggerSubscriptionModal: (title?: string) => title || "Seja VIP",
+        handleTriggerPaymentModal: () => {
+            return {
+                title: 'Complete seu Pagamento',
+                initialStep: 'select',
+                isRePayment: true,
+                action: 'showSubscriptionModal'
+            }
+        },
+        handleTriggerLoginModal: () => ({ action: 'showLoginModal' }),
+    }
+}
+
+export default function VideoFeedOptimized() {
+    const [isAdultModalVisible, setIsAdultModalVisible] = useState(true)
+    const [isSubscriptionModalVisible, setIsSubscriptionModalVisible] = useState(false)
+    const [isLoginModalVisible, setLoginVisible] = useState(false)
+    const [subscriptionModalTitle, setSubscriptionModalTitle] = useState("Seja VIP")
+    const [subscriptionModalInitialStep, setSubscriptionModalInitialStep] = useState<'select' | 'payment'>('select')
+    const [isRePayment, setIsRePayment] = useState(false)
+
+    const {
+        containerRef,
+        feedVideos,
+        currentIndex,
+        preloadRange,
+        dailyLimit,
+        hasLoadedMore,
+        queueTab,
+        isLoadingFeed,
+        scrollCount,
+        customValues,
+        canChangeTab,
+        handleTabChange,
+        handleTriggerSubscriptionModal,
+        handleTriggerPaymentModal,
+        handleTriggerLoginModal,
+    } = VideoFeedContent()
+
+    const { loading, error, retry, isRetrying, initialLoadComplete } = useVideoQueue()
+
     const showInitialLoading = loading && !initialLoadComplete
-    const showError = error && !initialLoadComplete && junkieFeed.length === 0 && premiumFeed.length === 0
+    const showError = error && !initialLoadComplete && feedVideos.length === 0
+
+    useEffect(() => {
+        if (dailyLimit) {
+            setSubscriptionModalTitle('Continue Espiando')
+            setIsSubscriptionModalVisible(true)
+        }
+    }, [dailyLimit])
 
     return (
         <div
@@ -296,23 +332,23 @@ export default function VideoFeedOptimized() {
             )}
 
             {isSubscriptionModalVisible && (
-                    <SubscriptionModal
-                        title={subscriptionModalTitle}
-                        isVisible={isSubscriptionModalVisible}
-                        dailyLimit={dailyLimit}
-                        customValues={customValues}
-                        onAccept={() => {
-                            setIsSubscriptionModalVisible(false)
-                            setIsRePayment(false)
-                        }}
-                        onDecline={() => {
-                            setIsSubscriptionModalVisible(false)
-                            setIsRePayment(false)
-                        }}
-                        onShowLogin={() => setLoginVisible(true)}
-                        initialStep={subscriptionModalInitialStep}
-                        isRePayment={isRePayment}
-                    />
+                <SubscriptionModal
+                    title={subscriptionModalTitle}
+                    isVisible={isSubscriptionModalVisible}
+                    dailyLimit={dailyLimit}
+                    customValues={customValues}
+                    onAccept={() => {
+                        setIsSubscriptionModalVisible(false)
+                        setIsRePayment(false)
+                    }}
+                    onDecline={() => {
+                        setIsSubscriptionModalVisible(false)
+                        setIsRePayment(false)
+                    }}
+                    onShowLogin={() => setLoginVisible(true)}
+                    initialStep={subscriptionModalInitialStep}
+                    isRePayment={isRePayment}
+                />
             )}
 
             {isLoginModalVisible && (
@@ -340,8 +376,17 @@ export default function VideoFeedOptimized() {
             )}
 
             <TopBar
-                triggerSubscriptionModal={handleTriggerSubscriptionModal}
-                triggerPaymentModal={handleTriggerPaymentModal}
+                triggerSubscriptionModal={(title?: string) => {
+                    setSubscriptionModalTitle(title || "Seja VIP");
+                    setIsSubscriptionModalVisible(true);
+                }}
+                triggerPaymentModal={() => {
+                    const { title, initialStep, isRePayment } = handleTriggerPaymentModal()
+                    setSubscriptionModalTitle(title)
+                    setSubscriptionModalInitialStep(initialStep as 'select' | 'payment')
+                    setIsRePayment(isRePayment)
+                    setIsSubscriptionModalVisible(true)
+                }}
                 onToggleQueue={handleTabChange}
                 disabledToggle={!canChangeTab}
             />
@@ -392,3 +437,5 @@ export default function VideoFeedOptimized() {
         </div>
     )
 }
+
+
