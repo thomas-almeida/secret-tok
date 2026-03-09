@@ -2,7 +2,7 @@ export const affiliateCommissionTemplate = (user, data) => {
   const { name, email } = user;
   const { newBalance, totalAssociated } = data;
   const balanceFormatted = (newBalance / 100).toFixed(2).replace('.', ',');
-  const frontendUrl = process.env.FRONTEND_URL || 'https://rapidinhas.vercel.app';
+  const frontendUrl = process.env.FRONTEND_URL || 'https://www.rapidinhas.top';
 
   const html = `
 <!DOCTYPE html>

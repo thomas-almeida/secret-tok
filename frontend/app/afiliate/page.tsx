@@ -177,7 +177,7 @@ const [customModel, setCustomModel] = useState<{
     const handleCopyCode = () => {
         if (!user?._id) return
 
-        const copied = copy(`https://rapidinhas.vercel.app?ref=${user?._id}`)
+        const copied = copy(`https://www.rapidinhas.top?ref=${user?._id}`)
 
         if (copied) {
             setCopiedLink(true)
@@ -190,7 +190,7 @@ const [customModel, setCustomModel] = useState<{
     const handleCopyAdsLink = () => {
         if (!user?._id) return
 
-        const copied = copy(`https://rapidinhas.vercel.app/pre-ads?ref=${user?._id}`)
+        const copied = copy(`https://www.rapidinhas.top/pre-ads?ref=${user?._id}`)
 
         if (copied) {
             setCopiedAdsLink(true)
@@ -373,7 +373,7 @@ const [customModel, setCustomModel] = useState<{
                                 <Input
                                     type="text"
                                     placeholder="Seu código de indicação"
-                                    value={`https://rapidinhas.vercel.app?ref=${user?._id}`}
+                                    value={`https://www.rapidinhas.top?ref=${user?._id}`}
                                     className="mt-2 text-xl font-medium lg:text-base"
                                 />
                                 <button
@@ -391,7 +391,7 @@ const [customModel, setCustomModel] = useState<{
                                 <Input
                                     type="text"
                                     placeholder="Link para anúncios"
-                                    value={`https://rapidinhas.vercel.app/pre-ads?ref=${user?._id}`}
+                                    value={`https://www.rapidinhas.top/pre-ads?ref=${user?._id}`}
                                     className="mt-2 text-xl font-medium lg:text-base"
                                 />
                                 <button
@@ -627,12 +627,12 @@ const [customModel, setCustomModel] = useState<{
                                 <div className="flex flex-col justify-center items-center gap-2">
                                     <Input
                                         type="text"
-                                        value={`https://rapidinhas.vercel.app/model/${customModel.username}?ref=${user?._id}`}
+                                        value={`https://www.rapidinhas.top/model/${customModel.username}?ref=${user?._id}`}
                                         className="text-lg font-medium w-full"
                                     />
                                     <button
                                         onClick={() => {
-                                            const copied = copy(`https://rapidinhas.vercel.app/model/${customModel.username}?ref=${user?._id}`);
+                                            const copied = copy(`https://www.rapidinhas.top/model/${customModel.username}?ref=${user?._id}`);
                                             if (copied) {
                                                 alert("Link copiado com sucesso!");
                                             }
