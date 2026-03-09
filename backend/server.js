@@ -5,7 +5,6 @@ import dotenv from 'dotenv';
 import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import modelRoutes from './routes/modelRoutes.js';
-
 import keepAlive from './services/keepAlive.js';
 
 dotenv.config();
@@ -16,18 +15,36 @@ const PORT = process.env.PORT;
 app.use(cors());
 app.use(express.json());
 
-app.use('/api/users', userRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/models', modelRoutes);
-
-//anti-cold 
-
+// ✅ Health check com status do banco
 app.get('/ping', (req, res) => {
-  console.log('[KEEP] all services are online!')
-  res.status(200).json({ status: 'ok', timestamp: Date.now() })
+  const dbStatus = mongoose.connection.readyState === 1 ? 'ok' : 'down'
+  console.log(`[KEEP] server: ok | db: ${dbStatus}`)
+  res.status(200).json({
+    status: 'ok',
+    db: dbStatus,
+    timestamp: Date.now()
+  })
 })
 
-mongoose.connect(process.env.DB_URI)
+// ✅ Middleware para checar banco antes de rotas críticas
+function checkDB(req, res, next) {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ error: 'Serviço indisponível, tente novamente em instantes.' })
+  }
+  next()
+}
+
+app.use('/api/users', checkDB, userRoutes);
+app.use('/api/auth', checkDB, authRoutes);
+app.use('/api/models', checkDB, modelRoutes);
+
+// ✅ Mongoose com pool configurado
+mongoose.connect(process.env.DB_URI, {
+  maxPoolSize: 10,
+  minPoolSize: 2,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+})
   .then(() => {
     console.log('Connected to MongoDB');
     app.listen(PORT, () => {
