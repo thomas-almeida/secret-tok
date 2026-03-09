@@ -117,7 +117,11 @@ export default function AdsLandingPage() {
                         </div>
                     </div>
 
-                    <div className="p-2 py-4 w-full max-w-6xl mx-auto md:mt-20">
+                    <div className="flex"> 
+                        <img src="/shot.png" className="w-260 my-4 transition-transform duration-200 hover:scale-105 cursor-pointer" />
+                    </div>
+
+                    <div className="p-2 py-4 w-full max-w-6xl mx-auto">
                         <div className="py-4 px-4 mb-4">
                             <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">Sua Operação Agradece!</h2>
                             <div className="w-full flex justify-center items-center">
