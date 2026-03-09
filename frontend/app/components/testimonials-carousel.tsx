@@ -29,9 +29,9 @@ export default function TestimonialsCarousel({ testimonials }: TestimonialsCarou
                         <div className="flex animate-infinite-scroll-testimonials text-left">
                             {[...testimonials, ...testimonials].map((testimonial, index) => (
                                 <div key={index} className="shrink-0 relative px-2 w-[320px] lg:w-[400px]">
-                                    <div className="bg-neutral-900/80 backdrop-blur-sm border border-neutral-700/50 p-4 rounded-xl shadow-lg h-full">
+                                    <div className="bg-neutral-900/80 backdrop-blur-sm border border-neutral-700/50 p-4 rounded-tr-xl rounded-bl-xl shadow-lg">
                                         <div className="flex items-center gap-3 mb-3">
-                                            <div className="w-12 h-12 rounded-full bg-linear-to-br from-red-400 to-red-600 flex items-center justify-center border-2 border-red-500">
+                                            <div className="w-8 h-8 rounded-full bg-linear-to-br from-red-400 to-red-600 flex items-center justify-center border-2 border-red-500">
                                                 <span className="text-white font-bold text-lg">{testimonial.name.charAt(0)}</span>
                                             </div>
                                             <div className="text-left">

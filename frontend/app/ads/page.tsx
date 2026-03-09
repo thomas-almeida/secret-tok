@@ -20,11 +20,42 @@ export default function AdsLandingPage() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isLoginModalVisible, setLoginVisible] = useState(false)
     const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
+    const [isLoaded, setIsLoaded] = useState(false)
+    const [isParagraphLoaded, setIsParagraphLoaded] = useState(false)
     const router = useRouter()
     const videoRefDemo = useRef<HTMLVideoElement>(null)
+    const videoRefDemoModel = useRef<HTMLVideoElement>(null)
+
+    useEffect(() => {
+        setIsLoaded(true)
+        setTimeout(() => setIsParagraphLoaded(true), 200) // leve atraso
+    }, [])
 
     useEffect(() => {
         const video = videoRefDemo.current
+        if (!video) return
+
+        let retryCount = 0
+        const maxRetries = 8
+
+        const tryPlay = () => {
+            if (retryCount >= maxRetries) return
+
+            const playPromise = video.play()
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    retryCount++
+                    const delay = Math.min(1000 * Math.pow(1.5, retryCount), 5000)
+                    setTimeout(tryPlay, delay)
+                })
+            }
+        }
+
+        setTimeout(tryPlay, 500)
+    }, [])
+
+    useEffect(() => {
+        const video = videoRefDemoModel.current
         if (!video) return
 
         let retryCount = 0
@@ -66,12 +97,14 @@ export default function AdsLandingPage() {
 
                 <main className="flex flex-col items-center text-center gap-4 py-12 px-4 text-white">
                     <div className="max-w-6xl mx-auto">
-                        <h1 className="text-center text-3xl tracking-tighter leading-8 font-bold lg:text-5xl lg:leading-[0.9] lg:mx-64">Criar estrutura no hot leva tempo, mas não precisa ser o seu.</h1>
-                        <p className="text-lg px-4 leading-5 mt-6 lg:text-xl lg:px-8"><b className="text-red-400">Configurar Bots, Grupo VIP, Gateways</b> só para manter um lead <b className="text-yellow-400">já saturou!</b> em 3 cliques você tem uma base automática de vazados pro seu lead sair satisfeito e você sair <b className="text-green-400">comissionado!</b></p>
+                        <h1 className={`text-center text-4xl tracking-tighter leading-8 font-bold lg:text-6xl lg:leading-[0.96] lg:mx-64 transition-all duration-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>Criar uma estrutura no <b className="italic">hot</b> leva tempo, mas não precisa ser o seu.</h1>
+                        <div className="w-full flex justify-center items-center">
+                            <p className={`text-lg px-4 leading-6 mt-6 lg:px-8 md:w-[50%] transition-all duration-300 ${isParagraphLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>Configurar Bots, Grupo VIP, Gateways só para manter um lead já saturou! em 3 cliques você tem uma base automática de vazados pro seu lead sair satisfeito e você sair comissionado operando 10x mais rápido!</p>
+                        </div>
                         <div className="w-[80%] md:w-full max-w-md md:max-w-xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <button
                                 onClick={() => setIsModalOpen(true)}
-                                className="p-4 text-lg font-bold rounded bg-red-600 shadow-2xl w-full hover:bg-red-700 lg:text-xl lg:py-6 cursor-pointer"
+                                className="p-4 text-lg font-bold rounded bg-red-600 shadow-2xl w-ful cursor-pointer"
                             >
                                 Me Tornar Afiliado Agora
                             </button>
@@ -84,65 +117,119 @@ export default function AdsLandingPage() {
                         </div>
                     </div>
 
-                    <div className="w-full max-w-md lg:max-w-lg mx-auto p-4 lg:p-8">
-                        <div className="relative">
-                            <img
-                                src="/phone-mockup.webp"
-                                alt="Phone mockup"
-                                className="w-full h-full relative z-10"
-                            />
-                            <div className="absolute top-0 left-[6.5%] w-[88%] h-full overflow-hidden rounded-[2.5rem] p-4.5">
-                                <video
-                                    ref={videoRefDemo}
-                                    className="w-full h-full object-cover rounded-4xl"
-                                    autoPlay
-                                    muted
-                                    playsInline
-                                    loop
-                                    preload="auto"
-                                    onCanPlay={() => {
-                                        let retryCount = 0
-                                        const maxRetries = 5
-                                        const tryPlay = () => {
-                                            if (retryCount >= maxRetries) return
-                                            videoRefDemo.current?.play().catch(() => {
-                                                retryCount++
-                                                setTimeout(tryPlay, 500)
-                                            })
-                                        }
-                                        tryPlay()
-                                    }}
-                                    onLoadedMetadata={() => {
-                                        let retryCount = 0
-                                        const maxRetries = 5
-                                        const tryPlay = () => {
-                                            if (retryCount >= maxRetries) return
-                                            videoRefDemo.current?.play().catch(() => {
-                                                retryCount++
-                                                setTimeout(tryPlay, 500)
-                                            })
-                                        }
-                                        tryPlay()
-                                    }}
-                                >
-                                    <source src="/videos/demo.mp4" type="video/mp4" />
-                                </video>
+                    <div className="p-2 py-4 w-full max-w-6xl mx-auto md:mt-20">
+                        <div className="py-4 px-4 mb-4">
+                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">Sua Operação Agradece!</h2>
+                            <div className="w-full flex justify-center items-center">
+                                <p className="leading-6 text-lg lg:text-xl md:w-[60%] max-w-4xl mx-auto">Aumente sua oferta oferecendo um novo formato de VIP ao estilo TikTok, use tanto como <i>Presell</i>, <i>Upsell</i>, <i>Downsell</i>, <i>Order Bump</i> ou criando uma modelo própria, nossa estrutura é flexível para se encaixar em qualquer pedaço da sua operação e maximizar seu LTV.</p>
+                            </div>
+                        </div>
+                        <div className="md:flex justify-center items-center">
+                            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:w-[70%] ">
+                                <div>
+                                    <h1 className="font-bold text-2xl py-4">Vazados</h1>
+                                    <div className="relative">
+                                        <img
+                                            src="/phone-mockup.webp"
+                                            alt="Phone mockup"
+                                            className="w-full h-full relative z-10"
+                                        />
+                                        <div className="absolute top-0 left-[6.5%] w-[88%] h-full overflow-hidden rounded-[2.5rem] p-4.5">
+                                            <video
+                                                ref={videoRefDemo}
+                                                className="w-full h-full object-cover rounded-4xl"
+                                                autoPlay
+                                                muted
+                                                playsInline
+                                                loop
+                                                preload="auto"
+                                                onCanPlay={() => {
+                                                    let retryCount = 0
+                                                    const maxRetries = 5
+                                                    const tryPlay = () => {
+                                                        if (retryCount >= maxRetries) return
+                                                        videoRefDemo.current?.play().catch(() => {
+                                                            retryCount++
+                                                            setTimeout(tryPlay, 500)
+                                                        })
+                                                    }
+                                                    tryPlay()
+                                                }}
+                                                onLoadedMetadata={() => {
+                                                    let retryCount = 0
+                                                    const maxRetries = 5
+                                                    const tryPlay = () => {
+                                                        if (retryCount >= maxRetries) return
+                                                        videoRefDemo.current?.play().catch(() => {
+                                                            retryCount++
+                                                            setTimeout(tryPlay, 500)
+                                                        })
+                                                    }
+                                                    tryPlay()
+                                                }}
+                                            >
+                                                <source src="/videos/demo.mp4" type="video/mp4" />
+                                            </video>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h1 className="font-bold text-2xl py-4">Sua Modelo</h1>
+                                    <div className="relative">
+                                        <img
+                                            src="/phone-mockup.webp"
+                                            alt="Phone mockup"
+                                            className="w-full h-full relative z-10"
+                                        />
+                                        <div className="absolute top-0 left-[6.5%] w-[88%] h-full overflow-hidden rounded-[2.5rem] p-4.5">
+                                            <video
+                                                ref={videoRefDemoModel}
+                                                className="w-full h-full object-cover rounded-4xl"
+                                                autoPlay
+                                                muted
+                                                playsInline
+                                                loop
+                                                preload="auto"
+                                                onCanPlay={() => {
+                                                    let retryCount = 0
+                                                    const maxRetries = 5
+                                                    const tryPlay = () => {
+                                                        if (retryCount >= maxRetries) return
+                                                        videoRefDemoModel.current?.play().catch(() => {
+                                                            retryCount++
+                                                            setTimeout(tryPlay, 500)
+                                                        })
+                                                    }
+                                                    tryPlay()
+                                                }}
+                                                onLoadedMetadata={() => {
+                                                    let retryCount = 0
+                                                    const maxRetries = 5
+                                                    const tryPlay = () => {
+                                                        if (retryCount >= maxRetries) return
+                                                        videoRefDemoModel.current?.play().catch(() => {
+                                                            retryCount++
+                                                            setTimeout(tryPlay, 500)
+                                                        })
+                                                    }
+                                                    tryPlay()
+                                                }}
+                                            >
+                                                <source src="/videos/model-example.mp4" type="video/mp4" />
+                                            </video>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div className="p-2 py-4 w-full max-w-6xl mx-auto">
                         <div className="py-4 px-4 mb-4">
-                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">Sua Operação Agradece!</h2>
-                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Aumente sua oferta oferecendo um novo formato estilo TikTok, seja para <b>Order Bump</b>, <b>Upsell e Downsell</b> seja em grupos VIPs ou com modelo própria, nossa estrutura é flexível para se encaixar em qualquer pedaço da sua operação.</p>
-                        </div>
-                        <ModelsCarousel models={models} />
-                    </div>
-
-                    <div className="p-2 py-4 w-full max-w-6xl mx-auto">
-                        <div className="py-4 px-4 mb-4">
-                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">O que dizem os nossos afiliados?</h2>
-                            <p className="leading-6 text-lg lg:text-xl max-w-4xl mx-auto">Veja os resultados reais de quem já está faturando com a gente. pedimos para os melhores players da plataforma falarem por nós!</p>
+                            <h2 className="text-2xl font-bold tracking-tight pb-4 lg:text-4xl">Afiliados que falam por nós!</h2>
+                            <div className="w-full flex justify-center items-center">
+                                <p className="leading-6 text-lg lg:text-xl max-w-4xl md:w-[50%] mx-auto">Resultados reais de quem já fatura no novo formato, pedimos para os melhores players da plataforma falarem por nós!</p>
+                            </div>
                         </div>
                         <TestimonialsCarousel testimonials={testimonials} />
                     </div>
