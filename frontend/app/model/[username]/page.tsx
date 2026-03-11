@@ -25,10 +25,23 @@ function ModelPageContent() {
 
     useEffect(() => {
         const fetchModelData = async () => {
+            const finalAffiliateId = affiliateId || (typeof window !== 'undefined' ? localStorage.getItem('afiliate-code') : null)
             try {
                 const response = await getModelByUsername(username)
                 setModel(response?.model)
-                setCustomPlans(response?.customPlans)
+                
+                // Se houver afiliado, tentar buscar os planos customizados dele para essa modelo
+                if (finalAffiliateId) {
+                    const { getAfiliateData } = await import('@/app/services/user-service')
+                    const afiliateData = await getAfiliateData(finalAffiliateId)
+                    if (afiliateData?.data?.customPlans) {
+                        setCustomPlans(afiliateData.data.customPlans)
+                    } else {
+                        setCustomPlans(response?.customPlans)
+                    }
+                } else {
+                    setCustomPlans(response?.customPlans)
+                }
             } catch (err) {
                 setError('Modelo não encontrada')
             } finally {
@@ -38,7 +51,7 @@ function ModelPageContent() {
         }
 
         fetchModelData()
-    }, [username])
+    }, [username, affiliateId])
 
     if (!mounted || loading) {
         return (

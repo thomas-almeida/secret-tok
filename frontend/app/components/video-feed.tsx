@@ -149,9 +149,10 @@ function VideoFeedContent() {
 
     useEffect(() => {
         const fetchAfiliateData = async () => {
-            if (ref) {
+            const afiliateCode = ref || (typeof window !== 'undefined' ? localStorage.getItem('afiliate-code') : null)
+            if (afiliateCode) {
                 try {
-                    const response = await getAfiliateData(ref as string)
+                    const response = await getAfiliateData(afiliateCode as string)
                     if (response?.data?.customPlans) {
                         setCustomValues({
                             lifetime: response.data.customPlans.lifetime,

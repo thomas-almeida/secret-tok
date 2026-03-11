@@ -40,18 +40,35 @@ type PixData = {
     status: string
 }
 
-export default function SubscriptionModal({ isVisible, title, dailyLimit, customValues, onAccept, onDecline, onShowLogin, initialStep = 'select', isRePayment = false }: SubscriptionModalProps) {
+export default function SubscriptionModal({ isVisible, title, dailyLimit, customValues: initialCustomValues, onAccept, onDecline, onShowLogin, initialStep = 'select', isRePayment = false }: SubscriptionModalProps) {
 
     const { isCustomerAuthenticated, customer, loginCustomer: loginUserToStore } = useCustomerStore()
+    const [customValues, setCustomValues] = useState(initialCustomValues)
+    const afiliateCode = typeof window !== 'undefined' ? localStorage.getItem("afiliate-code") : null
+
+    useEffect(() => {
+        if (initialCustomValues) {
+            setCustomValues(initialCustomValues)
+        } else if (afiliateCode) {
+            const fetchAfiliateDataInternal = async () => {
+                try {
+                    const { getAfiliateData } = await import("@/app/services/user-service")
+                    const response = await getAfiliateData(afiliateCode)
+                    if (response?.data?.customPlans) {
+                        setCustomValues(response.data.customPlans)
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar planos customizados internamente:", error)
+                }
+            }
+            fetchAfiliateDataInternal()
+        }
+    }, [initialCustomValues, afiliateCode])
 
     const prices = {
         forever: customValues?.lifetime / 100 || 49.90,
         monthly: customValues?.monthly / 100 || 29.90,
     }
-
-    const [selectedPlan, setSelectedPlan] = useState<Plan>({ id: 'lifetime', name: 'vitalicio' })
-    const [pixData, setPixData] = useState<PixData>()
-    const afiliateCode = localStorage.getItem("afiliate-code")
 
     const plans = [
         {
@@ -64,8 +81,11 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, custom
         }
     ]
 
+    const [selectedPlan, setSelectedPlan] = useState<Plan | null>(plans[0])
+    const [pixData, setPixData] = useState<PixData>()
+
     const [isProcessing, setIsProcessing] = useState(false)
-    const [expandedPlan, setExpandedPlan] = useState<string | null>(null)
+    const [expandedPlan, setExpandedPlan] = useState<string | null>(plans[0].name)
     const [step, setStep] = useState<'select' | 'payment'>(isRePayment ? 'payment' : initialStep)
     const [newUser, setNewUser] = useState<{ _id: string; name: string; email: string; phone: string } | null>(null)
     const [newCustomer, setNewCustomer] = useState<{ _id: string; email: string } | null>(null)
@@ -99,7 +119,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, custom
         const generatePaymentForAuthenticatedUser = async () => {
             console.log('Payment Effect - isCustomerAuthenticated:', isCustomerAuthenticated, 'isVisible:', isVisible, 'isRePayment:', isRePayment, 'step:', step, 'pixData:', pixData)
 
-            if (isCustomerAuthenticated && isVisible && isRePayment && step === 'payment' && !pixData) {
+            if (isCustomerAuthenticated && isVisible && isRePayment && step === 'payment' && !pixData && selectedPlan) {
                 // Usuário está logado e precisa pagar, gerar payment intent
                 console.log('Iniciando geração de payment intent')
                 setIsLoadingPayment(true)
@@ -147,7 +167,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, custom
         console.log(step)
 
         if (step == 'select') {
-            if (!data) return
+            if (!data || !selectedPlan) return
 
             setIsProcessing(true)
 
@@ -218,8 +238,13 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, custom
     }
 
     const handlePlanSelect = (plan: Plan) => {
-        setSelectedPlan(plan)
-        setExpandedPlan(expandedPlan === plan.name ? null : plan.name)
+        if (expandedPlan === plan.name) {
+            setExpandedPlan(null)
+            setSelectedPlan(null)
+        } else {
+            setExpandedPlan(plan.name)
+            setSelectedPlan(plan)
+        }
     }
 
     const handleCopyCode = async () => {
@@ -332,7 +357,7 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, custom
                         <button
                             className="bg-green-600 text-white px-4 py-2 mt-4 rounded w-full shadow-2xl shadow-green-600/50 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-60"
                             onClick={() => step === 'select' ? handleSubmit(handlePixPayment)() : handlePixPayment()}
-                            disabled={isProcessing || (step === 'payment' && isLoadingPayment)}
+                            disabled={isProcessing || (step === 'payment' && isLoadingPayment) || (step === 'select' && !selectedPlan)}
                         >
                             <div className="flex justify-center items-center gap-2">
                                 {isProcessing || (step === 'payment' && isLoadingPayment) ? (
