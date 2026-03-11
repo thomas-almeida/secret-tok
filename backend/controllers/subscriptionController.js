@@ -34,10 +34,10 @@ export const createPaymentIntent = async (req, res) => {
             expiresIn: 100000,
             description: plan.description,
             customer: {
-                name: 'SHELBY TECH',
-                cellphone: '5511949099361',
+                name: '',
+                cellphone: '',
                 email: customer.email,
-                taxId: '49995652000100'
+                taxId: ''
             }
         };
 
