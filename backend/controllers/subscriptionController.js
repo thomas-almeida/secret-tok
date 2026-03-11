@@ -35,7 +35,7 @@ export const createPaymentIntent = async (req, res) => {
             description: plan.description,
             customer: {
                 name: 'SHELBY TECH',
-                cellphone: '5511949098312',
+                cellphone: '5511949099361',
                 email: customer.email,
                 taxId: '49995652000100'
             }
