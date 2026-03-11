@@ -20,13 +20,13 @@ export const createPaymentIntent = async (req, res) => {
         }
 
         let planAmount = plan.amount;
-        
+
         // Verificar se o afiliado possui valores personalizados para os planos
         if (referenceId && referenceId !== "none") {
-          const affiliateUser = await User.findById(referenceId);
-          if (affiliateUser?.revenue?.customPlans) {
-            planAmount = affiliateUser.revenue.customPlans[plan.id] || plan.amount;
-          }
+            const affiliateUser = await User.findById(referenceId);
+            if (affiliateUser?.revenue?.customPlans) {
+                planAmount = affiliateUser.revenue.customPlans[plan.id] || plan.amount;
+            }
         }
 
         const paymentIntent = {
@@ -37,7 +37,7 @@ export const createPaymentIntent = async (req, res) => {
                 name: 'SHELBY TECH',
                 cellphone: '5511949098312',
                 email: customer.email,
-                taxId: '50780598814'
+                taxId: '49995652000100'
             }
         };
 
