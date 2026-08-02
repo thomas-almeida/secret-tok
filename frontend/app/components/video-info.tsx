@@ -70,7 +70,7 @@ export default function VideoInfo({ userName, videoDescription, videoUrl, trigge
                 <div className="relative z-20">
                     <div className="flex justify-start items-center gap-2">
                         <Image
-                            src="https://res.cloudinary.com/daaj5jf0n/image/upload/v1769753805/rapidinhas-logo_mgbvx2.png"
+                            src="/rapidinhas-logo.png"
                             alt=""
                             width={40}
                             height={40}
