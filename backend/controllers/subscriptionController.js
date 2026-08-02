@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { getPlanById } from "../config/plans.js";
 import Transaction from "../models/Transactions.js";
 import WebhookEvent from "../models/WebhookEvent.js";
@@ -7,6 +8,8 @@ import notificationService from '../services/notificationService.js';
 import { EVENT_TYPES } from '../config/notificationEvents.js';
 import { calculateAndApplyCommission, checkTransactionStatusAndProcess } from '../services/commissionService.js';
 import Customer from "../models/Customer.js";
+
+const NEXUSPAG_BASEURL = 'https://nexuspag.com';
 
 export const createPaymentIntent = async (req, res) => {
     try {
@@ -29,31 +32,32 @@ export const createPaymentIntent = async (req, res) => {
             }
         }
 
+        // NexusPag trabalha em REAIS (2 casas decimais); planAmount internamente é em centavos.
+        const externalId = crypto.randomUUID();
         const paymentIntent = {
-            amount: planAmount,
-            expiresIn: 100000,
+            amount: Number((planAmount / 100).toFixed(2)),
+            expiration: 100000,
             description: plan.description,
-            customer: {
-                name: '',
-                cellphone: '',
-                email: customer.email,
-                taxId: ''
-            }
+            external_id: externalId,
+            ...(process.env.PUBLIC_BASEURL && {
+                webhook_url: `${process.env.PUBLIC_BASEURL}/api/auth/nexuspag-webhook`
+            })
         };
 
         console.log(customer)
 
-        const abacatePayResponse = await axios.post(
-            'https://api.abacatepay.com/v1/pixQrCode/create',
+        const nexusPagResponse = await axios.post(
+            `${NEXUSPAG_BASEURL}/api/pix/create`,
             paymentIntent,
             {
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.ABKTPAY_PROD}`
+                    'x-api-key': process.env.NEXUSPAG_PROD
                 }
             });
 
-        const gatewayId = abacatePayResponse.data?.data?.id;
+        const nexusPagTransaction = nexusPagResponse.data?.transaction;
+        const gatewayId = nexusPagTransaction?.id;
         console.log('Creating transaction with gatewayId:', gatewayId);
 
         // Atualizar assinatura do usuário como pendente
@@ -90,7 +94,13 @@ export const createPaymentIntent = async (req, res) => {
         }
 
         res.status(200).json({
-            paymentIntent: abacatePayResponse.data?.data,
+            paymentIntent: {
+                id: nexusPagTransaction?.id,
+                brCode: nexusPagTransaction?.pix_copia_cola,
+                brCodeBase64: nexusPagTransaction?.qr_code_base64,
+                status: nexusPagTransaction?.status?.toUpperCase(),
+                expiresAt: nexusPagTransaction?.expires_at
+            },
             transactionId: transaction._id
         });
 
@@ -109,42 +119,48 @@ export const checkTransactionStatus = async (req, res) => {
     try {
         const { gatewayId } = req.params;
 
-        const abacatePayResponse = await axios.get(
-            `https://api.abacatepay.com/v1/pixQrCode/check?id=${gatewayId}`,
+        const nexusPagResponse = await axios.get(
+            `${NEXUSPAG_BASEURL}/api/pix/${gatewayId}`,
             {
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.ABKTPAY_PROD}`
+                    'x-api-key': process.env.NEXUSPAG_PROD
                 }
             })
 
+        const gatewayStatus = nexusPagResponse.data?.status?.toUpperCase();
 
-        if (abacatePayResponse.data?.data?.status === 'PAID') {
+        if (gatewayStatus === 'PAID') {
             const result = await checkTransactionStatusAndProcess(gatewayId);
 
             if (!result) {
                 return res.status(404).json({ error: 'Transaction not found or error processing' });
             }
 
+            // Buscar o customer atualizado (subscription.active já deve estar true a essa altura)
+            // para o front sincronizar a store local com o estado real do pagamento.
+            const updatedCustomer = await Customer.findById(result.transaction.userId);
+
             if (result.alreadyPaid) {
                 return res.status(200).json({
                     message: 'Transaction already processed',
-                    transactionStatus: abacatePayResponse.data?.data?.status
+                    transactionStatus: gatewayStatus,
+                    customer: updatedCustomer
                 });
             }
 
             console.log('Transaction processed successfully:', result);
 
-            res.status(200).json({
+            return res.status(200).json({
                 message: 'Assinatura ativada com sucesso',
-                transactionStatus: abacatePayResponse.data?.data?.status,
-                commissionData: result.commissionData
+                transactionStatus: gatewayStatus,
+                commissionData: result.commissionData,
+                customer: updatedCustomer
             });
         }
 
         res.status(200).json({
             message: 'success',
-            transactionStatus: abacatePayResponse.data?.data?.status,
+            transactionStatus: gatewayStatus,
         });
 
 
@@ -157,19 +173,46 @@ export const checkTransactionStatus = async (req, res) => {
 
 }
 
-export const webhookAbacatePay = async (req, res) => {
-    try {
-        const webhookSecret = req.query.webhookSecret;
+// Formato documentado pela NexusPag: header "t=<unix>,v1=<hmac>", assinando `${t}.${JSON.stringify(body)}`
+const verifyNexusPagSignature = (signatureHeader, body) => {
+    if (!signatureHeader || !process.env.WEBHOOK_SECRET) return false;
 
-        if (webhookSecret !== process.env.ABKTPAY_WEBHOOK_SECRET) {
-            return res.status(403).json({ error: 'Invalid webhook secret' });
+    const fields = Object.fromEntries(
+        signatureHeader.split(',').map(part => part.split('='))
+    );
+    const payload = JSON.stringify(body);
+
+    const expected = crypto
+        .createHmac('sha256', process.env.WEBHOOK_SECRET)
+        .update(`${fields.t}.${payload}`)
+        .digest('hex');
+
+    const fresh = Math.abs(Date.now() / 1000 - Number(fields.t)) <= 300;
+    const valid = fields.v1?.length === expected.length &&
+        crypto.timingSafeEqual(
+            Buffer.from(fields.v1, 'hex'),
+            Buffer.from(expected, 'hex')
+        );
+
+    return fresh && valid;
+};
+
+export const webhookNexusPag = async (req, res) => {
+    try {
+        const signatureHeader = req.headers['x-nexuspag-signature'];
+
+        if (!verifyNexusPagSignature(signatureHeader, req.body)) {
+            return res.status(403).json({ error: 'Invalid webhook signature' });
         }
 
         const event = req.body;
-        const eventId = event?.id;
         const eventType = event?.event;
+        // A doc da NexusPag não especifica um id de entrega dedicado para o evento;
+        // usamos o id do recurso (transação/saque) + tipo como chave de idempotência.
+        const resourceId = event?.data?.id || event?.data?.txid || event?.data?.withdrawal_id;
+        const eventId = event?.id || (resourceId ? `${eventType}:${resourceId}` : null);
 
-        console.log('Received webhook event:', eventType, 'ID:', eventId);
+        console.log('Received NexusPag webhook:', eventType, 'ID:', eventId, JSON.stringify(event?.data));
 
         if (!eventId || !eventType) {
             return res.status(400).json({ error: 'Missing event ID or type' });
@@ -184,13 +227,13 @@ export const webhookAbacatePay = async (req, res) => {
         await WebhookEvent.create({
             eventId,
             eventType,
-            gatewayId: event?.data?.pixQrCode?.id || event?.data?.billing?.id,
+            gatewayId: resourceId,
             status: 'pending'
         });
 
         res.status(200).json({ received: true });
 
-        processWebhookEvent(event).catch(async (error) => {
+        processWebhookEvent(event, eventId).catch(async (error) => {
             console.error('❌ Error processing webhook event:', error);
             await WebhookEvent.findOneAndUpdate(
                 { eventId },
@@ -206,13 +249,12 @@ export const webhookAbacatePay = async (req, res) => {
     }
 };
 
-const processWebhookEvent = async (event) => {
-    const eventId = event?.id;
+const processWebhookEvent = async (event, eventId) => {
     const eventType = event?.event;
 
     try {
-        if (eventType === "billing.paid") {
-            const gatewayId = event?.data?.pixQrCode?.id;
+        if (eventType === "payment.confirmed") {
+            const gatewayId = event?.data?.id;
             console.log('Processing webhook - Event ID:', eventId, 'Gateway ID from webhook:', gatewayId);
 
             if (gatewayId) {
@@ -250,31 +292,45 @@ const processWebhookEvent = async (event) => {
                     });
                 }
             }
-        } else if (eventType === "withdraw.done") {
-            const transaction = event?.data?.transaction;
-            console.log(`💰 Saque realizado: ${transaction?.id}`);
+        } else if (eventType === "cashout.success") {
+            const withdrawal = event?.data;
+            console.log(`💰 Saque realizado: ${withdrawal?.withdrawal_id}`);
 
             await notificationService.sendMessage(EVENT_TYPES.WITHDRAW_DONE, {
                 eventId,
-                transactionId: transaction?.id,
-                amount: transaction?.amount,
-                fee: transaction?.platformFee,
-                receiptUrl: transaction?.receiptUrl
+                transactionId: withdrawal?.withdrawal_id,
+                amount: withdrawal?.amount,
+                fee: withdrawal?.fee
             });
 
             await WebhookEvent.findOneAndUpdate(
                 { eventId },
                 { status: 'processed' }
             );
-        } else if (eventType === "withdraw.failed") {
-            const transaction = event?.data?.transaction;
-            console.log(`⚠️ Saque falhou: ${transaction?.id}`);
+        } else if (eventType === "cashout.failed") {
+            const withdrawal = event?.data;
+            console.log(`⚠️ Saque falhou: ${withdrawal?.withdrawal_id}`);
 
             await notificationService.sendMessage(EVENT_TYPES.WITHDRAW_FAILED, {
                 eventId,
-                transactionId: transaction?.id,
-                amount: transaction?.amount,
-                status: transaction?.status
+                transactionId: withdrawal?.withdrawal_id,
+                amount: withdrawal?.amount,
+                status: withdrawal?.status
+            });
+
+            await WebhookEvent.findOneAndUpdate(
+                { eventId },
+                { status: 'processed' }
+            );
+        } else if (eventType === "refund.completed") {
+            const refund = event?.data;
+            console.log(`↩️ Reembolso processado: ${refund?.id}`);
+
+            await notificationService.sendMessage(EVENT_TYPES.WEBHOOK_PROCESSED, {
+                eventId,
+                eventType,
+                gatewayId: refund?.id,
+                amount: refund?.amount
             });
 
             await WebhookEvent.findOneAndUpdate(

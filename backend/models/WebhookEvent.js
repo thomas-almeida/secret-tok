@@ -10,7 +10,7 @@ const webhookEventSchema = new mongoose.Schema({
   eventType: {
     type: String,
     required: true,
-    enum: ['billing.paid', 'withdraw.done', 'withdraw.failed']
+    enum: ['payment.confirmed', 'cashout.success', 'cashout.failed', 'refund.completed']
   },
   gatewayId: {
     type: String,

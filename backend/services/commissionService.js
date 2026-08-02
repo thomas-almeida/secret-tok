@@ -65,17 +65,16 @@ export const calculateAndApplyCommission = async (transaction, affiliateUser) =>
 
 export const checkTransactionStatusAndProcess = async (gatewayId) => {
   try {
-    const abacatePayResponse = await axios.get(
-      `https://api.abacatepay.com/v1/pixQrCode/check?id=${gatewayId}`,
+    const nexusPagResponse = await axios.get(
+      `https://nexuspag.com/api/pix/${gatewayId}`,
       {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.ABKTPAY_PROD}`
+          'x-api-key': process.env.NEXUSPAG_PROD
         }
       }
     );
 
-    if (abacatePayResponse.data?.data?.status === 'PAID') {
+    if (nexusPagResponse.data?.status?.toUpperCase() === 'PAID') {
       console.log('Looking for transaction with gatewayId:', gatewayId);
       const transaction = await Transaction.findOne({ gatewayId });
       console.log('Transaction found:', transaction);

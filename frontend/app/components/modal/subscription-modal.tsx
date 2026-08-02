@@ -2,7 +2,7 @@ import Logo from "../logo"
 import ModelsCarousel from "../models-carousel"
 import ModalContainer from "./modal-container"
 import Accordion from "../accordion"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import Input from "../input"
@@ -88,7 +88,6 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, custom
     const [expandedPlan, setExpandedPlan] = useState<string | null>(plans[0].name)
     const [step, setStep] = useState<'select' | 'payment'>(isRePayment ? 'payment' : initialStep)
     const [newUser, setNewUser] = useState<{ _id: string; name: string; email: string; phone: string } | null>(null)
-    const [newCustomer, setNewCustomer] = useState<{ _id: string; email: string } | null>(null)
     const [isLoadingPayment, setIsLoadingPayment] = useState(false)
 
     // Garanta que quando isRePayment muda para true, o step vai direto para pagamento
@@ -162,6 +161,40 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, custom
         return str.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
     }
 
+    const checkPaymentStatus = useCallback(async () => {
+        if (!pixData?.pixId) return
+
+        try {
+            const statusResponse = await checkTransactionStatus(pixData.pixId)
+            console.log(statusResponse)
+
+            setPixData((prev) => prev ? { ...prev, status: statusResponse?.transactionStatus } : prev)
+
+            if (statusResponse?.transactionStatus === 'PAID') {
+                localStorage.setItem('is-subscribed', 'true')
+                // Usa o customer atualizado que o backend retorna (subscription.active já true),
+                // em vez do customer capturado antes do pagamento, que ficaria com acesso desatualizado.
+                if (statusResponse?.customer) {
+                    loginUserToStore(statusResponse.customer)
+                }
+                onAccept()
+            }
+        } catch (error) {
+            console.error('Erro ao verificar status da transação:', error)
+        }
+    }, [pixData?.pixId, loginUserToStore, onAccept])
+
+    // Poll automático: evita depender do usuário clicar "Verificar Pagamento" manualmente
+    useEffect(() => {
+        if (step !== 'payment' || !pixData?.pixId || pixData.status === 'PAID') return
+
+        const interval = setInterval(() => {
+            checkPaymentStatus()
+        }, 5000)
+
+        return () => clearInterval(interval)
+    }, [step, pixData?.pixId, pixData?.status, checkPaymentStatus])
+
     const handlePixPayment = async (data?: CustomerFormData) => {
 
         console.log(step)
@@ -181,8 +214,6 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, custom
             )
 
             if (response?.customer?._id) {
-
-                setNewCustomer(response.customer)
 
                 const paymentIntent = await createPaymentIntent({
                     planId: selectedPlan.id,
@@ -205,35 +236,9 @@ export default function SubscriptionModal({ isVisible, title, dailyLimit, custom
             }
 
         } else {
-
-            console.log(step)
-            if (pixData?.pixId) {
-                try {
-                    const statusResponse = await checkTransactionStatus(pixData.pixId)
-                    console.log(statusResponse)
-                    setPixData({
-                        ...pixData,
-                        status: statusResponse?.transactionStatus
-                    })
-                    setIsProcessing(false)
-
-                    if (statusResponse?.transactionStatus === 'PAID') {
-                        setInterval(() => {
-                            localStorage.setItem('is-subscribed', 'true')
-                            console.log(localStorage.getItem)
-                            if (newCustomer) {
-                                loginUserToStore(newCustomer as any)
-                            }
-                            onAccept()
-                        }, 2000)
-                    }
-
-                } catch (error) {
-                    console.error('Erro ao verificar status da transação:', error)
-                    setIsProcessing(false)
-                }
-            }
-
+            setIsProcessing(true)
+            await checkPaymentStatus()
+            setIsProcessing(false)
         }
     }
 
