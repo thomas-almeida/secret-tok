@@ -97,7 +97,7 @@ export default function AdsLandingPage() {
 
                 <main className="flex flex-col items-center text-center gap-4 py-12 px-4 text-white">
                     <div className="max-w-6xl mx-auto">
-                        <h1 className={`text-center text-4xl tracking-tighter leading-8 font-bold lg:text-6xl lg:leading-[0.96] lg:mx-64 transition-all duration-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>Criar uma estrutura no <b className="italic">hot</b> leva tempo, mas não precisa ser o seu.</h1>
+                        <h1 className={`text-center text-4xl tracking-tighter leading-8 font-bold lg:text-6xl lg:leading-[0.96] lg:mx-64 transition-all duration-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>Criar uma estrutura no <b className="italic">hot🌶️</b> leva tempo, mas não precisa ser o seu!</h1>
                         <div className="w-full flex justify-center items-center">
                             <p className={`text-lg px-4 leading-6 mt-6 lg:px-8 md:w-[50%] transition-all duration-300 ${isParagraphLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>Configurar Bots, Grupo VIP, Gateways só para manter um lead já saturou! em 3 cliques você tem uma base automática de vazados pro seu lead sair satisfeito e você sair comissionado operando 10x mais rápido!</p>
                         </div>
@@ -172,7 +172,7 @@ export default function AdsLandingPage() {
                                                     tryPlay()
                                                 }}
                                             >
-                                                <source src="/videos/demo.mp4" type="video/mp4" />
+                                                <source src="https://rapidinhas-cdn.rapidinhas-cdn.workers.dev/demo.mp4" type="video/mp4" />
                                             </video>
                                         </div>
                                     </div>
@@ -219,7 +219,7 @@ export default function AdsLandingPage() {
                                                     tryPlay()
                                                 }}
                                             >
-                                                <source src="/videos/model-example.mp4" type="video/mp4" />
+                                                <source src="https://rapidinhas-cdn.rapidinhas-cdn.workers.dev/model-example.mp4" type="video/mp4" />
                                             </video>
                                         </div>
                                     </div>

@@ -1,0 +1,8 @@
+name = "rapidinhas-cdn"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+account_id = "e6d674b010c186ef2cc53979bd6ce93a"
+
+[[r2_buckets]]
+binding = "VIDEOS_BUCKET"
+bucket_name = "rapidinhas"

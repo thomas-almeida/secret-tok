@@ -262,11 +262,10 @@ export default function VideoCard({
           ref={videoRef}
           src={video.videoUrl}
           className="absolute inset-0 h-[calc(100%-4px)] w-full object-cover lg:rounded-xl"
-          autoPlay
           muted
           loop
           playsInline
-          preload="auto"
+          preload={isActive || shouldPreload ? "auto" : "none"}
           onCanPlay={() => {
             setIsLoading(false)
             setShowPlaceholder(false)
