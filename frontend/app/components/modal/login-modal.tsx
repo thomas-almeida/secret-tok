@@ -34,10 +34,12 @@ export default function LoginModal({ isVisible, isCustomer, onAccept, onDecline,
     const [customerLoginPayload, setCustomerLoginPayload] = useState<CustomerLoginPayload>({ email: '' })
 
     const [isProcessing, setIsProcessing] = useState(false)
+    const [loginError, setLoginError] = useState<string | null>(null)
     const { login: loginUserToStore } = useAuthStore()
     const { loginCustomer: loginCustomerToStore } = useCustomerStore()
 
     const handleLogin = async () => {
+        setLoginError(null)
 
         if (!isCustomer) {
             if (loginPayload.phone === 0 || loginPayload.password === '') {
@@ -66,6 +68,12 @@ export default function LoginModal({ isVisible, isCustomer, onAccept, onDecline,
 
             let loginResponse = await loginUser(loginParams)
 
+            if (!loginResponse?.user?._id) {
+                setLoginError('Não foi possível confirmar seu login. Tente novamente em instantes.')
+                setIsProcessing(false)
+                return
+            }
+
             console.log('Login successful:', loginResponse)
             console.log('Subscription active:', loginResponse?.user?.subscription?.active)
             if (!isCustomer) {
@@ -86,8 +94,13 @@ export default function LoginModal({ isVisible, isCustomer, onAccept, onDecline,
                 console.log('Subscription ativa, fechando login')
                 onAccept()
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Login failed:', error)
+            if (error?.response?.status === 401) {
+                setLoginError(isCustomer ? 'E-mail não encontrado. Verifique se digitou certo.' : 'Telefone ou senha incorretos.')
+            } else {
+                setLoginError('Não foi possível entrar agora. Tente novamente em instantes.')
+            }
         } finally {
             setIsProcessing(false)
         }
@@ -128,6 +141,9 @@ export default function LoginModal({ isVisible, isCustomer, onAccept, onDecline,
                             className={`text-lg ${isCustomer && 'hidden'}`}
                         />
 
+                        {loginError && (
+                            <p className="text-red-400 text-sm -mt-2">{loginError}</p>
+                        )}
 
                         <button
                             onClick={handleLogin}

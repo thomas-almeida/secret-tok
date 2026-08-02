@@ -57,7 +57,10 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       isAuthenticated: false,
       isHydrated: false,
-      login: (userData) => set({ user: userData, isAuthenticated: true }),
+      login: (userData) => {
+        if (!userData?._id) return
+        set({ user: userData, isAuthenticated: true })
+      },
       logout: () => set({ user: null, isAuthenticated: false }),
       setHydrated: () => set({ isHydrated: true }),
     }),
@@ -78,7 +81,10 @@ export const useCustomerStore = create<CustomerStore>()(
       customer: null,
       isCustomerAuthenticated: false,
       isHydrated: false,
-      loginCustomer: (customerData) => set({ customer: customerData, isCustomerAuthenticated: true }),
+      loginCustomer: (customerData) => {
+        if (!customerData?._id) return
+        set({ customer: customerData, isCustomerAuthenticated: true })
+      },
       logout: () => set({ customer: null, isCustomerAuthenticated: false }),
       setHydrated: () => set({ isHydrated: true }),
     }),
