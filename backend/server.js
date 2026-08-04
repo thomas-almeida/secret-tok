@@ -5,7 +5,10 @@ import dotenv from 'dotenv';
 import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import modelRoutes from './routes/modelRoutes.js';
+import telegramFlowRoutes from './routes/telegramFlowRoutes.js';
+import telegramBotRoutes from './routes/telegramBotRoutes.js';
 import keepAlive from './services/keepAlive.js';
+import telegramFlowBotService from './services/telegramFlowBotService.js';
 
 dotenv.config();
 
@@ -37,6 +40,8 @@ function checkDB(req, res, next) {
 app.use('/api/users', checkDB, userRoutes);
 app.use('/api/auth', checkDB, authRoutes);
 app.use('/api/models', checkDB, modelRoutes);
+app.use('/api/telegram-flows', checkDB, telegramFlowRoutes);
+app.use('/api/telegram-bot', telegramBotRoutes); // sem checkDB: precisa responder rápido ao Telegram mesmo com Mongo instável
 
 // ✅ Mongoose com pool configurado
 mongoose.connect(process.env.DB_URI, {
@@ -50,6 +55,7 @@ mongoose.connect(process.env.DB_URI, {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       keepAlive()
+      telegramFlowBotService.registerWebhook()
     });
   })
   .catch((error) => {

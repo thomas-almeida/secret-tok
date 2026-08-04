@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getUsersOverview, checkIsAdmin, validateAdmin, updateUserCRM, ContactStatus, Funil } from "../services/admin-service";
 import Input from "../components/input";
-import { Loader2, Lock, User, Users, DollarSign, CheckCircle, Clock, TrendingUp, Search, ArrowUpDown, ArrowUp, ArrowDown, Receipt, Copy, Check } from "lucide-react";
+import { Loader2, Lock, User, Users, DollarSign, CheckCircle, Clock, TrendingUp, Search, ArrowUpDown, ArrowUp, ArrowDown, Receipt, Copy, Check, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import Logo from "../components/logo";
 
@@ -316,6 +316,13 @@ function AdminContent() {
             <div className="w-full flex justify-between items-center font-semibold p-2 py-4 lg:px-54">
                 <Logo />
                 <div className="flex items-center gap-3">
+                    <Link
+                        href={`/admin/telegram-flows?ref=${userId}`}
+                        className="flex items-center gap-2 px-4 py-2 bg-black/50 hover:bg-black/70 rounded-md text-lg text-slate-200"
+                    >
+                        <MessageCircle className="w-5 h-5" />
+                        Fluxos Telegram
+                    </Link>
                     <Link
                         href="/"
                         className="px-4 py-2 bg-black/50 hover:bg-black/70 rounded-md text-lg text-slate-200"

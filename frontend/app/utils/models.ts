@@ -12,12 +12,12 @@ export const models = [
     },
     {
         name: "Juliana Bonde",
-        description: "vocalista da banda de forró Bonde do Forró, misturando inocência e ousadia",
+        description: "Vocalista da banda de forró Bonde do Forró, conhecida pelo estilo ousado",
         image: "https://conteudo.imguol.com.br/c/entretenimento/64/2020/06/09/juliana-bonde-conheca-o-novo-dinamo-das-redes-sociais-1591744363872_v2_1x1.png"
     },
     {
         name: "Professora Cibelly",
-        description: "vídeos de 'dancinhas' com alunos",
+        description: "Conteúdo autoral que viralizou nas redes sociais",
         image: "https://yt3.googleusercontent.com/pDlownBL9wWHY4Wx77XRcMkfkuJFI7MNvpZeQtGdINw-nCr8Bg_VZbf1qMR8XWmoxwt-O7Xf2cA=s900-c-k-c0x00ffffff-no-rj"
     },
     {
@@ -27,7 +27,7 @@ export const models = [
     },
     {
         name: "MC Pipokinha",
-        description: "Rainha da Putaria com conteúdo sexual explícito, como sexo oral em fã no palco",
+        description: "Conhecida pelo estilo ousado e por viralizar nas redes",
         image: "https://spdiario.com.br/media/_versions/mc-pipokinha-valor-nudes_widemd.jpg"
     },
     {
