@@ -1,6 +1,9 @@
 import mongoose from "mongoose"
+import crypto from "crypto"
+import { PutObjectCommand } from "@aws-sdk/client-s3"
 import TelegramFlow from "../models/TelegramFlow.js"
 import TelegramFlowRun from "../models/TelegramFlowRun.js"
+import { r2Client, R2_CONFIG } from "../config/r2Config.js"
 
 export const createFlow = async (req, res) => {
     try {
@@ -230,6 +233,37 @@ export const getFlowLeads = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             message: "Erro ao listar leads do fluxo",
+            error: error.message
+        })
+    }
+}
+
+// Upload de foto/vídeo para os passos do fluxo, armazenado no bucket R2 já usado pelos vídeos do app
+export const uploadMedia = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                message: "Nenhum arquivo enviado"
+            })
+        }
+
+        const extension = req.file.originalname.split('.').pop()?.toLowerCase() || 'bin'
+        const key = `telegram-flows/${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${extension}`
+
+        await r2Client.send(new PutObjectCommand({
+            Bucket: R2_CONFIG.bucket,
+            Key: key,
+            Body: req.file.buffer,
+            ContentType: req.file.mimetype
+        }))
+
+        return res.status(201).json({
+            message: "Upload realizado com sucesso",
+            url: `${R2_CONFIG.publicBaseUrl}/${key}`
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message: "Erro ao enviar arquivo",
             error: error.message
         })
     }

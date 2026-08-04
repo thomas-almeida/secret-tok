@@ -6,12 +6,12 @@ import { useSearchParams } from "next/navigation";
 import AdminAuthGate, { AdminAuthGateSkeleton } from "../../../components/admin-auth-gate";
 import Logo from "../../../components/logo";
 import Input from "../../../components/input";
-import { uploadImage } from "../../../services/image-upload-service";
 import {
     getFlow,
     updateFlow,
     getFlowFunnel,
-    getFlowLeads
+    getFlowLeads,
+    uploadFlowMedia
 } from "../../../services/telegram-flow-service";
 import {
     TelegramFlow,
@@ -264,7 +264,7 @@ function FlowEditorContent({ userId, flowId }: { userId: string; flowId: string 
     const handleMediaUpload = async (stepIndex: number, file: File) => {
         setUploadingIndex(stepIndex);
         try {
-            const url = await uploadImage(file);
+            const url = await uploadFlowMedia(file);
             updateStep(stepIndex, { mediaUrl: url });
         } catch (err) {
             console.error('Error uploading media:', err);
@@ -451,21 +451,19 @@ function FlowEditorContent({ userId, flowId }: { userId: string; flowId: string 
                                                 value={step.mediaUrl || ''}
                                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateStep(index, { mediaUrl: e.target.value })}
                                             />
-                                            {step.type === 'photo' && (
-                                                <label className="flex items-center gap-2 px-3 py-2 bg-neutral-700 hover:bg-neutral-600 rounded-lg text-sm cursor-pointer whitespace-nowrap">
-                                                    {uploadingIndex === index ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                                    Enviar
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        className="hidden"
-                                                        onChange={(e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (file) handleMediaUpload(index, file);
-                                                        }}
-                                                    />
-                                                </label>
-                                            )}
+                                            <label className="flex items-center gap-2 px-3 py-2 bg-neutral-700 hover:bg-neutral-600 rounded-lg text-sm cursor-pointer whitespace-nowrap">
+                                                {uploadingIndex === index ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                                Enviar
+                                                <input
+                                                    type="file"
+                                                    accept={step.type === 'photo' ? 'image/*' : 'video/*'}
+                                                    className="hidden"
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) handleMediaUpload(index, file);
+                                                    }}
+                                                />
+                                            </label>
                                         </div>
                                     </div>
                                 )}

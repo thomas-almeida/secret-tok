@@ -44,3 +44,13 @@ export const getFlowLeads = async (
     const response = await axios.get(`${BASE_URL}/${flowId}/leads`, { params });
     return response.data;
 };
+
+export const uploadFlowMedia = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await axios.post(`${BASE_URL}/upload-media`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data.url;
+};
