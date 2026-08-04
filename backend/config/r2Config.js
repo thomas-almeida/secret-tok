@@ -10,6 +10,7 @@ export const R2_CONFIG = {
 export const r2Client = new S3Client({
     region: 'auto',
     endpoint: process.env.R2_USER_API_S3_URL,
+    forcePathStyle: true,
     credentials: {
         accessKeyId: process.env.R2_USER_API_ACCESS_KEY,
         secretAccessKey: process.env.R2_USER_API_SECRET_ACCESS_KEY

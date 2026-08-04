@@ -247,6 +247,12 @@ export const uploadMedia = async (req, res) => {
             })
         }
 
+        if (!process.env.R2_USER_API_S3_URL || !process.env.R2_USER_API_ACCESS_KEY || !process.env.R2_USER_API_SECRET_ACCESS_KEY) {
+            return res.status(500).json({
+                message: "R2 não configurado no ambiente (faltam R2_USER_API_S3_URL / R2_USER_API_ACCESS_KEY / R2_USER_API_SECRET_ACCESS_KEY)"
+            })
+        }
+
         const extension = req.file.originalname.split('.').pop()?.toLowerCase() || 'bin'
         const key = `telegram-flows/${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${extension}`
 
