@@ -29,8 +29,13 @@ export interface Customer {
     amount: number
     active: boolean
     transactionDate: string
+    planId?: string
     _id: string
   },
+  closeFriendsAccess?: {
+    active: boolean
+    purchasedAt?: string
+  }
 }
 
 interface AuthStore {

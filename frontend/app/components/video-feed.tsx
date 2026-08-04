@@ -6,10 +6,14 @@ import TopBar from "./topbar"
 import AdultModal from "./modal/adult-modal"
 import SubscriptionModal from "./modal/subscription-modal"
 import LoginModal from "./modal/login-modal"
-import { useAuthStore } from "../stores/auth-store"
+import CloseFriendsModal from "./modal/close-friends-modal"
+import StoriesBar, { type StoryModel } from "./stories-bar"
+import StoryViewer from "./story-viewer"
+import { useAuthStore, useCustomerStore } from "../stores/auth-store"
 import { useVideoQueue } from "../hooks/useVideoQueue"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getAfiliateData } from "../services/user-service"
+import type { Model } from "../stores/model-store"
 
 const shuffleArray = <T,>(array: T[]): T[] => {
     const shuffled = [...array]
@@ -264,6 +268,8 @@ function VideoFeedContent() {
         scrollCount,
         customValues,
         canChangeTab,
+        junkieModel,
+        premiumModels,
         handleTabChange: (tab: string) => {
             if (!canChangeTab) return
             setQueueTab(tab)
@@ -289,6 +295,13 @@ export default function VideoFeedOptimized() {
     const [subscriptionModalInitialStep, setSubscriptionModalInitialStep] = useState<'select' | 'payment'>('select')
     const [isRePayment, setIsRePayment] = useState(false)
 
+    const [selectedStoryModel, setSelectedStoryModel] = useState<Model | null>(null)
+    const [isCloseFriendsModalVisible, setIsCloseFriendsModalVisible] = useState(false)
+    const [pendingStoryModel, setPendingStoryModel] = useState<Model | null>(null)
+
+    const { customer } = useCustomerStore()
+    const hasCloseFriendsAccess = customer?.subscription?.planId === 'lifetime' || customer?.closeFriendsAccess?.active === true
+
     const {
         containerRef,
         feedVideos,
@@ -301,6 +314,8 @@ export default function VideoFeedOptimized() {
         scrollCount,
         customValues,
         canChangeTab,
+        junkieModel,
+        premiumModels,
         handleTabChange,
         handleTriggerSubscriptionModal,
         handleTriggerPaymentModal,
@@ -311,6 +326,23 @@ export default function VideoFeedOptimized() {
 
     const showInitialLoading = loading && !initialLoadComplete
     const showError = error && !initialLoadComplete && feedVideos.length === 0
+
+    const storyModels: Model[] = [
+        ...(junkieModel ? [junkieModel] : []),
+        ...(premiumModels || [])
+    ]
+
+    const handleSelectStoryModel = (storyModel: StoryModel) => {
+        const fullModel = storyModels.find(m => m._id === storyModel._id)
+        if (!fullModel || !fullModel.videos?.length) return
+
+        if (hasCloseFriendsAccess) {
+            setSelectedStoryModel(fullModel)
+        } else {
+            setPendingStoryModel(fullModel)
+            setIsCloseFriendsModalVisible(true)
+        }
+    }
 
     useEffect(() => {
         if (dailyLimit) {
@@ -391,6 +423,35 @@ export default function VideoFeedOptimized() {
                 onToggleQueue={handleTabChange}
                 disabledToggle={!canChangeTab}
             />
+
+            <StoriesBar
+                models={storyModels.map(m => ({ _id: m._id, name: m.name, profilePic: m.profilePic }))}
+                onSelectModel={handleSelectStoryModel}
+            />
+
+            {selectedStoryModel && (
+                <StoryViewer
+                    model={selectedStoryModel}
+                    onClose={() => setSelectedStoryModel(null)}
+                />
+            )}
+
+            {isCloseFriendsModalVisible && (
+                <CloseFriendsModal
+                    isVisible={isCloseFriendsModalVisible}
+                    onAccept={() => {
+                        setIsCloseFriendsModalVisible(false)
+                        if (pendingStoryModel) {
+                            setSelectedStoryModel(pendingStoryModel)
+                            setPendingStoryModel(null)
+                        }
+                    }}
+                    onDecline={() => {
+                        setIsCloseFriendsModalVisible(false)
+                        setPendingStoryModel(null)
+                    }}
+                />
+            )}
 
             {showInitialLoading && (
                 <LoadingOverlay message={isRetrying ? "Atualizando..." : "Carregando vídeos..."} />
