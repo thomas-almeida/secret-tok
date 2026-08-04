@@ -23,6 +23,13 @@ export const SUBSCRIPTION_PLANS = {
   }
 };
 
+export const CLOSE_FRIENDS_ORDER_BUMP = {
+  id: 'close_friends',
+  name: 'Close Friends',
+  amount: 999,
+  description: 'Acesso vitalício aos close friends de todas as modelos'
+};
+
 export const getPlanById = (planId) => {
   return Object.values(SUBSCRIPTION_PLANS).find(plan => plan.id === planId);
 };

@@ -92,18 +92,26 @@ export const checkTransactionStatusAndProcess = async (gatewayId) => {
         transaction.status = 'PAID';
         await transaction.save();
 
-        // Ativar assinatura do usuário
+        // Ativar assinatura ou liberar acesso ao close friends, dependendo do que foi comprado
         const user = await Customer.findById(transaction.userId);
         if (user) {
-          user.subscription.active = true;
-          user.subscription.transactionDate = new Date();
+          if (transaction.purchaseType === 'close_friends') {
+            user.closeFriendsAccess = {
+              active: true,
+              purchasedAt: new Date()
+            };
+          } else {
+            user.subscription.active = true;
+            user.subscription.transactionDate = new Date();
+          }
           await user.save();
 
           // Enviar notificação de pagamento aprovado
           notificationService.sendMessage(EVENT_TYPES.SUBSCRIPTION_PAID, {
             userId: user._id,
             userName: user.email,
-            planId: user.subscription.planId,
+            purchaseType: transaction.purchaseType,
+            planId: user.subscription?.planId,
             amount: transaction.amount,
             transactionId: transaction._id,
             gatewayId: gatewayId

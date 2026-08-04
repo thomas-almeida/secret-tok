@@ -13,6 +13,10 @@ const subscriptionSchema = new mongoose.Schema({
     type: Date,
     required: true,
     default: Date.now
+  },
+  planId: {
+    type: String,
+    required: false
   }
 });
 

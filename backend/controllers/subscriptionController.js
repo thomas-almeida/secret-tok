@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { getPlanById } from "../config/plans.js";
+import { getPlanById, CLOSE_FRIENDS_ORDER_BUMP } from "../config/plans.js";
 import Transaction from "../models/Transactions.js";
 import WebhookEvent from "../models/WebhookEvent.js";
 import axios from "axios";
@@ -63,7 +63,7 @@ export const createPaymentIntent = async (req, res) => {
         // Atualizar assinatura do usuário como pendente
         Customer.findByIdAndUpdate(customer?._id, {
             subscription: {
-                planId: plan.planId,
+                planId: plan.id,
                 amount: planAmount,
                 active: false,
                 transactionDate: new Date()
@@ -76,7 +76,8 @@ export const createPaymentIntent = async (req, res) => {
             userId: customer?.customerId,
             amount: planAmount,
             gatewayId: gatewayId,
-            referenceId: referenceId
+            referenceId: referenceId,
+            planId: plan.id
         });
 
         console.log(transaction.userId)
@@ -108,6 +109,74 @@ export const createPaymentIntent = async (req, res) => {
 
         res.status(500).json({
             error: 'Error to create payment intent',
+            message: error.message
+        })
+
+    }
+}
+
+export const createCloseFriendsPaymentIntent = async (req, res) => {
+    try {
+
+        const { customer, referenceId } = req.body;
+
+        const externalId = crypto.randomUUID();
+        const paymentIntent = {
+            amount: Number((CLOSE_FRIENDS_ORDER_BUMP.amount / 100).toFixed(2)),
+            expiration: 600, // 10 minutos, alinhado com a oferta promocional exibida no front
+            description: CLOSE_FRIENDS_ORDER_BUMP.description,
+            external_id: externalId,
+            ...(process.env.PUBLIC_BASEURL && {
+                webhook_url: `${process.env.PUBLIC_BASEURL}/api/auth/nexuspag-webhook`
+            })
+        };
+
+        const nexusPagResponse = await axios.post(
+            `${NEXUSPAG_BASEURL}/api/pix/create`,
+            paymentIntent,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': process.env.NEXUSPAG_PROD
+                }
+            });
+
+        const nexusPagTransaction = nexusPagResponse.data?.transaction;
+        const gatewayId = nexusPagTransaction?.id;
+
+        const transaction = new Transaction({
+            userId: customer?.customerId,
+            amount: CLOSE_FRIENDS_ORDER_BUMP.amount,
+            gatewayId: gatewayId,
+            referenceId: referenceId,
+            purchaseType: 'close_friends'
+        });
+
+        await transaction.save();
+
+        if (referenceId && referenceId !== "none") {
+            const affiliateUser = await User.findById(referenceId);
+            if (affiliateUser) {
+                affiliateUser.revenue.transactions.push(transaction.toObject());
+                await affiliateUser.save();
+            }
+        }
+
+        res.status(200).json({
+            paymentIntent: {
+                id: nexusPagTransaction?.id,
+                brCode: nexusPagTransaction?.pix_copia_cola,
+                brCodeBase64: nexusPagTransaction?.qr_code_base64,
+                status: nexusPagTransaction?.status?.toUpperCase(),
+                expiresAt: nexusPagTransaction?.expires_at
+            },
+            transactionId: transaction._id
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            error: 'Error to create close friends payment intent',
             message: error.message
         })
 

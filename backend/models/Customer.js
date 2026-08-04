@@ -12,6 +12,16 @@ const customerSchema = new mongoose.Schema({
         type: subscriptionSchema,
         required: false
     },
+    closeFriendsAccess: {
+        active: {
+            type: Boolean,
+            default: false
+        },
+        purchasedAt: {
+            type: Date,
+            required: false
+        }
+    },
 }, {
     timestamps: true
 });

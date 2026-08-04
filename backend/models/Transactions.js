@@ -34,6 +34,15 @@ const transactionSchema = new mongoose.Schema({
     modelUsername: {
         type: String,
         required: false
+    },
+    purchaseType: {
+        type: String,
+        enum: ['subscription', 'close_friends'],
+        default: 'subscription'
+    },
+    planId: {
+        type: String,
+        required: false
     }
 })
 
