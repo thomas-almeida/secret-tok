@@ -53,8 +53,16 @@ const telegramFlowRunSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['in_progress', 'completed'],
+        enum: ['in_progress', 'waiting', 'completed'],
         default: 'in_progress'
+    },
+    // Preenchido quando status === 'waiting': em qual passo parou e até quando
+    // esperar antes do sweep de timeout resolver pelo caminho padrão.
+    waitingStepOrder: {
+        type: Number
+    },
+    waitingUntil: {
+        type: Date
     },
     buttonClicks: {
         type: [buttonClickSchema],
@@ -64,6 +72,7 @@ const telegramFlowRunSchema = new mongoose.Schema({
 
 telegramFlowRunSchema.index({ flowId: 1, status: 1 })
 telegramFlowRunSchema.index({ flowId: 1, maxStepOrderReached: 1 })
+telegramFlowRunSchema.index({ status: 1, waitingUntil: 1 })
 
 const TelegramFlowRun = mongoose.model('TelegramFlowRun', telegramFlowRunSchema)
 

@@ -4,6 +4,8 @@ export interface TelegramButton {
     label: string;
     kind: TelegramButtonKind;
     url?: string;
+    // Só faz sentido em botões "quiz": para onde pular ao clicar (order do passo)
+    goToStep?: number;
 }
 
 export type TelegramStepType = 'text' | 'photo' | 'video';
@@ -15,6 +17,10 @@ export interface TelegramStep {
     mediaUrl?: string;
     delaySeconds: number;
     buttons: TelegramButton[];
+    // Pausa o envio aqui até alguém clicar num botão quiz ou o timeout expirar
+    waitForClick?: boolean;
+    timeoutSeconds?: number;
+    timeoutGoToStep?: number;
 }
 
 export interface TelegramFlow {
@@ -44,7 +50,9 @@ export interface TelegramFlowRun {
     startedAt: string;
     maxStepOrderReached: number;
     completedAt?: string;
-    status: 'in_progress' | 'completed';
+    status: 'in_progress' | 'waiting' | 'completed';
+    waitingStepOrder?: number;
+    waitingUntil?: string;
     buttonClicks: TelegramFlowButtonClick[];
 }
 

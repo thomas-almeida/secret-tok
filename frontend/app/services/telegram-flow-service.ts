@@ -39,7 +39,7 @@ export const getFlowFunnel = async (flowId: string): Promise<TelegramFlowFunnel>
 
 export const getFlowLeads = async (
     flowId: string,
-    params?: { status?: 'in_progress' | 'completed'; minStep?: number; page?: number; limit?: number }
+    params?: { status?: 'in_progress' | 'waiting' | 'completed'; minStep?: number; page?: number; limit?: number }
 ): Promise<{ leads: TelegramFlowRun[]; total: number; page: number; limit: number }> => {
     const response = await axios.get(`${BASE_URL}/${flowId}/leads`, { params });
     return response.data;

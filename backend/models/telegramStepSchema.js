@@ -27,6 +27,19 @@ const telegramStepSchema = new mongoose.Schema({
     buttons: {
         type: [telegramButtonSchema],
         default: []
+    },
+    // Se true (e o passo tiver ao menos um botão "quiz"), o envio pausa aqui
+    // até alguém clicar num botão quiz ou o timeout abaixo expirar.
+    waitForClick: {
+        type: Boolean,
+        default: false
+    },
+    timeoutSeconds: {
+        type: Number
+    },
+    // Pra onde pular se ninguém clicar dentro do timeout (default: próximo passo)
+    timeoutGoToStep: {
+        type: Number
     }
 })
 

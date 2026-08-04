@@ -56,6 +56,7 @@ mongoose.connect(process.env.DB_URI, {
       console.log(`Server running on port ${PORT}`);
       keepAlive()
       telegramFlowBotService.registerWebhook()
+      telegramFlowBotService.startTimeoutSweep()
     });
   })
   .catch((error) => {

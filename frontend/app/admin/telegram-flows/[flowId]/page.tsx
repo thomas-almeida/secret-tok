@@ -22,7 +22,7 @@ import {
 } from "../../../schemas/telegram-flow-schema";
 import {
     Loader2, Plus, Trash2, ArrowUp, ArrowDown, Save, Copy, Check,
-    ImageIcon, Video, Type, Link2, HelpCircle, Upload, BarChart3, ListChecks
+    ImageIcon, Video, Type, Link2, HelpCircle, Upload, BarChart3, ListChecks, Timer
 } from "lucide-react";
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_FLOW_BOT_USERNAME || '';
@@ -31,6 +31,7 @@ interface EditableButton {
     label: string;
     kind: TelegramButtonKind;
     url?: string;
+    goToStep?: number;
 }
 
 interface EditableStep {
@@ -39,6 +40,9 @@ interface EditableStep {
     mediaUrl?: string;
     delaySeconds: number;
     buttons: EditableButton[];
+    waitForClick?: boolean;
+    timeoutSeconds?: number;
+    timeoutGoToStep?: number;
 }
 
 function emptyStep(): EditableStep {
@@ -48,7 +52,7 @@ function emptyStep(): EditableStep {
 function FunnelPanel({ flowId }: { flowId: string }) {
     const [funnel, setFunnel] = useState<TelegramFlowFunnel | null>(null);
     const [leads, setLeads] = useState<TelegramFlowRun[]>([]);
-    const [statusFilter, setStatusFilter] = useState<'' | 'in_progress' | 'completed'>('');
+    const [statusFilter, setStatusFilter] = useState<'' | 'in_progress' | 'waiting' | 'completed'>('');
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const load = useCallback(async () => {
@@ -140,10 +144,11 @@ function FunnelPanel({ flowId }: { flowId: string }) {
                     <h3 className="text-lg font-semibold">Leads</h3>
                     <select
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value as '' | 'in_progress' | 'completed')}
+                        onChange={(e) => setStatusFilter(e.target.value as '' | 'in_progress' | 'waiting' | 'completed')}
                         className="bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-1.5 text-sm"
                     >
                         <option value="">Todos</option>
+                        <option value="waiting">Esperando clique</option>
                         <option value="in_progress">Em andamento</option>
                         <option value="completed">Completou</option>
                     </select>
@@ -164,8 +169,11 @@ function FunnelPanel({ flowId }: { flowId: string }) {
                                     <td className="p-3">{lead.username ? `@${lead.username}` : (lead.firstName || lead.chatId)}</td>
                                     <td className="p-3">{lead.maxStepOrderReached + 1}</td>
                                     <td className="p-3">
-                                        <span className={`px-2 py-0.5 rounded-full text-xs ${lead.status === 'completed' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                                            {lead.status === 'completed' ? 'Completou' : 'Em andamento'}
+                                        <span className={`px-2 py-0.5 rounded-full text-xs ${lead.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                                                lead.status === 'waiting' ? 'bg-amber-500/20 text-amber-400' :
+                                                    'bg-blue-500/20 text-blue-400'
+                                            }`}>
+                                            {lead.status === 'completed' ? 'Completou' : lead.status === 'waiting' ? 'Esperando clique' : 'Em andamento'}
                                         </span>
                                     </td>
                                     <td className="p-3 text-neutral-400">{new Date(lead.startedAt).toLocaleString('pt-BR')}</td>
@@ -215,7 +223,10 @@ function FlowEditorContent({ userId, flowId }: { userId: string; flowId: string 
                             text: s.text,
                             mediaUrl: s.mediaUrl,
                             delaySeconds: s.delaySeconds,
-                            buttons: s.buttons.map((b) => ({ label: b.label, kind: b.kind, url: b.url }))
+                            waitForClick: s.waitForClick,
+                            timeoutSeconds: s.timeoutSeconds,
+                            timeoutGoToStep: s.timeoutGoToStep,
+                            buttons: s.buttons.map((b) => ({ label: b.label, kind: b.kind, url: b.url, goToStep: b.goToStep }))
                         }))
                 );
             } catch (err) {
@@ -536,12 +547,66 @@ function FlowEditorContent({ userId, flowId }: { userId: string; flowId: string 
                                                         className="flex-1"
                                                     />
                                                 )}
+                                                {button.kind === 'quiz' && (
+                                                    <select
+                                                        value={button.goToStep !== undefined ? String(button.goToStep) : ''}
+                                                        onChange={(e) => updateButton(index, buttonIndex, { goToStep: e.target.value === '' ? undefined : Number(e.target.value) })}
+                                                        className="bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-1.5 text-sm text-neutral-300"
+                                                    >
+                                                        <option value="">Ao clicar: próximo passo</option>
+                                                        {steps.map((_, stepOption) => (
+                                                            <option key={stepOption} value={stepOption}>Ao clicar: ir para Passo {stepOption + 1}</option>
+                                                        ))}
+                                                    </select>
+                                                )}
                                                 <button onClick={() => removeButton(index, buttonIndex)} className="p-2 hover:bg-red-900/30 rounded self-start">
                                                     <Trash2 className="w-4 h-4 text-red-400" />
                                                 </button>
                                             </div>
                                         ))}
                                     </div>
+
+                                    {step.buttons.some((b) => b.kind === 'quiz') && (
+                                        <div className="mt-3 p-3 bg-neutral-900 border border-neutral-700 rounded-lg">
+                                            <label className="flex items-center gap-2 text-sm text-neutral-300 mb-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={step.waitForClick || false}
+                                                    onChange={(e) => updateStep(index, { waitForClick: e.target.checked })}
+                                                    className="accent-amber-500"
+                                                />
+                                                <Timer className="w-4 h-4" />
+                                                Pausar aqui e esperar clique num botão quiz
+                                            </label>
+
+                                            {step.waitForClick && (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                                                    <div>
+                                                        <label className="block text-xs text-neutral-400 mb-1">Timeout (segundos, opcional)</label>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="Espera pra sempre se vazio"
+                                                            value={step.timeoutSeconds !== undefined ? String(step.timeoutSeconds) : ''}
+                                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateStep(index, { timeoutSeconds: e.target.value === '' ? undefined : Number(e.target.value) })}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs text-neutral-400 mb-1">Se ninguém clicar, ir para</label>
+                                                        <select
+                                                            value={step.timeoutGoToStep !== undefined ? String(step.timeoutGoToStep) : ''}
+                                                            onChange={(e) => updateStep(index, { timeoutGoToStep: e.target.value === '' ? undefined : Number(e.target.value) })}
+                                                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-2 text-sm text-neutral-300"
+                                                        >
+                                                            <option value="">Próximo passo</option>
+                                                            {steps.map((_, stepOption) => (
+                                                                <option key={stepOption} value={stepOption}>Passo {stepOption + 1}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}

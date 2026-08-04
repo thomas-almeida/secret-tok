@@ -117,8 +117,9 @@ class TelegramFlowBotService {
         return { reply_markup: { inline_keyboard } }
     }
 
-    async runFlow(chatId, flow, run) {
-        const steps = [...flow.steps].sort((a, b) => a.order - b.order)
+    // fromOrder: a partir de qual passo continuar (usado ao retomar de uma pausa)
+    async runFlow(chatId, flow, run, fromOrder = -Infinity) {
+        const steps = [...flow.steps].sort((a, b) => a.order - b.order).filter((s) => s.order >= fromOrder)
 
         for (const step of steps) {
             if (step.delaySeconds > 0) {
@@ -142,12 +143,35 @@ class TelegramFlowBotService {
             }
 
             run.maxStepOrderReached = Math.max(run.maxStepOrderReached, step.order)
+
+            const hasQuizButton = step.buttons?.some((b) => b.kind === 'quiz')
+            if (step.waitForClick && hasQuizButton) {
+                run.status = 'waiting'
+                run.waitingStepOrder = step.order
+                run.waitingUntil = step.timeoutSeconds ? new Date(Date.now() + step.timeoutSeconds * 1000) : undefined
+                await run.save()
+                return
+            }
+
             await run.save()
         }
 
         run.status = 'completed'
         run.completedAt = new Date()
         await run.save()
+    }
+
+    // Retoma um run pausado, seja pelo passo indicado explicitamente (goToStep de
+    // um botão) ou pelo próximo passo sequencial quando nenhum destino é definido.
+    async resumeRun(run, flow, nextOrder) {
+        const resumed = await TelegramFlowRun.findOneAndUpdate(
+            { _id: run._id, status: 'waiting' },
+            { status: 'in_progress', waitingStepOrder: null, waitingUntil: null },
+            { new: true }
+        )
+        if (!resumed) return // já foi retomado por outro caminho (clique x timeout em corrida)
+
+        await this.runFlow(resumed.chatId, flow, resumed, nextOrder)
     }
 
     async handleCallbackQuery(query) {
@@ -159,7 +183,7 @@ class TelegramFlowBotService {
         const buttonIndex = Number(buttonIndexRaw)
         if (Number.isNaN(stepOrder) || Number.isNaN(buttonIndex)) return
 
-        const run = await TelegramFlowRun.findOne({ chatId, status: 'in_progress' }).sort({ startedAt: -1 })
+        const run = await TelegramFlowRun.findOne({ chatId, status: { $in: ['in_progress', 'waiting'] } }).sort({ startedAt: -1 })
         if (!run) return
 
         const flow = await TelegramFlow.findById(run.flowId)
@@ -173,6 +197,38 @@ class TelegramFlowBotService {
             buttonKind: button.kind
         })
         await run.save()
+
+        // Se o fluxo estava pausado esperando exatamente esse clique, retoma o envio
+        if (run.status === 'waiting' && run.waitingStepOrder === stepOrder && button.kind === 'quiz') {
+            const nextOrder = button.goToStep ?? stepOrder + 1
+            await this.resumeRun(run, flow, nextOrder)
+        }
+    }
+
+    // Varre runs parados em 'waiting' cujo timeout expirou e segue pro caminho padrão
+    async sweepTimeouts() {
+        if (!this.enabled) return
+
+        try {
+            const overdue = await TelegramFlowRun.find({ status: 'waiting', waitingUntil: { $lte: new Date() } })
+
+            for (const run of overdue) {
+                const flow = await TelegramFlow.findById(run.flowId)
+                if (!flow) continue
+
+                const step = flow.steps.find((s) => s.order === run.waitingStepOrder)
+                const nextOrder = step?.timeoutGoToStep ?? (run.waitingStepOrder + 1)
+
+                await this.resumeRun(run, flow, nextOrder)
+            }
+        } catch (error) {
+            console.error('❌ Erro no sweep de timeout do Flow Bot:', error.message)
+        }
+    }
+
+    startTimeoutSweep() {
+        if (!this.enabled) return
+        setInterval(() => this.sweepTimeouts(), 30 * 1000)
     }
 }
 
