@@ -465,6 +465,23 @@ function FlowEditorContent({ userId, flowId }: { userId: string; flowId: string 
                                                 />
                                             </label>
                                         </div>
+
+                                        {step.mediaUrl && (
+                                            step.type === 'photo' ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img
+                                                    src={step.mediaUrl}
+                                                    alt="Preview da imagem"
+                                                    className="mt-2 max-h-56 rounded-lg border border-neutral-700 object-contain"
+                                                />
+                                            ) : (
+                                                <video
+                                                    src={step.mediaUrl}
+                                                    controls
+                                                    className="mt-2 max-h-56 rounded-lg border border-neutral-700"
+                                                />
+                                            )
+                                        )}
                                     </div>
                                 )}
 
