@@ -128,11 +128,12 @@ function FunnelPanel({ flowId }: { flowId: string }) {
             {funnel.buttonClicks.length > 0 && (
                 <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-4">
                     <h3 className="text-lg font-semibold mb-4">Cliques em botões (quiz)</h3>
+                    <p className="text-xs text-neutral-500 mb-3">Usuários únicos que clicaram — não conta cliques repetidos da mesma pessoa</p>
                     <div className="space-y-2">
                         {funnel.buttonClicks.map((click, i) => (
                             <div key={i} className="flex justify-between text-sm">
                                 <span className="text-neutral-300">Passo {click.stepOrder + 1} · {click.buttonLabel}</span>
-                                <span className="text-neutral-400">{click.count} clique(s)</span>
+                                <span className="text-neutral-400">{click.count} usuário(s)</span>
                             </div>
                         ))}
                     </div>

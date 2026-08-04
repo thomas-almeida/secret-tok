@@ -176,12 +176,19 @@ export const getFlowFunnel = async (req, res) => {
             }
         }))
 
+        // Conta usuários únicos por botão, não o total de cliques (um mesmo lead
+        // pode clicar mais de uma vez, ou até ter mais de uma execução do fluxo).
         const buttonClicksAgg = await TelegramFlowRun.aggregate([
             { $match: { flowId: new mongoose.Types.ObjectId(flowId) } },
             { $unwind: '$buttonClicks' },
             {
                 $group: {
-                    _id: { stepOrder: '$buttonClicks.stepOrder', buttonLabel: '$buttonClicks.buttonLabel' },
+                    _id: { stepOrder: '$buttonClicks.stepOrder', buttonLabel: '$buttonClicks.buttonLabel', chatId: '$chatId' }
+                }
+            },
+            {
+                $group: {
+                    _id: { stepOrder: '$_id.stepOrder', buttonLabel: '$_id.buttonLabel' },
                     count: { $sum: 1 }
                 }
             },
