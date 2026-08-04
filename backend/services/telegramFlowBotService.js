@@ -6,17 +6,24 @@ import { TELEGRAM_FLOW_CONFIG } from '../config/telegramFlowConfig.js'
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-// Converte **negrito** (Markdown comum) pro formato HTML que o Telegram entende,
-// escapando antes os caracteres reservados de HTML pra não quebrar o parse_mode.
-function formatTelegramText(text) {
-    if (!text) return text
-
-    const escaped = text
+function escapeHtml(str) {
+    return String(str || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
+}
 
-    return escaped.replace(/\*\*(.+?)\*\*/gs, '<b>$1</b>')
+// Substitui {{nome}}/{{username}} pelos dados do contato e converte **negrito**
+// (Markdown comum) pro formato HTML que o Telegram entende. Escapa o template e
+// os valores separadamente pra nenhum dos dois quebrar o parse_mode HTML.
+function renderStepText(text, contact) {
+    if (!text) return text
+
+    const withPlaceholders = escapeHtml(text)
+        .replace(/\{\{\s*nome\s*\}\}/gi, escapeHtml(contact?.firstName))
+        .replace(/\{\{\s*username\s*\}\}/gi, escapeHtml(contact?.username))
+
+    return withPlaceholders.replace(/\*\*(.+?)\*\*/gs, '<b>$1</b>')
 }
 
 class TelegramFlowBotService {
@@ -119,6 +126,7 @@ class TelegramFlowBotService {
 
     // fromOrder: a partir de qual passo continuar (usado ao retomar de uma pausa)
     async runFlow(chatId, flow, run, fromOrder = -Infinity) {
+        const contact = await TelegramContact.findOne({ chatId })
         const steps = [...flow.steps].sort((a, b) => a.order - b.order).filter((s) => s.order >= fromOrder)
 
         for (const step of steps) {
@@ -127,7 +135,7 @@ class TelegramFlowBotService {
             }
 
             const replyMarkup = this.buildReplyMarkup(step)
-            const text = formatTelegramText(step.text)
+            const text = renderStepText(step.text, contact)
 
             try {
                 if (step.type === 'text') {
