@@ -486,7 +486,10 @@ function FlowEditorContent({ userId, flowId }: { userId: string; flowId: string 
                                 )}
 
                                 <div className="mb-3">
-                                    <label className="block text-sm text-neutral-400 mb-2">{step.type === 'text' ? 'Texto' : 'Legenda (opcional)'}</label>
+                                    <label className="block text-sm text-neutral-400 mb-2">
+                                        {step.type === 'text' ? 'Texto' : 'Legenda (opcional)'}
+                                        <span className="text-neutral-500 font-normal"> — use **assim** para deixar em negrito</span>
+                                    </label>
                                     <textarea
                                         value={step.text || ''}
                                         onChange={(e) => updateStep(index, { text: e.target.value })}

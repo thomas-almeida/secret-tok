@@ -6,6 +6,19 @@ import { TELEGRAM_FLOW_CONFIG } from '../config/telegramFlowConfig.js'
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
+// Converte **negrito** (Markdown comum) pro formato HTML que o Telegram entende,
+// escapando antes os caracteres reservados de HTML pra não quebrar o parse_mode.
+function formatTelegramText(text) {
+    if (!text) return text
+
+    const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+
+    return escaped.replace(/\*\*(.+?)\*\*/gs, '<b>$1</b>')
+}
+
 class TelegramFlowBotService {
     constructor() {
         this.bot = null
@@ -113,14 +126,15 @@ class TelegramFlowBotService {
             }
 
             const replyMarkup = this.buildReplyMarkup(step)
+            const text = formatTelegramText(step.text)
 
             try {
                 if (step.type === 'text') {
-                    await this.bot.sendMessage(chatId, step.text || '', replyMarkup)
+                    await this.bot.sendMessage(chatId, text || '', { parse_mode: 'HTML', ...replyMarkup })
                 } else if (step.type === 'photo') {
-                    await this.bot.sendPhoto(chatId, step.mediaUrl, { caption: step.text, ...replyMarkup })
+                    await this.bot.sendPhoto(chatId, step.mediaUrl, { caption: text, parse_mode: 'HTML', ...replyMarkup })
                 } else if (step.type === 'video') {
-                    await this.bot.sendVideo(chatId, step.mediaUrl, { caption: step.text, ...replyMarkup })
+                    await this.bot.sendVideo(chatId, step.mediaUrl, { caption: text, parse_mode: 'HTML', ...replyMarkup })
                 }
             } catch (error) {
                 console.error(`❌ Erro ao enviar passo ${step.order} do fluxo "${flow.slug}":`, error.message)
