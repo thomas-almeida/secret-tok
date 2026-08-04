@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, use } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense, use } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AdminAuthGate, { AdminAuthGateSkeleton } from "../../../components/admin-auth-gate";
 import Logo from "../../../components/logo";
 import Input from "../../../components/input";
+import FlowMap from "./flow-map";
 import {
     getFlow,
     updateFlow,
@@ -22,7 +23,7 @@ import {
 } from "../../../schemas/telegram-flow-schema";
 import {
     Loader2, Plus, Trash2, ArrowUp, ArrowDown, Save, Copy, Check,
-    ImageIcon, Video, Type, Link2, HelpCircle, Upload, BarChart3, ListChecks, Timer
+    ImageIcon, Video, Type, Link2, HelpCircle, Upload, BarChart3, ListChecks, Timer, Workflow
 } from "lucide-react";
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_FLOW_BOT_USERNAME || '';
@@ -195,7 +196,9 @@ function FlowEditorContent({ userId, flowId }: { userId: string; flowId: string 
     const searchParams = useSearchParams();
     const initialTab = searchParams.get('tab') === 'funnel' ? 'funnel' : 'editor';
 
-    const [tab, setTab] = useState<'editor' | 'funnel'>(initialTab);
+    const [tab, setTab] = useState<'editor' | 'map' | 'funnel'>(initialTab);
+    const [pendingScrollIndex, setPendingScrollIndex] = useState<number | null>(null);
+    const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
     const [flow, setFlow] = useState<TelegramFlow | null>(null);
     const [name, setName] = useState<string>('');
     const [slug, setSlug] = useState<string>('');
@@ -307,6 +310,25 @@ function FlowEditorContent({ userId, flowId }: { userId: string; flowId: string 
         }
     };
 
+    useEffect(() => {
+        if (tab === 'editor' && pendingScrollIndex !== null) {
+            const index = pendingScrollIndex;
+            // Double rAF: espera o navegador terminar de assentar o layout (e qualquer
+            // ajuste de foco/scroll da aba do mapa desmontando) antes de rolar até o passo.
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    stepRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+            });
+            setPendingScrollIndex(null);
+        }
+    }, [tab, pendingScrollIndex]);
+
+    const handleSelectStepFromMap = (index: number) => {
+        setTab('editor');
+        setPendingScrollIndex(index);
+    };
+
     const copyDeepLink = async () => {
         if (!BOT_USERNAME) return;
         try {
@@ -398,6 +420,12 @@ function FlowEditorContent({ userId, flowId }: { userId: string; flowId: string 
                         <ListChecks className="w-4 h-4" /> Passos
                     </button>
                     <button
+                        onClick={() => setTab('map')}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'map' ? 'border-amber-500 text-white' : 'border-transparent text-neutral-400 hover:text-white'}`}
+                    >
+                        <Workflow className="w-4 h-4" /> Mapa
+                    </button>
+                    <button
                         onClick={() => setTab('funnel')}
                         className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'funnel' ? 'border-amber-500 text-white' : 'border-transparent text-neutral-400 hover:text-white'}`}
                     >
@@ -407,10 +435,16 @@ function FlowEditorContent({ userId, flowId }: { userId: string; flowId: string 
 
                 {tab === 'funnel' ? (
                     <FunnelPanel flowId={flowId} />
+                ) : tab === 'map' ? (
+                    <FlowMap steps={steps} onSelectStep={handleSelectStepFromMap} />
                 ) : (
                     <div className="space-y-4">
                         {steps.map((step, index) => (
-                            <div key={index} className="bg-neutral-800 border border-neutral-700 rounded-lg p-4">
+                            <div
+                                key={index}
+                                ref={(el) => { stepRefs.current[index] = el; }}
+                                className="bg-neutral-800 border border-neutral-700 rounded-lg p-4 scroll-mt-24"
+                            >
                                 <div className="flex items-center justify-between mb-4">
                                     <p className="font-semibold text-neutral-300">Passo {index + 1}</p>
                                     <div className="flex items-center gap-1">

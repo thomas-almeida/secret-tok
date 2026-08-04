@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@xyflow/react": "^12.11.2",
     "axios": "^1.13.3",
     "copy-to-clipboard": "^3.3.3",
     "critters": "^0.0.23",
