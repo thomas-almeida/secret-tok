@@ -156,6 +156,7 @@ export const getFlowFunnel = async (req, res) => {
         }
 
         const steps = [...flow.steps].sort((a, b) => a.order - b.order)
+        const flowObjectId = new mongoose.Types.ObjectId(flowId)
 
         const [totalRuns, completedRuns] = await Promise.all([
             TelegramFlowRun.countDocuments({ flowId }),
@@ -175,36 +176,88 @@ export const getFlowFunnel = async (req, res) => {
                 reached
             }
         }))
+        const reachedByStep = new Map(stepsFunnel.map((s) => [s.order, s.reached]))
 
         // Conta usuários únicos por botão, não o total de cliques (um mesmo lead
         // pode clicar mais de uma vez, ou até ter mais de uma execução do fluxo).
         const buttonClicksAgg = await TelegramFlowRun.aggregate([
-            { $match: { flowId: new mongoose.Types.ObjectId(flowId) } },
+            { $match: { flowId: flowObjectId } },
             { $unwind: '$buttonClicks' },
             {
                 $group: {
-                    _id: { stepOrder: '$buttonClicks.stepOrder', buttonLabel: '$buttonClicks.buttonLabel', chatId: '$chatId' }
+                    _id: { stepOrder: '$buttonClicks.stepOrder', buttonLabel: '$buttonClicks.buttonLabel', buttonKind: '$buttonClicks.buttonKind', chatId: '$chatId' }
                 }
             },
             {
                 $group: {
-                    _id: { stepOrder: '$_id.stepOrder', buttonLabel: '$_id.buttonLabel' },
+                    _id: { stepOrder: '$_id.stepOrder', buttonLabel: '$_id.buttonLabel', buttonKind: '$_id.buttonKind' },
                     count: { $sum: 1 }
                 }
             },
             { $sort: { '_id.stepOrder': 1 } }
         ])
 
+        // Distribuição de status atual dos leads (em andamento / esperando clique / completou)
+        const statusAgg = await TelegramFlowRun.aggregate([
+            { $match: { flowId: flowObjectId } },
+            { $group: { _id: '$status', count: { $sum: 1 } } }
+        ])
+        const statusBreakdown = { in_progress: 0, waiting: 0, completed: 0 }
+        statusAgg.forEach((s) => { statusBreakdown[s._id] = s.count })
+
+        // Tempo médio (segundos) do início até a conclusão do fluxo, só entre quem completou
+        const [avgCompletionAgg] = await TelegramFlowRun.aggregate([
+            { $match: { flowId: flowObjectId, status: 'completed', completedAt: { $exists: true } } },
+            { $project: { seconds: { $divide: [{ $subtract: ['$completedAt', '$startedAt'] }, 1000] } } },
+            { $group: { _id: null, avgSeconds: { $avg: '$seconds' } } }
+        ])
+        const avgCompletionTimeSeconds = avgCompletionAgg?.avgSeconds ?? null
+
+        // Leads novos por dia nos últimos 30 dias (zero-preenchido pros dias sem entrada)
+        const since = new Date()
+        since.setDate(since.getDate() - 29)
+        since.setHours(0, 0, 0, 0)
+
+        const leadsByDayAgg = await TelegramFlowRun.aggregate([
+            { $match: { flowId: flowObjectId, startedAt: { $gte: since } } },
+            { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$startedAt' } }, count: { $sum: 1 } } }
+        ])
+        const leadsByDayMap = new Map(leadsByDayAgg.map((d) => [d._id, d.count]))
+        const leadsByDay = []
+        for (let i = 0; i < 30; i++) {
+            const day = new Date(since)
+            day.setDate(day.getDate() + i)
+            const key = day.toISOString().slice(0, 10)
+            leadsByDay.push({ date: key, count: leadsByDayMap.get(key) || 0 })
+        }
+
+        const buttonClicks = buttonClicksAgg.map((click) => ({
+            stepOrder: click._id.stepOrder,
+            buttonLabel: click._id.buttonLabel,
+            buttonKind: click._id.buttonKind,
+            count: click.count
+        }))
+
+        // CTR por botão: cliques únicos / leads que alcançaram o passo do botão
+        const ctaStats = buttonClicks.map((click) => {
+            const reached = reachedByStep.get(click.stepOrder) || 0
+            return {
+                ...click,
+                reached,
+                ctr: reached > 0 ? click.count / reached : 0
+            }
+        })
+
         return res.status(200).json({
             totalRuns,
             completedRuns,
             completionRate: totalRuns > 0 ? completedRuns / totalRuns : 0,
+            avgCompletionTimeSeconds,
+            statusBreakdown,
+            leadsByDay,
             steps: stepsFunnel,
-            buttonClicks: buttonClicksAgg.map((click) => ({
-                stepOrder: click._id.stepOrder,
-                buttonLabel: click._id.buttonLabel,
-                count: click.count
-            }))
+            buttonClicks,
+            ctaStats
         })
     } catch (error) {
         return res.status(500).json({

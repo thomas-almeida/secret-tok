@@ -66,13 +66,34 @@ export interface TelegramFlowFunnelStep {
 export interface TelegramFlowFunnelButtonClick {
     stepOrder: number;
     buttonLabel: string;
+    buttonKind: TelegramButtonKind;
     count: number;
+}
+
+export interface TelegramFlowCtaStat extends TelegramFlowFunnelButtonClick {
+    reached: number;
+    ctr: number;
+}
+
+export interface TelegramFlowLeadsByDay {
+    date: string;
+    count: number;
+}
+
+export interface TelegramFlowStatusBreakdown {
+    in_progress: number;
+    waiting: number;
+    completed: number;
 }
 
 export interface TelegramFlowFunnel {
     totalRuns: number;
     completedRuns: number;
     completionRate: number;
+    avgCompletionTimeSeconds: number | null;
+    statusBreakdown: TelegramFlowStatusBreakdown;
+    leadsByDay: TelegramFlowLeadsByDay[];
     steps: TelegramFlowFunnelStep[];
     buttonClicks: TelegramFlowFunnelButtonClick[];
+    ctaStats: TelegramFlowCtaStat[];
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, Suspense, use } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense, use, Fragment } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AdminAuthGate, { AdminAuthGateSkeleton } from "../../../components/admin-auth-gate";
@@ -23,8 +23,13 @@ import {
 } from "../../../schemas/telegram-flow-schema";
 import {
     Loader2, Plus, Trash2, ArrowUp, ArrowDown, Save, Copy, Check,
-    ImageIcon, Video, Type, Link2, HelpCircle, Upload, BarChart3, ListChecks, Timer, Workflow
+    ImageIcon, Video, Type, Link2, HelpCircle, Upload, BarChart3, ListChecks, Timer, Workflow,
+    Users, Clock, TrendingUp, MousePointerClick
 } from "lucide-react";
+import {
+    ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+    PieChart, Pie, Cell
+} from "recharts";
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_FLOW_BOT_USERNAME || '';
 
@@ -50,11 +55,34 @@ function emptyStep(): EditableStep {
     return { type: 'text', text: '', delaySeconds: 0, buttons: [] };
 }
 
+function formatDuration(totalSeconds: number | null): string {
+    if (totalSeconds === null || Number.isNaN(totalSeconds)) return '—';
+    const seconds = Math.round(totalSeconds);
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}min ${seconds % 60}s`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ${minutes % 60}min`;
+}
+
+const STATUS_COLORS: Record<string, string> = {
+    completed: '#22c55e',
+    waiting: '#f59e0b',
+    in_progress: '#3b82f6'
+};
+
+const STATUS_LABELS: Record<string, string> = {
+    completed: 'Completou',
+    waiting: 'Esperando clique',
+    in_progress: 'Em andamento'
+};
+
 function FunnelPanel({ flowId }: { flowId: string }) {
     const [funnel, setFunnel] = useState<TelegramFlowFunnel | null>(null);
     const [leads, setLeads] = useState<TelegramFlowRun[]>([]);
     const [statusFilter, setStatusFilter] = useState<'' | 'in_progress' | 'waiting' | 'completed'>('');
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
 
     const load = useCallback(async () => {
         setIsLoading(true);
@@ -86,20 +114,101 @@ function FunnelPanel({ flowId }: { flowId: string }) {
 
     if (!funnel) return null;
 
+    const last7 = funnel.leadsByDay.slice(-7).reduce((sum, d) => sum + d.count, 0);
+    const pieData = (['completed', 'waiting', 'in_progress'] as const)
+        .map((key) => ({ key, value: funnel.statusBreakdown[key] }))
+        .filter((d) => d.value > 0);
+
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="bg-neutral-800 border border-neutral-700 p-4 rounded-lg">
-                    <p className="text-sm text-neutral-400">Total de leads</p>
-                    <p className="text-2xl font-bold">{funnel.totalRuns}</p>
+                    <p className="text-xs text-neutral-400 flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />Total de leads</p>
+                    <p className="text-2xl font-bold mt-1">{funnel.totalRuns}</p>
                 </div>
                 <div className="bg-neutral-800 border border-neutral-700 p-4 rounded-lg">
-                    <p className="text-sm text-neutral-400">Completaram o fluxo</p>
-                    <p className="text-2xl font-bold">{funnel.completedRuns}</p>
+                    <p className="text-xs text-neutral-400 flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5" />Novos (7 dias)</p>
+                    <p className="text-2xl font-bold mt-1">{last7}</p>
                 </div>
                 <div className="bg-neutral-800 border border-neutral-700 p-4 rounded-lg">
-                    <p className="text-sm text-neutral-400">Taxa de conclusão</p>
-                    <p className="text-2xl font-bold">{(funnel.completionRate * 100).toFixed(0)}%</p>
+                    <p className="text-xs text-neutral-400">Completaram o fluxo</p>
+                    <p className="text-2xl font-bold mt-1">{funnel.completedRuns}</p>
+                </div>
+                <div className="bg-neutral-800 border border-neutral-700 p-4 rounded-lg">
+                    <p className="text-xs text-neutral-400">Taxa de conclusão</p>
+                    <p className="text-2xl font-bold mt-1">{(funnel.completionRate * 100).toFixed(0)}%</p>
+                </div>
+                <div className="bg-neutral-800 border border-neutral-700 p-4 rounded-lg">
+                    <p className="text-xs text-neutral-400 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />Tempo médio até completar</p>
+                    <p className="text-2xl font-bold mt-1">{formatDuration(funnel.avgCompletionTimeSeconds)}</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-2 bg-neutral-800 border border-neutral-700 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold mb-4">Leads novos por dia (30 dias)</h3>
+                    {funnel.leadsByDay.every((d) => d.count === 0) ? (
+                        <p className="text-neutral-400 text-sm py-8 text-center">Sem entradas nos últimos 30 dias.</p>
+                    ) : (
+                        <ResponsiveContainer width="100%" height={220}>
+                            <AreaChart data={funnel.leadsByDay}>
+                                <defs>
+                                    <linearGradient id="leadsGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.4} />
+                                        <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#404040" vertical={false} />
+                                <XAxis
+                                    dataKey="date"
+                                    tickFormatter={(d: string) => d.slice(5).split('-').reverse().join('/')}
+                                    tick={{ fill: '#a3a3a3', fontSize: 11 }}
+                                    axisLine={{ stroke: '#404040' }}
+                                    tickLine={false}
+                                    minTickGap={20}
+                                />
+                                <YAxis allowDecimals={false} tick={{ fill: '#a3a3a3', fontSize: 11 }} axisLine={false} tickLine={false} width={28} />
+                                <Tooltip
+                                    contentStyle={{ background: '#171717', border: '1px solid #404040', borderRadius: 8, fontSize: 12 }}
+                                    labelFormatter={(d) => new Date(`${d}T00:00:00`).toLocaleDateString('pt-BR')}
+                                    formatter={(value) => [value, 'Leads']}
+                                />
+                                <Area type="monotone" dataKey="count" stroke="#f59e0b" strokeWidth={2} fill="url(#leadsGradient)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    )}
+                </div>
+
+                <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold mb-4">Status atual dos leads</h3>
+                    {pieData.length === 0 ? (
+                        <p className="text-neutral-400 text-sm py-8 text-center">Sem leads ainda.</p>
+                    ) : (
+                        <>
+                            <ResponsiveContainer width="100%" height={160}>
+                                <PieChart>
+                                    <Pie data={pieData} dataKey="value" nameKey="key" innerRadius={45} outerRadius={70} paddingAngle={2}>
+                                        {pieData.map((d) => <Cell key={d.key} fill={STATUS_COLORS[d.key]} />)}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{ background: '#171717', border: '1px solid #404040', borderRadius: 8, fontSize: 12 }}
+                                        formatter={(value, _name, entry) => [value, STATUS_LABELS[String((entry as { payload?: { key?: string } })?.payload?.key)]]}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="space-y-1.5 mt-2">
+                                {pieData.map((d) => (
+                                    <div key={d.key} className="flex items-center justify-between text-xs">
+                                        <span className="flex items-center gap-1.5 text-neutral-300">
+                                            <span className="w-2 h-2 rounded-full" style={{ background: STATUS_COLORS[d.key] }} />
+                                            {STATUS_LABELS[d.key]}
+                                        </span>
+                                        <span className="text-neutral-400">{d.value}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -126,17 +235,42 @@ function FunnelPanel({ flowId }: { flowId: string }) {
                 </div>
             </div>
 
-            {funnel.buttonClicks.length > 0 && (
-                <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold mb-4">Cliques em botões (quiz)</h3>
-                    <p className="text-xs text-neutral-500 mb-3">Usuários únicos que clicaram — não conta cliques repetidos da mesma pessoa</p>
-                    <div className="space-y-2">
-                        {funnel.buttonClicks.map((click, i) => (
-                            <div key={i} className="flex justify-between text-sm">
-                                <span className="text-neutral-300">Passo {click.stepOrder + 1} · {click.buttonLabel}</span>
-                                <span className="text-neutral-400">{click.count} usuário(s)</span>
-                            </div>
-                        ))}
+            {funnel.ctaStats.length > 0 && (
+                <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden">
+                    <div className="p-4 border-b border-neutral-700">
+                        <h3 className="text-lg font-semibold flex items-center gap-2"><MousePointerClick className="w-4 h-4" />Performance dos CTAs (quiz)</h3>
+                        <p className="text-xs text-neutral-500 mt-1">CTR = cliques únicos ÷ leads que alcançaram o passo. Botões do tipo &quot;link&quot; não são rastreáveis pelo Telegram.</p>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-neutral-700/50">
+                                <tr>
+                                    <th className="text-left p-3 text-neutral-300">Passo</th>
+                                    <th className="text-left p-3 text-neutral-300">Botão</th>
+                                    <th className="text-left p-3 text-neutral-300">Alcançaram</th>
+                                    <th className="text-left p-3 text-neutral-300">Cliques únicos</th>
+                                    <th className="text-left p-3 text-neutral-300">CTR</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-neutral-700">
+                                {funnel.ctaStats.map((cta, i) => (
+                                    <tr key={i}>
+                                        <td className="p-3 text-neutral-300">{cta.stepOrder + 1}</td>
+                                        <td className="p-3 text-neutral-300">{cta.buttonLabel}</td>
+                                        <td className="p-3 text-neutral-400">{cta.reached}</td>
+                                        <td className="p-3 text-neutral-400">{cta.count}</td>
+                                        <td className="p-3">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-16 h-1.5 bg-neutral-700 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-amber-500" style={{ width: `${Math.min(cta.ctr * 100, 100)}%` }} />
+                                                </div>
+                                                <span className="text-neutral-300 text-xs">{(cta.ctr * 100).toFixed(0)}%</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             )}
@@ -162,25 +296,89 @@ function FunnelPanel({ flowId }: { flowId: string }) {
                                 <th className="text-left p-3 text-neutral-300">Lead</th>
                                 <th className="text-left p-3 text-neutral-300">Passo atual</th>
                                 <th className="text-left p-3 text-neutral-300">Status</th>
-                                <th className="text-left p-3 text-neutral-300">Início</th>
+                                <th className="text-left p-3 text-neutral-300">Entrada</th>
+                                <th className="text-left p-3 text-neutral-300">Cliques</th>
+                                <th className="text-left p-3 text-neutral-300"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-700">
-                            {leads.map((lead) => (
-                                <tr key={lead._id}>
-                                    <td className="p-3">{lead.username ? `@${lead.username}` : (lead.firstName || lead.chatId)}</td>
-                                    <td className="p-3">{lead.maxStepOrderReached + 1}</td>
-                                    <td className="p-3">
-                                        <span className={`px-2 py-0.5 rounded-full text-xs ${lead.status === 'completed' ? 'bg-green-500/20 text-green-400' :
-                                                lead.status === 'waiting' ? 'bg-amber-500/20 text-amber-400' :
-                                                    'bg-blue-500/20 text-blue-400'
-                                            }`}>
-                                            {lead.status === 'completed' ? 'Completou' : lead.status === 'waiting' ? 'Esperando clique' : 'Em andamento'}
-                                        </span>
-                                    </td>
-                                    <td className="p-3 text-neutral-400">{new Date(lead.startedAt).toLocaleString('pt-BR')}</td>
-                                </tr>
-                            ))}
+                            {leads.map((lead) => {
+                                const isExpanded = expandedLeadId === lead._id;
+                                const entryDate = new Date(lead.startedAt);
+                                return (
+                                    <Fragment key={lead._id}>
+                                        <tr
+                                            className="cursor-pointer hover:bg-neutral-700/30"
+                                            onClick={() => setExpandedLeadId(isExpanded ? null : lead._id)}
+                                        >
+                                            <td className="p-3">{lead.username ? `@${lead.username}` : (lead.firstName || lead.chatId)}</td>
+                                            <td className="p-3">{lead.maxStepOrderReached + 1}</td>
+                                            <td className="p-3">
+                                                <span className={`px-2 py-0.5 rounded-full text-xs ${lead.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                                                        lead.status === 'waiting' ? 'bg-amber-500/20 text-amber-400' :
+                                                            'bg-blue-500/20 text-blue-400'
+                                                    }`}>
+                                                    {lead.status === 'completed' ? 'Completou' : lead.status === 'waiting' ? 'Esperando clique' : 'Em andamento'}
+                                                </span>
+                                            </td>
+                                            <td className="p-3 text-neutral-400">
+                                                <div>{entryDate.toLocaleDateString('pt-BR')}</div>
+                                                <div className="text-xs text-neutral-500">{entryDate.toLocaleTimeString('pt-BR')}</div>
+                                            </td>
+                                            <td className="p-3 text-neutral-400">{lead.buttonClicks.length}</td>
+                                            <td className="p-3 text-neutral-500 text-xs">{isExpanded ? '▲ fechar' : '▼ detalhes'}</td>
+                                        </tr>
+                                        {isExpanded && (
+                                            <tr className="bg-neutral-900/60">
+                                                <td colSpan={6} className="p-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                                        <div>
+                                                            <p className="text-neutral-500 mb-1">Chat ID</p>
+                                                            <p className="text-neutral-300">{lead.chatId}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-neutral-500 mb-1">Entrou no fluxo</p>
+                                                            <p className="text-neutral-300">{entryDate.toLocaleString('pt-BR')}</p>
+                                                        </div>
+                                                        {lead.status === 'completed' && lead.completedAt && (
+                                                            <div>
+                                                                <p className="text-neutral-500 mb-1">Completou o fluxo</p>
+                                                                <p className="text-neutral-300">{new Date(lead.completedAt).toLocaleString('pt-BR')}</p>
+                                                            </div>
+                                                        )}
+                                                        {lead.status === 'waiting' && lead.waitingUntil && (
+                                                            <div>
+                                                                <p className="text-neutral-500 mb-1">Timeout em</p>
+                                                                <p className="text-neutral-300">{new Date(lead.waitingUntil).toLocaleString('pt-BR')}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="mt-4">
+                                                        <p className="text-neutral-500 mb-2 text-xs">Cliques em CTAs</p>
+                                                        {lead.buttonClicks.length === 0 ? (
+                                                            <p className="text-neutral-600 text-xs">Nenhum clique registrado.</p>
+                                                        ) : (
+                                                            <div className="space-y-1.5">
+                                                                {[...lead.buttonClicks]
+                                                                    .sort((a, b) => new Date(a.clickedAt).getTime() - new Date(b.clickedAt).getTime())
+                                                                    .map((click, i) => (
+                                                                        <div key={i} className="flex items-center justify-between text-xs bg-neutral-800 border border-neutral-700 rounded px-3 py-1.5">
+                                                                            <span className="text-neutral-300">
+                                                                                Passo {click.stepOrder + 1} · {click.buttonLabel}
+                                                                                <span className="ml-2 text-neutral-500">({click.buttonKind === 'quiz' ? 'quiz' : 'link'})</span>
+                                                                            </span>
+                                                                            <span className="text-neutral-400">{new Date(click.clickedAt).toLocaleString('pt-BR')}</span>
+                                                                        </div>
+                                                                    ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </Fragment>
+                                );
+                            })}
                         </tbody>
                     </table>
                     {leads.length === 0 && (
