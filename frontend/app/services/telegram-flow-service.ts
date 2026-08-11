@@ -8,6 +8,7 @@ import {
     TelegramFlowFunnel,
     TelegramFlowRange,
     TelegramFlowRun,
+    TelegramLeadTimeline,
     TelegramStep
 } from "../schemas/telegram-flow-schema";
 
@@ -50,6 +51,11 @@ export const getFlowLeads = async (
     params?: { status?: 'in_progress' | 'waiting' | 'completed'; minStep?: number; page?: number; limit?: number }
 ): Promise<{ leads: TelegramFlowRun[]; total: number; page: number; limit: number }> => {
     const response = await axios.get(`${BASE_URL}/${flowId}/leads`, { params });
+    return response.data;
+};
+
+export const getLeadTimeline = async (flowId: string, runId: string): Promise<TelegramLeadTimeline> => {
+    const response = await axios.get(`${BASE_URL}/${flowId}/leads/${runId}/timeline`);
     return response.data;
 };
 

@@ -114,6 +114,40 @@ export interface TelegramFlowFunnel {
     ctaStats: TelegramFlowCtaStat[];
 }
 
+export interface TelegramTimelineMessageEvent {
+    type: 'message';
+    stepOrder: number;
+    stepType: TelegramStepType;
+    text: string | null;
+    mediaUrl: string | null;
+    buttons: TelegramButton[];
+    estimatedAt: string;
+}
+
+export interface TelegramTimelineClickEvent {
+    type: 'click';
+    stepOrder: number;
+    buttonLabel: string;
+    buttonKind: TelegramButtonKind;
+    at: string;
+}
+
+export type TelegramTimelineEvent = TelegramTimelineMessageEvent | TelegramTimelineClickEvent;
+
+export interface TelegramLeadTimeline {
+    run: {
+        _id: string;
+        chatId: number;
+        username?: string;
+        firstName?: string;
+        startedAt: string;
+        completedAt?: string;
+        status: 'in_progress' | 'waiting' | 'completed';
+        waitingUntil?: string;
+    };
+    timeline: TelegramTimelineEvent[];
+}
+
 export interface TelegramContactSummary {
     flowsCount: number;
     totalRuns: number;

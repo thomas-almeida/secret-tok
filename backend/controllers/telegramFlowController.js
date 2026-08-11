@@ -398,6 +398,114 @@ export const getFlowLeads = async (req, res) => {
     }
 }
 
+// Troca {{nome}}/{{username}} pelos dados do lead (mesma substituição que o bot faz
+// antes de enviar). Mantém os marcadores **negrito** intactos pro frontend decidir
+// como renderizar, em vez de mandar HTML pronto.
+function fillPlaceholders(text, run) {
+    if (!text) return text
+    return text
+        .replace(/\{\{\s*nome\s*\}\}/gi, run.firstName || '')
+        .replace(/\{\{\s*username\s*\}\}/gi, run.username || '')
+}
+
+// Reconstrói a jornada real do lead dentro do fluxo: quais mensagens foram
+// enviadas, em que ordem, e quando cada clique aconteceu — respeitando desvios
+// condicionais (goToStep/timeoutGoToStep), não apenas "passo 0 até o alcançado".
+// Os horários de mensagens antes do primeiro clique são estimados a partir do
+// delaySeconds acumulado desde o início; a partir de um clique ou timeout, o
+// relógio é realinhado pelo horário real do clique (ou pelo waitingUntil, no
+// caso de resolução por timeout).
+export const getLeadTimeline = async (req, res) => {
+    try {
+        const { flowId, runId } = req.params
+
+        const [flow, run] = await Promise.all([
+            TelegramFlow.findById(flowId),
+            TelegramFlowRun.findOne({ _id: runId, flowId })
+        ])
+
+        if (!flow || !run) {
+            return res.status(404).json({ message: "Fluxo ou lead não encontrado" })
+        }
+
+        const stepsByOrder = new Map(flow.steps.map((s) => [s.order, s]))
+        const sortedOrders = [...stepsByOrder.keys()].sort((a, b) => a - b)
+        const startedAtMs = new Date(run.startedAt).getTime()
+
+        const timeline = []
+        let cursor = sortedOrders[0]
+        let cumulativeMs = 0
+        const visitedOrders = new Set()
+
+        while (cursor !== undefined && cursor !== null && !visitedOrders.has(cursor)) {
+            const step = stepsByOrder.get(cursor)
+            if (!step) break
+            visitedOrders.add(cursor)
+
+            cumulativeMs += (step.delaySeconds || 0) * 1000
+            const estimatedAt = new Date(startedAtMs + cumulativeMs)
+
+            timeline.push({
+                type: 'message',
+                stepOrder: step.order,
+                stepType: step.type,
+                text: fillPlaceholders(step.text, run),
+                mediaUrl: step.mediaUrl || null,
+                buttons: step.buttons || [],
+                estimatedAt
+            })
+
+            const clicksOnStep = run.buttonClicks.filter((c) => c.stepOrder === step.order)
+            clicksOnStep.forEach((c) => {
+                timeline.push({
+                    type: 'click',
+                    stepOrder: step.order,
+                    buttonLabel: c.buttonLabel,
+                    buttonKind: c.buttonKind,
+                    at: c.clickedAt
+                })
+            })
+
+            const hasQuizButton = step.buttons?.some((b) => b.kind === 'quiz')
+            if (step.waitForClick && hasQuizButton) {
+                const quizClick = clicksOnStep.find((c) => c.buttonKind === 'quiz')
+                if (quizClick) {
+                    const button = step.buttons.find((b) => b.kind === 'quiz' && b.label === quizClick.buttonLabel)
+                    cursor = button?.goToStep ?? (step.order + 1)
+                    cumulativeMs = new Date(quizClick.clickedAt).getTime() - startedAtMs
+                } else if (run.status === 'waiting' && run.waitingStepOrder === step.order) {
+                    cursor = null // ainda pausado exatamente aqui
+                } else {
+                    // ninguém clicou: resolvido pelo sweep de timeout
+                    cursor = step.timeoutGoToStep ?? (step.order + 1)
+                    if (run.waitingUntil) cumulativeMs = new Date(run.waitingUntil).getTime() - startedAtMs
+                }
+            } else {
+                cursor = step.order + 1
+            }
+        }
+
+        return res.status(200).json({
+            run: {
+                _id: run._id,
+                chatId: run.chatId,
+                username: run.username,
+                firstName: run.firstName,
+                startedAt: run.startedAt,
+                completedAt: run.completedAt,
+                status: run.status,
+                waitingUntil: run.waitingUntil
+            },
+            timeline
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message: "Erro ao montar a jornada do lead",
+            error: error.message
+        })
+    }
+}
+
 // Upload de foto/vídeo para os passos do fluxo, armazenado no bucket R2 já usado pelos vídeos do app
 export const uploadMedia = async (req, res) => {
     try {

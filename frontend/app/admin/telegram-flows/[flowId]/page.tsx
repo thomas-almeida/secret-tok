@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, Suspense, use, Fragment } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense, use, Fragment, type ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AdminAuthGate, { AdminAuthGateSkeleton } from "../../../components/admin-auth-gate";
@@ -13,6 +13,7 @@ import {
     updateFlow,
     getFlowFunnel,
     getFlowLeads,
+    getLeadTimeline,
     uploadFlowMedia,
     getAllContacts,
     getFlowAudience,
@@ -26,6 +27,9 @@ import {
     TelegramFlowFunnel,
     TelegramFlowRange,
     TelegramFlowRun,
+    TelegramLeadTimeline,
+    TelegramTimelineMessageEvent,
+    TelegramTimelineClickEvent,
     TelegramContact,
     TelegramRemarketingStatus,
     TelegramRemarketingCounts
@@ -33,7 +37,7 @@ import {
 import {
     Loader2, Plus, Trash2, ArrowUp, ArrowDown, Save, Copy, Check,
     ImageIcon, Video, Type, Link2, HelpCircle, Upload, BarChart3, ListChecks, Timer, Workflow,
-    Users, Clock, TrendingUp, MousePointerClick, Search
+    Users, Clock, TrendingUp, MousePointerClick, Search, MessageSquareText, X
 } from "lucide-react";
 import {
     ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -108,6 +112,7 @@ function FunnelPanel({ flowId }: { flowId: string }) {
     const [range, setRange] = useState<TelegramFlowRange>('7d');
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
+    const [conversationRunId, setConversationRunId] = useState<string | null>(null);
 
     const load = useCallback(async () => {
         setIsLoading(true);
@@ -424,6 +429,12 @@ function FunnelPanel({ flowId }: { flowId: string }) {
                                         {isExpanded && (
                                             <tr className="bg-neutral-900/60">
                                                 <td colSpan={6} className="p-4">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setConversationRunId(lead._id); }}
+                                                        className="mb-4 flex items-center gap-2 px-3 py-1.5 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 rounded-lg text-xs font-medium"
+                                                    >
+                                                        <MessageSquareText className="w-3.5 h-3.5" /> Ver conversa
+                                                    </button>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                                                         <div>
                                                             <p className="text-neutral-500 mb-1">Chat ID</p>
@@ -476,6 +487,120 @@ function FunnelPanel({ flowId }: { flowId: string }) {
                     </table>
                     {leads.length === 0 && (
                         <div className="text-center py-8 text-neutral-400 text-sm">Nenhum lead ainda.</div>
+                    )}
+                </div>
+            </div>
+
+            {conversationRunId && (
+                <ConversationModal flowId={flowId} runId={conversationRunId} onClose={() => setConversationRunId(null)} />
+            )}
+        </div>
+    );
+}
+
+function renderBoldText(text: string): ReactNode {
+    return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+        part.startsWith('**') && part.endsWith('**')
+            ? <strong key={i}>{part.slice(2, -2)}</strong>
+            : <span key={i}>{part}</span>
+    );
+}
+
+function MessageBubble({ event }: { event: TelegramTimelineMessageEvent }) {
+    return (
+        <div className="flex justify-start">
+            <div className="max-w-[85%] bg-neutral-800 border border-neutral-700 rounded-2xl rounded-tl-sm px-3 py-2">
+                {event.mediaUrl && event.stepType === 'photo' && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={event.mediaUrl} alt="" className="rounded-lg mb-2 max-h-64 w-full object-cover" />
+                )}
+                {event.mediaUrl && event.stepType === 'video' && (
+                    <video src={event.mediaUrl} controls className="rounded-lg mb-2 max-h-64 w-full" />
+                )}
+                {event.text && <p className="text-sm text-neutral-100 whitespace-pre-wrap">{renderBoldText(event.text)}</p>}
+                {event.buttons.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                        {event.buttons.map((b, i) => (
+                            <div key={i} className="text-center text-xs text-sky-400 bg-neutral-900/60 border border-neutral-700 rounded-lg py-1.5 px-2">
+                                {b.kind === 'url' ? '🔗 ' : '☑️ '}{b.label}
+                            </div>
+                        ))}
+                    </div>
+                )}
+                <p className="text-[10px] text-neutral-500 mt-1 text-right">{new Date(event.estimatedAt).toLocaleTimeString('pt-BR')}</p>
+            </div>
+        </div>
+    );
+}
+
+function ClickPill({ event }: { event: TelegramTimelineClickEvent }) {
+    return (
+        <div className="flex justify-center">
+            <div className="text-[11px] text-neutral-400 bg-neutral-800/70 rounded-full px-3 py-1">
+                ✅ Clicou em &quot;{event.buttonLabel}&quot; · {new Date(event.at).toLocaleTimeString('pt-BR')}
+            </div>
+        </div>
+    );
+}
+
+function ConversationModal({ flowId, runId, onClose }: { flowId: string; runId: string; onClose: () => void }) {
+    const [data, setData] = useState<TelegramLeadTimeline | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    const load = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const result = await getLeadTimeline(flowId, runId);
+            setData(result);
+        } catch (err) {
+            console.error('Error loading timeline:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [flowId, runId]);
+
+    useEffect(() => {
+        load();
+    }, [load]);
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div
+                className="bg-neutral-900 border border-neutral-800 rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="p-4 border-b border-neutral-800 flex items-center justify-between shrink-0">
+                    <div>
+                        <h3 className="font-semibold flex items-center gap-2">
+                            <MessageSquareText className="w-4 h-4 text-amber-500" />
+                            {data?.run.username ? `@${data.run.username}` : (data?.run.firstName || data?.run.chatId || '...')}
+                        </h3>
+                        {data && <p className="text-xs text-neutral-500 mt-0.5">Iniciou em {new Date(data.run.startedAt).toLocaleString('pt-BR')}</p>}
+                    </div>
+                    <button onClick={onClose} className="p-1.5 hover:bg-neutral-800 rounded-lg">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-neutral-950">
+                    {isLoading ? (
+                        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-amber-500" /></div>
+                    ) : !data || data.timeline.length === 0 ? (
+                        <p className="text-neutral-500 text-sm text-center py-12">Nenhuma mensagem enviada ainda.</p>
+                    ) : (
+                        data.timeline.map((event, i) =>
+                            event.type === 'message'
+                                ? <MessageBubble key={i} event={event} />
+                                : <ClickPill key={i} event={event} />
+                        )
+                    )}
+
+                    {data && (
+                        <div className="text-center text-xs text-neutral-500 pt-2">
+                            {data.run.status === 'completed' && data.run.completedAt && `✅ Completou o fluxo às ${new Date(data.run.completedAt).toLocaleString('pt-BR')}`}
+                            {data.run.status === 'waiting' && data.run.waitingUntil && `⏳ Esperando clique (timeout às ${new Date(data.run.waitingUntil).toLocaleString('pt-BR')})`}
+                            {data.run.status === 'in_progress' && '⏱️ Em andamento'}
+                        </div>
                     )}
                 </div>
             </div>

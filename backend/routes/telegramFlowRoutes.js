@@ -8,6 +8,7 @@ import {
     deleteFlow,
     getFlowFunnel,
     getFlowLeads,
+    getLeadTimeline,
     uploadMedia,
     redirectClick
 } from "../controllers/telegramFlowController.js"
@@ -44,6 +45,7 @@ router.delete("/:flowId", deleteFlow)               // DELETE /api/telegram-flow
 
 router.get("/:flowId/funnel", getFlowFunnel)        // GET /api/telegram-flows/:flowId/funnel - Dashboard de funil
 router.get("/:flowId/leads", getFlowLeads)          // GET /api/telegram-flows/:flowId/leads - Lista de leads/execuções
+router.get("/:flowId/leads/:runId/timeline", getLeadTimeline) // GET /api/telegram-flows/:flowId/leads/:runId/timeline - Jornada (conversa) reconstruída do lead
 
 router.get("/:flowId/audience", getFlowAudience)    // GET /api/telegram-flows/:flowId/audience - Audiência de remarketing do fluxo
 router.put("/:flowId/audience", setFlowAudience)    // PUT /api/telegram-flows/:flowId/audience - Marca quem recebe o remarketing
