@@ -113,3 +113,48 @@ export interface TelegramFlowFunnel {
     buttonClicks: TelegramFlowFunnelButtonClick[];
     ctaStats: TelegramFlowCtaStat[];
 }
+
+export interface TelegramContactSummary {
+    flowsCount: number;
+    totalRuns: number;
+    lastFlowSlug: string | null;
+    lastStatus: 'in_progress' | 'waiting' | 'completed' | null;
+    lastActivityAt: string | null;
+}
+
+export interface TelegramContact {
+    _id: string;
+    chatId: number;
+    username?: string;
+    firstName?: string;
+    createdAt: string;
+    updatedAt: string;
+    summary: TelegramContactSummary;
+}
+
+export type TelegramRemarketingStatus = 'selected' | 'queued' | 'sending' | 'sent' | 'failed';
+
+export interface TelegramRemarketingTarget {
+    _id: string;
+    chatId: number;
+    username?: string;
+    firstName?: string;
+    status: TelegramRemarketingStatus;
+    runId?: string;
+    error?: string;
+    queuedAt?: string;
+    sentAt?: string;
+}
+
+export interface TelegramRemarketingCounts {
+    selected: number;
+    queued: number;
+    sending: number;
+    sent: number;
+    failed: number;
+}
+
+export interface TelegramFlowAudience {
+    targets: TelegramRemarketingTarget[];
+    counts: TelegramRemarketingCounts;
+}

@@ -9,10 +9,15 @@ import Input from "../../../components/input";
 import FlowMap from "./flow-map";
 import {
     getFlow,
+    getFlows,
     updateFlow,
     getFlowFunnel,
     getFlowLeads,
-    uploadFlowMedia
+    uploadFlowMedia,
+    getAllContacts,
+    getFlowAudience,
+    setFlowAudience,
+    dispatchFlow
 } from "../../../services/telegram-flow-service";
 import {
     TelegramFlow,
@@ -20,12 +25,15 @@ import {
     TelegramButtonKind,
     TelegramFlowFunnel,
     TelegramFlowRange,
-    TelegramFlowRun
+    TelegramFlowRun,
+    TelegramContact,
+    TelegramRemarketingStatus,
+    TelegramRemarketingCounts
 } from "../../../schemas/telegram-flow-schema";
 import {
     Loader2, Plus, Trash2, ArrowUp, ArrowDown, Save, Copy, Check,
     ImageIcon, Video, Type, Link2, HelpCircle, Upload, BarChart3, ListChecks, Timer, Workflow,
-    Users, Clock, TrendingUp, MousePointerClick
+    Users, Clock, TrendingUp, MousePointerClick, Search
 } from "lucide-react";
 import {
     ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -475,11 +483,328 @@ function FunnelPanel({ flowId }: { flowId: string }) {
     );
 }
 
+const REMARKETING_STATUS_LABELS: Record<string, string> = {
+    selected: 'Selecionado',
+    queued: 'Na fila',
+    sending: 'Enviando',
+    sent: 'Enviado',
+    failed: 'Falhou'
+};
+const REMARKETING_STATUS_CLASSES: Record<string, string> = {
+    selected: 'bg-neutral-700 text-neutral-300',
+    queued: 'bg-blue-500/20 text-blue-400',
+    sending: 'bg-blue-500/20 text-blue-400',
+    sent: 'bg-green-500/20 text-green-400',
+    failed: 'bg-red-500/20 text-red-400'
+};
+
+function AudiencePanel({ flowId }: { flowId: string }) {
+    const [contacts, setContacts] = useState<TelegramContact[]>([]);
+    const [total, setTotal] = useState<number>(0);
+    const [page, setPage] = useState<number>(1);
+    const [search, setSearch] = useState<string>('');
+    const [flowSlugFilter, setFlowSlugFilter] = useState<string>('');
+    const [statusFilter, setStatusFilter] = useState<'' | 'in_progress' | 'waiting' | 'completed'>('');
+    const [activeFrom, setActiveFrom] = useState<string>('');
+    const [activeTo, setActiveTo] = useState<string>('');
+    const [allFlows, setAllFlows] = useState<TelegramFlow[]>([]);
+    const [audienceStatus, setAudienceStatus] = useState<Map<number, TelegramRemarketingStatus>>(new Map());
+    const [counts, setCounts] = useState<TelegramRemarketingCounts>({ selected: 0, queued: 0, sending: 0, sent: 0, failed: 0 });
+    const [selected, setSelected] = useState<Set<number>>(new Set());
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [confirmingDispatch, setConfirmingDispatch] = useState<boolean>(false);
+    const [isDispatching, setIsDispatching] = useState<boolean>(false);
+    const [message, setMessage] = useState<string>('');
+    const limit = 50;
+
+    useEffect(() => {
+        getFlows().then(setAllFlows).catch((err) => console.error('Error fetching flows:', err));
+    }, []);
+
+    const loadContacts = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const data = await getAllContacts({
+                search: search || undefined,
+                page,
+                limit,
+                flowSlug: flowSlugFilter || undefined,
+                status: statusFilter || undefined,
+                activeFrom: activeFrom ? new Date(activeFrom).toISOString() : undefined,
+                activeTo: activeTo ? new Date(activeTo).toISOString() : undefined
+            });
+            setContacts(data.contacts);
+            setTotal(data.total);
+        } catch (err) {
+            console.error('Error fetching contacts:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [search, page, flowSlugFilter, statusFilter, activeFrom, activeTo]);
+
+    const loadAudience = useCallback(async () => {
+        try {
+            const data = await getFlowAudience(flowId);
+            const statusMap = new Map<number, TelegramRemarketingStatus>(data.targets.map((t) => [t.chatId, t.status]));
+            setAudienceStatus(statusMap);
+            setCounts(data.counts);
+            setSelected(new Set(data.targets.filter((t) => t.status === 'selected').map((t) => t.chatId)));
+        } catch (err) {
+            console.error('Error fetching audience:', err);
+        }
+    }, [flowId]);
+
+    useEffect(() => { loadContacts(); }, [loadContacts]);
+    useEffect(() => { loadAudience(); }, [loadAudience]);
+
+    // Enquanto tiver algo em fila/enviando, atualiza sozinho pra acompanhar o progresso do disparo
+    useEffect(() => {
+        if (counts.queued === 0 && counts.sending === 0) return;
+        const interval = setInterval(loadAudience, 4000);
+        return () => clearInterval(interval);
+    }, [counts.queued, counts.sending, loadAudience]);
+
+    const toggle = (chatId: number) => {
+        if (audienceStatus.has(chatId) && audienceStatus.get(chatId) !== 'selected') return; // já disparado, não mexe
+        setSelected((prev) => {
+            const next = new Set(prev);
+            if (next.has(chatId)) next.delete(chatId);
+            else next.add(chatId);
+            return next;
+        });
+    };
+
+    const selectAllFiltered = () => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+            contacts.forEach((c) => {
+                const status = audienceStatus.get(c.chatId);
+                if (!status || status === 'selected') next.add(c.chatId);
+            });
+            return next;
+        });
+    };
+
+    const clearSelection = () => setSelected(new Set());
+
+    const handleSaveSelection = async () => {
+        setIsSaving(true);
+        setMessage('');
+        try {
+            await setFlowAudience(flowId, [...selected]);
+            await loadAudience();
+            setMessage('Seleção salva.');
+        } catch (err) {
+            console.error('Error saving audience:', err);
+            setMessage('Erro ao salvar seleção.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDispatch = async () => {
+        setIsDispatching(true);
+        setMessage('');
+        try {
+            const result = await dispatchFlow(flowId);
+            setMessage(`Disparo iniciado para ${result.queued} contato(s).`);
+            setConfirmingDispatch(false);
+            await loadAudience();
+        } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string } } };
+            setMessage(error.response?.data?.message || 'Erro ao disparar remarketing.');
+        } finally {
+            setIsDispatching(false);
+        }
+    };
+
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const selectedCount = selected.size;
+
+    return (
+        <div className="space-y-4">
+            <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-1">Audiência de remarketing</h3>
+                <p className="text-xs text-neutral-500 mb-4">
+                    Marque quem vai receber este fluxo. Contatos já enviados/na fila não podem ser desmarcados — o histórico fica preservado.
+                </p>
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="px-2 py-1 rounded-lg bg-neutral-700 text-neutral-300">{counts.selected} selecionado(s)</span>
+                    <span className="px-2 py-1 rounded-lg bg-blue-500/20 text-blue-400">{counts.queued + counts.sending} na fila</span>
+                    <span className="px-2 py-1 rounded-lg bg-green-500/20 text-green-400">{counts.sent} enviado(s)</span>
+                    <span className="px-2 py-1 rounded-lg bg-red-500/20 text-red-400">{counts.failed} falharam</span>
+                </div>
+            </div>
+
+            <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden">
+                <div className="p-4 border-b border-neutral-700 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div className="relative">
+                        <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                            placeholder="Buscar por nome ou @usuário"
+                            value={search}
+                            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                            className="bg-neutral-700 border border-neutral-600 rounded-lg pl-9 pr-3 py-1.5 text-sm w-64"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button onClick={selectAllFiltered} className="px-3 py-1.5 text-xs bg-neutral-700 hover:bg-neutral-600 rounded-lg">
+                            Selecionar todos os filtrados
+                        </button>
+                        <button onClick={clearSelection} className="px-3 py-1.5 text-xs bg-neutral-700 hover:bg-neutral-600 rounded-lg">
+                            Limpar seleção
+                        </button>
+                    </div>
+                </div>
+
+                <div className="p-4 border-b border-neutral-700 flex flex-wrap items-end gap-3">
+                    <div>
+                        <label className="block text-xs text-neutral-500 mb-1">Esteve no fluxo</label>
+                        <select
+                            value={flowSlugFilter}
+                            onChange={(e) => { setFlowSlugFilter(e.target.value); setPage(1); }}
+                            className="bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-1.5 text-sm"
+                        >
+                            <option value="">Todos</option>
+                            {allFlows.map((f) => <option key={f._id} value={f.slug}>{f.name}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs text-neutral-500 mb-1">Último status</label>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => { setStatusFilter(e.target.value as '' | 'in_progress' | 'waiting' | 'completed'); setPage(1); }}
+                            className="bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-1.5 text-sm"
+                        >
+                            <option value="">Todos</option>
+                            <option value="waiting">Esperando clique</option>
+                            <option value="in_progress">Em andamento</option>
+                            <option value="completed">Completou</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs text-neutral-500 mb-1">Última atividade de</label>
+                        <input
+                            type="datetime-local"
+                            value={activeFrom}
+                            onChange={(e) => { setActiveFrom(e.target.value); setPage(1); }}
+                            className="bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-1.5 text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs text-neutral-500 mb-1">até</label>
+                        <input
+                            type="datetime-local"
+                            value={activeTo}
+                            onChange={(e) => { setActiveTo(e.target.value); setPage(1); }}
+                            className="bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-1.5 text-sm"
+                        />
+                    </div>
+                    {(flowSlugFilter || statusFilter || activeFrom || activeTo) && (
+                        <button
+                            onClick={() => { setFlowSlugFilter(''); setStatusFilter(''); setActiveFrom(''); setActiveTo(''); setPage(1); }}
+                            className="px-3 py-1.5 text-xs bg-neutral-700 hover:bg-neutral-600 rounded-lg"
+                        >
+                            Limpar filtros
+                        </button>
+                    )}
+                </div>
+
+                {isLoading ? (
+                    <div className="flex justify-center items-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+                    </div>
+                ) : contacts.length === 0 ? (
+                    <div className="text-center py-12 text-neutral-400">Nenhum contato encontrado.</div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-neutral-700/50">
+                                <tr>
+                                    <th className="p-3 w-10"></th>
+                                    <th className="text-left p-3 text-neutral-300">Contato</th>
+                                    <th className="text-left p-3 text-neutral-300">Já esteve em</th>
+                                    <th className="text-left p-3 text-neutral-300">Status neste fluxo</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-neutral-700">
+                                {contacts.map((c) => {
+                                    const status = audienceStatus.get(c.chatId);
+                                    const isChecked = selected.has(c.chatId);
+                                    const isLocked = Boolean(status) && status !== 'selected';
+                                    return (
+                                        <tr key={c._id} className={isLocked ? '' : 'cursor-pointer hover:bg-neutral-700/30'} onClick={() => !isLocked && toggle(c.chatId)}>
+                                            <td className="p-3">
+                                                <input type="checkbox" checked={isChecked} disabled={isLocked} onChange={() => toggle(c.chatId)} className="accent-amber-500" onClick={(e) => e.stopPropagation()} />
+                                            </td>
+                                            <td className="p-3">{c.username ? `@${c.username}` : (c.firstName || '—')}</td>
+                                            <td className="p-3 text-neutral-400">{c.summary.lastFlowSlug || '—'} ({c.summary.flowsCount} fluxo(s))</td>
+                                            <td className="p-3">
+                                                {status ? (
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs ${REMARKETING_STATUS_CLASSES[status]}`}>{REMARKETING_STATUS_LABELS[status]}</span>
+                                                ) : (
+                                                    <span className="text-neutral-600 text-xs">—</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {totalPages > 1 && (
+                    <div className="p-4 border-t border-neutral-700 flex items-center justify-between text-sm">
+                        <span className="text-neutral-400">{total} contato(s) · página {page} de {totalPages}</span>
+                        <div className="flex gap-2">
+                            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-600 disabled:opacity-40 rounded-lg">Anterior</button>
+                            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-600 disabled:opacity-40 rounded-lg">Próxima</button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-4 flex flex-wrap items-center gap-3">
+                <button
+                    onClick={handleSaveSelection}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 disabled:opacity-50 rounded-lg text-sm font-medium"
+                >
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Salvar seleção ({selectedCount})
+                </button>
+
+                {!confirmingDispatch ? (
+                    <button
+                        onClick={() => setConfirmingDispatch(true)}
+                        disabled={counts.selected === 0}
+                        className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-40 rounded-lg text-sm font-medium ml-auto"
+                    >
+                        Disparar remarketing ({counts.selected} salvos)
+                    </button>
+                ) : (
+                    <div className="flex items-center gap-2 ml-auto">
+                        <span className="text-sm text-neutral-300">Confirmar disparo para {counts.selected} contato(s)?</span>
+                        <button onClick={handleDispatch} disabled={isDispatching} className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 rounded-lg text-sm font-medium">
+                            {isDispatching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar'}
+                        </button>
+                        <button onClick={() => setConfirmingDispatch(false)} className="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-600 rounded-lg text-sm">Cancelar</button>
+                    </div>
+                )}
+
+                {message && <p className="w-full text-sm text-neutral-400">{message}</p>}
+            </div>
+        </div>
+    );
+}
+
 function FlowEditorContent({ userId, flowId }: { userId: string; flowId: string }) {
     const searchParams = useSearchParams();
     const initialTab = searchParams.get('tab') === 'funnel' ? 'funnel' : 'editor';
 
-    const [tab, setTab] = useState<'editor' | 'map' | 'funnel'>(initialTab);
+    const [tab, setTab] = useState<'editor' | 'map' | 'audience' | 'funnel'>(initialTab);
     const [pendingScrollIndex, setPendingScrollIndex] = useState<number | null>(null);
     const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
     const [flow, setFlow] = useState<TelegramFlow | null>(null);
@@ -709,6 +1034,12 @@ function FlowEditorContent({ userId, flowId }: { userId: string; flowId: string 
                         <Workflow className="w-4 h-4" /> Mapa
                     </button>
                     <button
+                        onClick={() => setTab('audience')}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'audience' ? 'border-amber-500 text-white' : 'border-transparent text-neutral-400 hover:text-white'}`}
+                    >
+                        <Users className="w-4 h-4" /> Audiência
+                    </button>
+                    <button
                         onClick={() => setTab('funnel')}
                         className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'funnel' ? 'border-amber-500 text-white' : 'border-transparent text-neutral-400 hover:text-white'}`}
                     >
@@ -720,6 +1051,8 @@ function FlowEditorContent({ userId, flowId }: { userId: string; flowId: string 
                     <FunnelPanel flowId={flowId} />
                 ) : tab === 'map' ? (
                     <FlowMap steps={steps} onSelectStep={handleSelectStepFromMap} />
+                ) : tab === 'audience' ? (
+                    <AudiencePanel flowId={flowId} />
                 ) : (
                     <div className="space-y-4">
                         {steps.map((step, index) => (

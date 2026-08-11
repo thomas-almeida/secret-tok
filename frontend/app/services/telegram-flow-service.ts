@@ -1,7 +1,15 @@
 'use client';
 
 import axios from "axios";
-import { TelegramFlow, TelegramFlowFunnel, TelegramFlowRange, TelegramFlowRun, TelegramStep } from "../schemas/telegram-flow-schema";
+import {
+    TelegramContact,
+    TelegramFlow,
+    TelegramFlowAudience,
+    TelegramFlowFunnel,
+    TelegramFlowRange,
+    TelegramFlowRun,
+    TelegramStep
+} from "../schemas/telegram-flow-schema";
 
 const BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_BASEURL}/api/telegram-flows`;
 
@@ -53,4 +61,33 @@ export const uploadFlowMedia = async (file: File): Promise<string> => {
         headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data.url;
+};
+
+export const getAllContacts = async (
+    params?: {
+        search?: string;
+        page?: number;
+        limit?: number;
+        flowSlug?: string;
+        status?: 'in_progress' | 'waiting' | 'completed';
+        activeFrom?: string;
+        activeTo?: string;
+    }
+): Promise<{ contacts: TelegramContact[]; total: number; page: number; limit: number }> => {
+    const response = await axios.get(`${BASE_URL}/contacts`, { params });
+    return response.data;
+};
+
+export const getFlowAudience = async (flowId: string): Promise<TelegramFlowAudience> => {
+    const response = await axios.get(`${BASE_URL}/${flowId}/audience`);
+    return response.data;
+};
+
+export const setFlowAudience = async (flowId: string, chatIds: number[]): Promise<void> => {
+    await axios.put(`${BASE_URL}/${flowId}/audience`, { chatIds });
+};
+
+export const dispatchFlow = async (flowId: string): Promise<{ queued: number }> => {
+    const response = await axios.post(`${BASE_URL}/${flowId}/dispatch`);
+    return response.data;
 };

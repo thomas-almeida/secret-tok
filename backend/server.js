@@ -57,6 +57,7 @@ mongoose.connect(process.env.DB_URI, {
       keepAlive()
       telegramFlowBotService.registerWebhook()
       telegramFlowBotService.startTimeoutSweep()
+      telegramFlowBotService.startDispatchWorker()
     });
   })
   .catch((error) => {

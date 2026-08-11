@@ -2,7 +2,13 @@ import TelegramBot from 'node-telegram-bot-api'
 import TelegramFlow from '../models/TelegramFlow.js'
 import TelegramContact from '../models/TelegramContact.js'
 import TelegramFlowRun from '../models/TelegramFlowRun.js'
+import TelegramRemarketingTarget from '../models/TelegramRemarketingTarget.js'
 import { TELEGRAM_FLOW_CONFIG } from '../config/telegramFlowConfig.js'
+
+// Intervalo entre envios de remarketing (bem abaixo do limite de ~30 msg/s do
+// Telegram) pra não estourar rate limit nem parecer spam em massa pro provedor.
+const DISPATCH_THROTTLE_MS = 300
+const DISPATCH_BATCH_SIZE = 20
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -30,6 +36,7 @@ class TelegramFlowBotService {
     constructor() {
         this.bot = null
         this.enabled = Boolean(TELEGRAM_FLOW_CONFIG.botToken)
+        this.isDispatching = false // trava em memória: evita duas rodadas do worker pegarem o mesmo lote
 
         if (this.enabled) {
             this.bot = new TelegramBot(TELEGRAM_FLOW_CONFIG.botToken, { polling: false, webHook: false })
@@ -111,9 +118,83 @@ class TelegramFlowBotService {
         await this.runFlow(chat.id, flow, run)
     }
 
+    // Dispara um fluxo pra um contato que JÁ deu /start antes (remarketing) —
+    // diferente de startFlowForChat, não depende de uma mensagem recebida agora.
+    async sendFlowToContact(flow, contact) {
+        const run = await TelegramFlowRun.create({
+            flowId: flow._id,
+            flowSlug: flow.slug,
+            chatId: contact.chatId,
+            username: contact.username,
+            firstName: contact.firstName
+        })
+
+        await this.runFlow(contact.chatId, flow, run)
+        return run
+    }
+
+    // Processa a fila de remarketing ('queued' -> 'sent'/'failed'), reivindicando
+    // um alvo por vez com findOneAndUpdate atômico (evita duas execuções — do
+    // mesmo processo ou de dois processos concorrentes — mandarem em duplicidade
+    // pro mesmo contato) e um intervalo entre envios pra não estourar rate limit
+    // do Telegram nem soar como spam em massa.
+    async processDispatchQueue() {
+        if (!this.enabled || this.isDispatching) return
+        this.isDispatching = true
+
+        try {
+            for (let i = 0; i < DISPATCH_BATCH_SIZE; i++) {
+                const target = await TelegramRemarketingTarget.findOneAndUpdate(
+                    { status: 'queued' },
+                    { status: 'sending' },
+                    { new: true }
+                )
+                if (!target) break // fila vazia
+
+                try {
+                    const [flow, contact] = await Promise.all([
+                        TelegramFlow.findById(target.flowId),
+                        TelegramContact.findOne({ chatId: target.chatId })
+                    ])
+
+                    if (!flow || !contact) {
+                        target.status = 'failed'
+                        target.error = !flow ? 'Fluxo não encontrado' : 'Contato não encontrado'
+                        await target.save()
+                        continue
+                    }
+
+                    const run = await this.sendFlowToContact(flow, contact)
+                    target.status = 'sent'
+                    target.runId = run._id
+                    target.sentAt = new Date()
+                    await target.save()
+                } catch (error) {
+                    target.status = 'failed'
+                    target.error = error.message
+                    await target.save()
+                }
+
+                await delay(DISPATCH_THROTTLE_MS)
+            }
+        } catch (error) {
+            console.error('❌ Erro ao processar fila de remarketing:', error.message)
+        } finally {
+            this.isDispatching = false
+        }
+    }
+
+    startDispatchWorker() {
+        if (!this.enabled) return
+        setInterval(() => this.processDispatchQueue(), 5 * 1000)
+    }
+
     // Botões "url" abrem o link direto no cliente do Telegram e nunca disparam
     // callback_query, então roteamos por um redirect nosso (que loga o clique e
     // devolve 302 pro destino real) pra conseguir medir quem clicou pra assistir.
+    // Botões "quiz" levam o runId no callback_data (em vez de resolver "o run mais
+    // recente desse chatId") porque com remarketing um mesmo contato pode ter
+    // vários runs concorrentes em fluxos diferentes ao mesmo tempo.
     buildReplyMarkup(step, runId) {
         if (!step.buttons || step.buttons.length === 0) return {}
 
@@ -122,7 +203,7 @@ class TelegramFlowBotService {
                 const trackedUrl = `${TELEGRAM_FLOW_CONFIG.publicBaseUrl}/api/telegram-flows/click/${runId}/${step.order}/${index}`
                 return { text: button.label, url: trackedUrl }
             }
-            return { text: button.label, callback_data: `${step.order}:${index}` }
+            return { text: button.label, callback_data: `${runId}:${step.order}:${index}` }
         })]
 
         return { reply_markup: { inline_keyboard } }
@@ -187,15 +268,12 @@ class TelegramFlowBotService {
     }
 
     async handleCallbackQuery(query) {
-        const chatId = query.message?.chat?.id
-        if (!chatId) return
-
-        const [stepOrderRaw, buttonIndexRaw] = (query.data || '').split(':')
+        const [runId, stepOrderRaw, buttonIndexRaw] = (query.data || '').split(':')
         const stepOrder = Number(stepOrderRaw)
         const buttonIndex = Number(buttonIndexRaw)
-        if (Number.isNaN(stepOrder) || Number.isNaN(buttonIndex)) return
+        if (!runId || Number.isNaN(stepOrder) || Number.isNaN(buttonIndex)) return
 
-        const run = await TelegramFlowRun.findOne({ chatId, status: { $in: ['in_progress', 'waiting'] } }).sort({ startedAt: -1 })
+        const run = await TelegramFlowRun.findOne({ _id: runId, status: { $in: ['in_progress', 'waiting'] } })
         if (!run) return
 
         const flow = await TelegramFlow.findById(run.flowId)
