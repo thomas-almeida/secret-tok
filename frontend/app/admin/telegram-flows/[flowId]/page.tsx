@@ -504,6 +504,7 @@ function AudiencePanel({ flowId }: { flowId: string }) {
     const [page, setPage] = useState<number>(1);
     const [search, setSearch] = useState<string>('');
     const [flowSlugFilter, setFlowSlugFilter] = useState<string>('');
+    const [excludeFlowSlugs, setExcludeFlowSlugs] = useState<Set<string>>(new Set());
     const [statusFilter, setStatusFilter] = useState<'' | 'in_progress' | 'waiting' | 'completed'>('');
     const [activeFrom, setActiveFrom] = useState<string>('');
     const [activeTo, setActiveTo] = useState<string>('');
@@ -530,6 +531,7 @@ function AudiencePanel({ flowId }: { flowId: string }) {
                 page,
                 limit,
                 flowSlug: flowSlugFilter || undefined,
+                excludeFlowSlug: excludeFlowSlugs.size > 0 ? [...excludeFlowSlugs].join(',') : undefined,
                 status: statusFilter || undefined,
                 activeFrom: activeFrom ? new Date(activeFrom).toISOString() : undefined,
                 activeTo: activeTo ? new Date(activeTo).toISOString() : undefined
@@ -541,7 +543,7 @@ function AudiencePanel({ flowId }: { flowId: string }) {
         } finally {
             setIsLoading(false);
         }
-    }, [search, page, flowSlugFilter, statusFilter, activeFrom, activeTo]);
+    }, [search, page, flowSlugFilter, excludeFlowSlugs, statusFilter, activeFrom, activeTo]);
 
     const loadAudience = useCallback(async () => {
         try {
@@ -720,15 +722,46 @@ function AudiencePanel({ flowId }: { flowId: string }) {
                             className="bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-1.5 text-sm"
                         />
                     </div>
-                    {(flowSlugFilter || statusFilter || activeFrom || activeTo) && (
+                    {(flowSlugFilter || excludeFlowSlugs.size > 0 || statusFilter || activeFrom || activeTo) && (
                         <button
-                            onClick={() => { setFlowSlugFilter(''); setStatusFilter(''); setActiveFrom(''); setActiveTo(''); setPage(1); }}
+                            onClick={() => { setFlowSlugFilter(''); setExcludeFlowSlugs(new Set()); setStatusFilter(''); setActiveFrom(''); setActiveTo(''); setPage(1); }}
                             className="px-3 py-1.5 text-xs bg-neutral-700 hover:bg-neutral-600 rounded-lg"
                         >
                             Limpar filtros
                         </button>
                     )}
                 </div>
+
+                {allFlows.length > 0 && (
+                    <div className="p-4 border-b border-neutral-700">
+                        <label className="block text-xs text-neutral-500 mb-2">Não esteve em (exclui quem passou por qualquer um destes)</label>
+                        <div className="flex flex-wrap gap-2">
+                            {allFlows.map((f) => {
+                                const isActive = excludeFlowSlugs.has(f.slug);
+                                return (
+                                    <button
+                                        key={f._id}
+                                        onClick={() => {
+                                            setExcludeFlowSlugs((prev) => {
+                                                const next = new Set(prev);
+                                                if (next.has(f.slug)) next.delete(f.slug);
+                                                else next.add(f.slug);
+                                                return next;
+                                            });
+                                            setPage(1);
+                                        }}
+                                        className={`px-3 py-1 text-xs rounded-full border transition-colors ${isActive
+                                                ? 'bg-red-500/20 border-red-500/40 text-red-400'
+                                                : 'bg-neutral-700 border-neutral-600 text-neutral-300 hover:bg-neutral-600'
+                                            }`}
+                                    >
+                                        {f.name}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {isLoading ? (
                     <div className="flex justify-center items-center py-12">

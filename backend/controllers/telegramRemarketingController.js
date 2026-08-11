@@ -5,13 +5,18 @@ import telegramFlowBotService from "../services/telegramFlowBotService.js"
 
 // Lista geral de todo contato que já deu /start em algum fluxo (base pra montar
 // audiências de remarketing), enriquecida com em quantos fluxos ele já passou.
-// Filtros de fluxo/status/data-hora agem sobre a ÚLTIMA execução de cada contato,
-// então precisam entrar na agregação antes da paginação (não dá pra filtrar em JS
-// depois de já ter paginado os contatos).
+// flowSlug/excludeFlowSlug checam TODO o histórico de execuções do contato (não
+// só a mais recente) — "esteve no fluxo X" e "não esteve em Y" precisam olhar
+// pra trás inteiro, senão alguém que passou por X e depois por Y escaparia dos
+// dois filtros. status/data-hora continuam batendo na execução mais recente.
+// Tudo entra na agregação antes da paginação (não dá pra filtrar em JS depois).
 export const getAllContacts = async (req, res) => {
     try {
-        const { search, page = 1, limit = 50, flowSlug, status, activeFrom, activeTo } = req.query
+        const { search, page = 1, limit = 50, flowSlug, excludeFlowSlug, status, activeFrom, activeTo } = req.query
         const skip = (Number(page) - 1) * Number(limit)
+        const excludeFlowSlugs = Array.isArray(excludeFlowSlug)
+            ? excludeFlowSlug
+            : (excludeFlowSlug ? String(excludeFlowSlug).split(',').filter(Boolean) : [])
 
         const contactMatch = {}
         if (search) {
@@ -26,6 +31,7 @@ export const getAllContacts = async (req, res) => {
             { $lookup: { from: 'telegramflowruns', localField: 'chatId', foreignField: 'chatId', as: 'runs' } },
             {
                 $addFields: {
+                    flowSlugs: { $setUnion: ['$runs.flowSlug', []] },
                     flowsCount: { $size: { $setUnion: ['$runs.flowId', []] } },
                     totalRuns: { $size: '$runs' },
                     lastRun: {
@@ -45,16 +51,18 @@ export const getAllContacts = async (req, res) => {
             }
         ]
 
-        const postMatch = {}
-        if (flowSlug) postMatch.lastFlowSlug = flowSlug
-        if (status) postMatch.lastStatus = status
+        const andConditions = []
+        if (flowSlug) andConditions.push({ flowSlugs: flowSlug })
+        if (excludeFlowSlugs.length > 0) andConditions.push({ flowSlugs: { $nin: excludeFlowSlugs } })
+        if (status) andConditions.push({ lastStatus: status })
         if (activeFrom || activeTo) {
-            postMatch.lastActivityAt = {}
-            if (activeFrom) postMatch.lastActivityAt.$gte = new Date(activeFrom)
-            if (activeTo) postMatch.lastActivityAt.$lte = new Date(activeTo)
+            const activityRange = {}
+            if (activeFrom) activityRange.$gte = new Date(activeFrom)
+            if (activeTo) activityRange.$lte = new Date(activeTo)
+            andConditions.push({ lastActivityAt: activityRange })
         }
-        if (Object.keys(postMatch).length > 0) {
-            pipeline.push({ $match: postMatch })
+        if (andConditions.length > 0) {
+            pipeline.push({ $match: { $and: andConditions } })
         }
 
         pipeline.push({ $sort: { lastActivityAt: -1, updatedAt: -1 } })

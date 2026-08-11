@@ -69,6 +69,7 @@ export const getAllContacts = async (
         page?: number;
         limit?: number;
         flowSlug?: string;
+        excludeFlowSlug?: string;
         status?: 'in_progress' | 'waiting' | 'completed';
         activeFrom?: string;
         activeTo?: string;
