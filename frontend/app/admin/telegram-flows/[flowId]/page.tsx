@@ -622,6 +622,11 @@ function AudiencePanel({ flowId }: { flowId: string }) {
     const totalPages = Math.max(1, Math.ceil(total / limit));
     const selectedCount = selected.size;
 
+    // Progresso do disparo: só conta quem já foi pra fila em algum momento (ignora 'selected', que ainda não disparou)
+    const dispatchTotal = counts.queued + counts.sending + counts.sent + counts.failed;
+    const dispatchProcessed = counts.sent + counts.failed;
+    const dispatchProgressPct = dispatchTotal > 0 ? (dispatchProcessed / dispatchTotal) * 100 : 0;
+
     return (
         <div className="space-y-4">
             <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-4">
@@ -629,6 +634,20 @@ function AudiencePanel({ flowId }: { flowId: string }) {
                 <p className="text-xs text-neutral-500 mb-4">
                     Marque quem vai receber este fluxo. Contatos já enviados/na fila não podem ser desmarcados — o histórico fica preservado.
                 </p>
+
+                {dispatchTotal > 0 && (
+                    <div className="mb-4">
+                        <div className="flex justify-between text-xs text-neutral-400 mb-1.5">
+                            <span>Progresso do disparo</span>
+                            <span>{dispatchProcessed} de {dispatchTotal} ({Math.round(dispatchProgressPct)}%)</span>
+                        </div>
+                        <div className="w-full h-2.5 bg-neutral-700 rounded-full overflow-hidden flex">
+                            <div className="h-full bg-green-500 transition-all" style={{ width: `${(counts.sent / dispatchTotal) * 100}%` }} />
+                            <div className="h-full bg-red-500 transition-all" style={{ width: `${(counts.failed / dispatchTotal) * 100}%` }} />
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span className="px-2 py-1 rounded-lg bg-neutral-700 text-neutral-300">{counts.selected} selecionado(s)</span>
                     <span className="px-2 py-1 rounded-lg bg-blue-500/20 text-blue-400">{counts.queued + counts.sending} na fila</span>
