@@ -75,8 +75,20 @@ export interface TelegramFlowCtaStat extends TelegramFlowFunnelButtonClick {
     ctr: number;
 }
 
-export interface TelegramFlowLeadsByDay {
-    date: string;
+export type TelegramFlowRange = '24h' | '7d' | '30d' | 'all';
+
+export interface TelegramFlowTimeSeriesPoint {
+    bucket: string;
+    count: number;
+}
+
+export interface TelegramFlowTimeSeries {
+    granularity: 'hour' | 'day';
+    points: TelegramFlowTimeSeriesPoint[];
+}
+
+export interface TelegramFlowHourBucket {
+    hour: number;
     count: number;
 }
 
@@ -87,12 +99,16 @@ export interface TelegramFlowStatusBreakdown {
 }
 
 export interface TelegramFlowFunnel {
+    range: TelegramFlowRange;
     totalRuns: number;
     completedRuns: number;
     completionRate: number;
     avgCompletionTimeSeconds: number | null;
+    avgTimeToClickSeconds: number | null;
+    uniqueUrlClickers: number;
     statusBreakdown: TelegramFlowStatusBreakdown;
-    leadsByDay: TelegramFlowLeadsByDay[];
+    timeSeries: TelegramFlowTimeSeries;
+    leadsByHour: TelegramFlowHourBucket[];
     steps: TelegramFlowFunnelStep[];
     buttonClicks: TelegramFlowFunnelButtonClick[];
     ctaStats: TelegramFlowCtaStat[];

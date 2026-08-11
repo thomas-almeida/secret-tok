@@ -1,7 +1,7 @@
 'use client';
 
 import axios from "axios";
-import { TelegramFlow, TelegramFlowFunnel, TelegramFlowRun, TelegramStep } from "../schemas/telegram-flow-schema";
+import { TelegramFlow, TelegramFlowFunnel, TelegramFlowRange, TelegramFlowRun, TelegramStep } from "../schemas/telegram-flow-schema";
 
 const BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_BASEURL}/api/telegram-flows`;
 
@@ -32,8 +32,8 @@ export const deleteFlow = async (flowId: string): Promise<void> => {
     await axios.delete(`${BASE_URL}/${flowId}`);
 };
 
-export const getFlowFunnel = async (flowId: string): Promise<TelegramFlowFunnel> => {
-    const response = await axios.get(`${BASE_URL}/${flowId}/funnel`);
+export const getFlowFunnel = async (flowId: string, range: TelegramFlowRange = '7d'): Promise<TelegramFlowFunnel> => {
+    const response = await axios.get(`${BASE_URL}/${flowId}/funnel`, { params: { range } });
     return response.data;
 };
 

@@ -5,6 +5,15 @@ import TelegramFlow from "../models/TelegramFlow.js"
 import TelegramFlowRun from "../models/TelegramFlowRun.js"
 import { r2Client, R2_CONFIG } from "../config/r2Config.js"
 
+const RANGE_DAYS = { '24h': 1, '7d': 7, '30d': 30 }
+
+function rangeSince(range) {
+    if (range === 'all' || !RANGE_DAYS[range]) return null
+    const since = new Date()
+    since.setDate(since.getDate() - RANGE_DAYS[range])
+    return since
+}
+
 export const createFlow = async (req, res) => {
     try {
         const { name, slug, active, steps } = req.body
@@ -142,10 +151,49 @@ export const deleteFlow = async (req, res) => {
     }
 }
 
-// Funil: quantos leads chegaram em cada passo, taxa de conclusão e cliques por botão
+// Redirect rastreado pros botões "url" dos passos: loga o clique (mesmo formato
+// dos cliques de quiz, só que buttonKind='url') e manda o usuário pro destino real.
+// É assim que passamos a saber quem clicou pra assistir o vídeo/acessar o link.
+const FALLBACK_URL = process.env.FRONTEND_URL || 'https://www.rapidinhas.top'
+
+export const redirectClick = async (req, res) => {
+    try {
+        const { runId, stepOrder, buttonIndex } = req.params
+
+        const run = await TelegramFlowRun.findById(runId)
+        if (!run) return res.redirect(302, FALLBACK_URL)
+
+        const flow = await TelegramFlow.findById(run.flowId)
+        const step = flow?.steps.find((s) => s.order === Number(stepOrder))
+        const button = step?.buttons?.[Number(buttonIndex)]
+
+        if (!button || button.kind !== 'url' || !button.url) {
+            return res.redirect(302, FALLBACK_URL)
+        }
+
+        run.buttonClicks.push({
+            stepOrder: Number(stepOrder),
+            buttonLabel: button.label,
+            buttonKind: 'url'
+        })
+        await run.save()
+
+        return res.redirect(302, button.url)
+    } catch (error) {
+        console.error('❌ Erro ao redirecionar clique de fluxo Telegram:', error.message)
+        return res.redirect(302, FALLBACK_URL)
+    }
+}
+
+const TIMEZONE = 'America/Sao_Paulo'
+
+// Funil: quantos leads chegaram em cada passo, taxa de conclusão, horários de
+// entrada, tempo até clicar e cliques por botão (link e quiz). Aceita
+// ?range=24h|7d|30d|all pra recortar o período de todas as métricas.
 export const getFlowFunnel = async (req, res) => {
     try {
         const { flowId } = req.params
+        const range = ['24h', '7d', '30d', 'all'].includes(req.query.range) ? req.query.range : '7d'
 
         const flow = await TelegramFlow.findById(flowId)
 
@@ -158,14 +206,17 @@ export const getFlowFunnel = async (req, res) => {
         const steps = [...flow.steps].sort((a, b) => a.order - b.order)
         const flowObjectId = new mongoose.Types.ObjectId(flowId)
 
+        const since = rangeSince(range)
+        const rangeMatch = { flowId: flowObjectId, ...(since ? { startedAt: { $gte: since } } : {}) }
+
         const [totalRuns, completedRuns] = await Promise.all([
-            TelegramFlowRun.countDocuments({ flowId }),
-            TelegramFlowRun.countDocuments({ flowId, status: 'completed' })
+            TelegramFlowRun.countDocuments(rangeMatch),
+            TelegramFlowRun.countDocuments({ ...rangeMatch, status: 'completed' })
         ])
 
         const stepsFunnel = await Promise.all(steps.map(async (step) => {
             const reached = await TelegramFlowRun.countDocuments({
-                flowId,
+                ...rangeMatch,
                 maxStepOrderReached: { $gte: step.order }
             })
 
@@ -180,8 +231,10 @@ export const getFlowFunnel = async (req, res) => {
 
         // Conta usuários únicos por botão, não o total de cliques (um mesmo lead
         // pode clicar mais de uma vez, ou até ter mais de uma execução do fluxo).
+        // Cobre tanto botões "quiz" (clique via callback_query) quanto "url"
+        // (clique via nosso redirect rastreado em /telegram-flows/click/...).
         const buttonClicksAgg = await TelegramFlowRun.aggregate([
-            { $match: { flowId: flowObjectId } },
+            { $match: rangeMatch },
             { $unwind: '$buttonClicks' },
             {
                 $group: {
@@ -199,7 +252,7 @@ export const getFlowFunnel = async (req, res) => {
 
         // Distribuição de status atual dos leads (em andamento / esperando clique / completou)
         const statusAgg = await TelegramFlowRun.aggregate([
-            { $match: { flowId: flowObjectId } },
+            { $match: rangeMatch },
             { $group: { _id: '$status', count: { $sum: 1 } } }
         ])
         const statusBreakdown = { in_progress: 0, waiting: 0, completed: 0 }
@@ -207,29 +260,72 @@ export const getFlowFunnel = async (req, res) => {
 
         // Tempo médio (segundos) do início até a conclusão do fluxo, só entre quem completou
         const [avgCompletionAgg] = await TelegramFlowRun.aggregate([
-            { $match: { flowId: flowObjectId, status: 'completed', completedAt: { $exists: true } } },
+            { $match: { ...rangeMatch, status: 'completed', completedAt: { $exists: true } } },
             { $project: { seconds: { $divide: [{ $subtract: ['$completedAt', '$startedAt'] }, 1000] } } },
             { $group: { _id: null, avgSeconds: { $avg: '$seconds' } } }
         ])
         const avgCompletionTimeSeconds = avgCompletionAgg?.avgSeconds ?? null
 
-        // Leads novos por dia nos últimos 30 dias (zero-preenchido pros dias sem entrada)
-        const since = new Date()
-        since.setDate(since.getDate() - 29)
-        since.setHours(0, 0, 0, 0)
-
-        const leadsByDayAgg = await TelegramFlowRun.aggregate([
-            { $match: { flowId: flowObjectId, startedAt: { $gte: since } } },
-            { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$startedAt' } }, count: { $sum: 1 } } }
+        // Tempo médio (segundos) da entrada até o PRIMEIRO clique em qualquer botão
+        const [avgClickAgg] = await TelegramFlowRun.aggregate([
+            { $match: { ...rangeMatch, 'buttonClicks.0': { $exists: true } } },
+            { $project: { seconds: { $divide: [{ $subtract: [{ $min: '$buttonClicks.clickedAt' }, '$startedAt'] }, 1000] } } },
+            { $group: { _id: null, avgSeconds: { $avg: '$seconds' } } }
         ])
-        const leadsByDayMap = new Map(leadsByDayAgg.map((d) => [d._id, d.count]))
-        const leadsByDay = []
-        for (let i = 0; i < 30; i++) {
-            const day = new Date(since)
-            day.setDate(day.getDate() + i)
-            const key = day.toISOString().slice(0, 10)
-            leadsByDay.push({ date: key, count: leadsByDayMap.get(key) || 0 })
+        const avgTimeToClickSeconds = avgClickAgg?.avgSeconds ?? null
+
+        // Quantos leads únicos clicaram pra assistir/acessar (qualquer botão "url")
+        const [uniqueUrlClickersAgg] = await TelegramFlowRun.aggregate([
+            { $match: { ...rangeMatch, 'buttonClicks.buttonKind': 'url' } },
+            { $group: { _id: '$chatId' } },
+            { $count: 'count' }
+        ])
+        const uniqueUrlClickers = uniqueUrlClickersAgg?.count ?? 0
+
+        // Série temporal de novos leads. Granularidade se adapta ao período:
+        // 24h -> por hora (últimas 24h), 7d/30d/all -> por dia.
+        const isHourly = range === '24h'
+        const seriesSince = since || (await TelegramFlowRun.findOne({ flowId: flowObjectId }).sort({ startedAt: 1 }).select('startedAt'))?.startedAt || new Date()
+        const seriesStart = new Date(seriesSince)
+        if (!isHourly) seriesStart.setHours(0, 0, 0, 0)
+        const spanMs = Date.now() - seriesStart.getTime()
+        const bucketCount = isHourly
+            ? 24
+            : Math.min(90, Math.max(1, Math.ceil(spanMs / (1000 * 60 * 60 * 24)) + 1))
+
+        const timeSeriesAgg = await TelegramFlowRun.aggregate([
+            { $match: { flowId: flowObjectId, startedAt: { $gte: seriesStart } } },
+            {
+                $group: {
+                    _id: isHourly
+                        ? { $dateToString: { format: '%Y-%m-%dT%H:00', date: '$startedAt', timezone: TIMEZONE } }
+                        : { $dateToString: { format: '%Y-%m-%d', date: '$startedAt', timezone: TIMEZONE } },
+                    count: { $sum: 1 }
+                }
+            }
+        ])
+        const timeSeriesMap = new Map(timeSeriesAgg.map((d) => [d._id, d.count]))
+        const timeSeries = []
+        for (let i = 0; i < bucketCount; i++) {
+            const bucket = new Date(seriesStart)
+            if (isHourly) bucket.setHours(bucket.getHours() + i)
+            else bucket.setDate(bucket.getDate() + i)
+            if (bucket.getTime() > Date.now()) break
+
+            const key = isHourly
+                ? `${bucket.toLocaleDateString('sv-SE', { timeZone: TIMEZONE })}T${String(bucket.getHours()).padStart(2, '0')}:00`
+                : bucket.toLocaleDateString('sv-SE', { timeZone: TIMEZONE })
+            timeSeries.push({ bucket: key, count: timeSeriesMap.get(key) || 0 })
         }
+
+        // Horário de pico: soma de leads por hora do dia (0-23), agregando todos
+        // os dias do período selecionado — mostra em que horas o funil mais entra gente.
+        const leadsByHourAgg = await TelegramFlowRun.aggregate([
+            { $match: rangeMatch },
+            { $group: { _id: { $dateToString: { format: '%H', date: '$startedAt', timezone: TIMEZONE } }, count: { $sum: 1 } } }
+        ])
+        const leadsByHourMap = new Map(leadsByHourAgg.map((d) => [Number(d._id), d.count]))
+        const leadsByHour = Array.from({ length: 24 }, (_, hour) => ({ hour, count: leadsByHourMap.get(hour) || 0 }))
 
         const buttonClicks = buttonClicksAgg.map((click) => ({
             stepOrder: click._id.stepOrder,
@@ -249,12 +345,16 @@ export const getFlowFunnel = async (req, res) => {
         })
 
         return res.status(200).json({
+            range,
             totalRuns,
             completedRuns,
             completionRate: totalRuns > 0 ? completedRuns / totalRuns : 0,
             avgCompletionTimeSeconds,
+            avgTimeToClickSeconds,
+            uniqueUrlClickers,
             statusBreakdown,
-            leadsByDay,
+            timeSeries: { granularity: isHourly ? 'hour' : 'day', points: timeSeries },
+            leadsByHour,
             steps: stepsFunnel,
             buttonClicks,
             ctaStats

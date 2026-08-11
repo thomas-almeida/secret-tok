@@ -19,6 +19,7 @@ import {
     TelegramStepType,
     TelegramButtonKind,
     TelegramFlowFunnel,
+    TelegramFlowRange,
     TelegramFlowRun
 } from "../../../schemas/telegram-flow-schema";
 import {
@@ -27,7 +28,7 @@ import {
     Users, Clock, TrendingUp, MousePointerClick
 } from "lucide-react";
 import {
-    ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+    ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
     PieChart, Pie, Cell
 } from "recharts";
 
@@ -77,10 +78,26 @@ const STATUS_LABELS: Record<string, string> = {
     in_progress: 'Em andamento'
 };
 
+const RANGE_OPTIONS: { value: TelegramFlowRange; label: string }[] = [
+    { value: '24h', label: '24H' },
+    { value: '7d', label: '7D' },
+    { value: '30d', label: '30D' },
+    { value: 'all', label: 'All' }
+];
+
+function formatBucketLabel(bucket: string, granularity: 'hour' | 'day'): string {
+    if (granularity === 'hour') {
+        return bucket.slice(-5); // "HH:00"
+    }
+    const [, month, day] = bucket.split('-');
+    return `${day}/${month}`;
+}
+
 function FunnelPanel({ flowId }: { flowId: string }) {
     const [funnel, setFunnel] = useState<TelegramFlowFunnel | null>(null);
     const [leads, setLeads] = useState<TelegramFlowRun[]>([]);
     const [statusFilter, setStatusFilter] = useState<'' | 'in_progress' | 'waiting' | 'completed'>('');
+    const [range, setRange] = useState<TelegramFlowRange>('7d');
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
 
@@ -88,7 +105,7 @@ function FunnelPanel({ flowId }: { flowId: string }) {
         setIsLoading(true);
         try {
             const [funnelData, leadsData] = await Promise.all([
-                getFlowFunnel(flowId),
+                getFlowFunnel(flowId, range),
                 getFlowLeads(flowId, statusFilter ? { status: statusFilter, limit: 100 } : { limit: 100 })
             ]);
             setFunnel(funnelData);
@@ -98,7 +115,7 @@ function FunnelPanel({ flowId }: { flowId: string }) {
         } finally {
             setIsLoading(false);
         }
-    }, [flowId, statusFilter]);
+    }, [flowId, statusFilter, range]);
 
     useEffect(() => {
         load();
@@ -114,44 +131,73 @@ function FunnelPanel({ flowId }: { flowId: string }) {
 
     if (!funnel) return null;
 
-    const last7 = funnel.leadsByDay.slice(-7).reduce((sum, d) => sum + d.count, 0);
     const pieData = (['completed', 'waiting', 'in_progress'] as const)
         .map((key) => ({ key, value: funnel.statusBreakdown[key] }))
         .filter((d) => d.value > 0);
 
+    const peakHour = funnel.leadsByHour.reduce((max, h) => (h.count > max.count ? h : max), funnel.leadsByHour[0]);
+    const hasHourData = funnel.leadsByHour.some((h) => h.count > 0);
+    const clickRate = funnel.totalRuns > 0 ? funnel.uniqueUrlClickers / funnel.totalRuns : 0;
+
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-xl font-semibold">Visão geral</h2>
+                    <p className="text-xs text-neutral-500 mt-0.5">Métricas do período selecionado</p>
+                </div>
+                <div className="flex items-center bg-neutral-800 border border-neutral-700 rounded-lg p-1">
+                    {RANGE_OPTIONS.map((opt) => (
+                        <button
+                            key={opt.value}
+                            onClick={() => setRange(opt.value)}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${range === opt.value ? 'bg-amber-600 text-white' : 'text-neutral-400 hover:text-neutral-200'
+                                }`}
+                        >
+                            {opt.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
                 <div className="bg-neutral-800 border border-neutral-700 p-4 rounded-lg">
-                    <p className="text-xs text-neutral-400 flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />Total de leads</p>
+                    <p className="text-xs text-neutral-400 flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />Leads no período</p>
                     <p className="text-2xl font-bold mt-1">{funnel.totalRuns}</p>
                 </div>
                 <div className="bg-neutral-800 border border-neutral-700 p-4 rounded-lg">
-                    <p className="text-xs text-neutral-400 flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5" />Novos (7 dias)</p>
-                    <p className="text-2xl font-bold mt-1">{last7}</p>
-                </div>
-                <div className="bg-neutral-800 border border-neutral-700 p-4 rounded-lg">
-                    <p className="text-xs text-neutral-400">Completaram o fluxo</p>
+                    <p className="text-xs text-neutral-400 flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5" />Completaram</p>
                     <p className="text-2xl font-bold mt-1">{funnel.completedRuns}</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">{(funnel.completionRate * 100).toFixed(0)}% de conclusão</p>
                 </div>
                 <div className="bg-neutral-800 border border-neutral-700 p-4 rounded-lg">
-                    <p className="text-xs text-neutral-400">Taxa de conclusão</p>
-                    <p className="text-2xl font-bold mt-1">{(funnel.completionRate * 100).toFixed(0)}%</p>
+                    <p className="text-xs text-neutral-400 flex items-center gap-1.5"><Video className="w-3.5 h-3.5" />Clicaram p/ assistir</p>
+                    <p className="text-2xl font-bold mt-1">{funnel.uniqueUrlClickers}</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">{(clickRate * 100).toFixed(0)}% dos leads</p>
                 </div>
                 <div className="bg-neutral-800 border border-neutral-700 p-4 rounded-lg">
-                    <p className="text-xs text-neutral-400 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />Tempo médio até completar</p>
+                    <p className="text-xs text-neutral-400 flex items-center gap-1.5"><MousePointerClick className="w-3.5 h-3.5" />Tempo até clicar</p>
+                    <p className="text-2xl font-bold mt-1">{formatDuration(funnel.avgTimeToClickSeconds)}</p>
+                </div>
+                <div className="bg-neutral-800 border border-neutral-700 p-4 rounded-lg">
+                    <p className="text-xs text-neutral-400 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />Tempo até completar</p>
                     <p className="text-2xl font-bold mt-1">{formatDuration(funnel.avgCompletionTimeSeconds)}</p>
+                </div>
+                <div className="bg-neutral-800 border border-neutral-700 p-4 rounded-lg">
+                    <p className="text-xs text-neutral-400 flex items-center gap-1.5"><Timer className="w-3.5 h-3.5" />Horário de pico</p>
+                    <p className="text-2xl font-bold mt-1">{hasHourData ? `${String(peakHour.hour).padStart(2, '0')}h` : '—'}</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">{hasHourData ? `${peakHour.count} leads nesse horário` : 'sem dados'}</p>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="lg:col-span-2 bg-neutral-800 border border-neutral-700 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold mb-4">Leads novos por dia (30 dias)</h3>
-                    {funnel.leadsByDay.every((d) => d.count === 0) ? (
-                        <p className="text-neutral-400 text-sm py-8 text-center">Sem entradas nos últimos 30 dias.</p>
+                    <h3 className="text-lg font-semibold mb-4">Leads novos {funnel.timeSeries.granularity === 'hour' ? '(por hora, últimas 24h)' : `(por dia, ${range === 'all' ? 'todo o período' : range})`}</h3>
+                    {funnel.timeSeries.points.every((d) => d.count === 0) ? (
+                        <p className="text-neutral-400 text-sm py-8 text-center">Sem entradas nesse período.</p>
                     ) : (
                         <ResponsiveContainer width="100%" height={220}>
-                            <AreaChart data={funnel.leadsByDay}>
+                            <AreaChart data={funnel.timeSeries.points}>
                                 <defs>
                                     <linearGradient id="leadsGradient" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.4} />
@@ -160,8 +206,8 @@ function FunnelPanel({ flowId }: { flowId: string }) {
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#404040" vertical={false} />
                                 <XAxis
-                                    dataKey="date"
-                                    tickFormatter={(d: string) => d.slice(5).split('-').reverse().join('/')}
+                                    dataKey="bucket"
+                                    tickFormatter={(d: string) => formatBucketLabel(d, funnel.timeSeries.granularity)}
                                     tick={{ fill: '#a3a3a3', fontSize: 11 }}
                                     axisLine={{ stroke: '#404040' }}
                                     tickLine={false}
@@ -170,7 +216,7 @@ function FunnelPanel({ flowId }: { flowId: string }) {
                                 <YAxis allowDecimals={false} tick={{ fill: '#a3a3a3', fontSize: 11 }} axisLine={false} tickLine={false} width={28} />
                                 <Tooltip
                                     contentStyle={{ background: '#171717', border: '1px solid #404040', borderRadius: 8, fontSize: 12 }}
-                                    labelFormatter={(d) => new Date(`${d}T00:00:00`).toLocaleDateString('pt-BR')}
+                                    labelFormatter={(d) => formatBucketLabel(String(d), funnel.timeSeries.granularity)}
                                     formatter={(value) => [value, 'Leads']}
                                 />
                                 <Area type="monotone" dataKey="count" stroke="#f59e0b" strokeWidth={2} fill="url(#leadsGradient)" />
@@ -213,6 +259,39 @@ function FunnelPanel({ flowId }: { flowId: string }) {
             </div>
 
             <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-1">Horários de pico</h3>
+                <p className="text-xs text-neutral-500 mb-4">Soma de leads por hora do dia (horário de Brasília), no período selecionado</p>
+                {!hasHourData ? (
+                    <p className="text-neutral-400 text-sm py-8 text-center">Sem dados suficientes nesse período.</p>
+                ) : (
+                    <ResponsiveContainer width="100%" height={180}>
+                        <BarChart data={funnel.leadsByHour}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#404040" vertical={false} />
+                            <XAxis
+                                dataKey="hour"
+                                tickFormatter={(h: number) => `${h}h`}
+                                tick={{ fill: '#a3a3a3', fontSize: 10 }}
+                                axisLine={{ stroke: '#404040' }}
+                                tickLine={false}
+                                interval={1}
+                            />
+                            <YAxis allowDecimals={false} tick={{ fill: '#a3a3a3', fontSize: 11 }} axisLine={false} tickLine={false} width={28} />
+                            <Tooltip
+                                contentStyle={{ background: '#171717', border: '1px solid #404040', borderRadius: 8, fontSize: 12 }}
+                                labelFormatter={(h) => `${h}h - ${Number(h) + 1}h`}
+                                formatter={(value) => [value, 'Leads']}
+                            />
+                            <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+                                {funnel.leadsByHour.map((h) => (
+                                    <Cell key={h.hour} fill={h.hour === peakHour.hour ? '#f59e0b' : '#525252'} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                )}
+            </div>
+
+            <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-4">
                 <h3 className="text-lg font-semibold mb-4">Funil por passo</h3>
                 <div className="space-y-3">
                     {funnel.steps.map((step) => {
@@ -238,8 +317,8 @@ function FunnelPanel({ flowId }: { flowId: string }) {
             {funnel.ctaStats.length > 0 && (
                 <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden">
                     <div className="p-4 border-b border-neutral-700">
-                        <h3 className="text-lg font-semibold flex items-center gap-2"><MousePointerClick className="w-4 h-4" />Performance dos CTAs (quiz)</h3>
-                        <p className="text-xs text-neutral-500 mt-1">CTR = cliques únicos ÷ leads que alcançaram o passo. Botões do tipo &quot;link&quot; não são rastreáveis pelo Telegram.</p>
+                        <h3 className="text-lg font-semibold flex items-center gap-2"><MousePointerClick className="w-4 h-4" />Performance dos CTAs</h3>
+                        <p className="text-xs text-neutral-500 mt-1">CTR = cliques únicos ÷ leads que alcançaram o passo. Inclui botões de quiz e de link (assistir/acessar).</p>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -247,6 +326,7 @@ function FunnelPanel({ flowId }: { flowId: string }) {
                                 <tr>
                                     <th className="text-left p-3 text-neutral-300">Passo</th>
                                     <th className="text-left p-3 text-neutral-300">Botão</th>
+                                    <th className="text-left p-3 text-neutral-300">Tipo</th>
                                     <th className="text-left p-3 text-neutral-300">Alcançaram</th>
                                     <th className="text-left p-3 text-neutral-300">Cliques únicos</th>
                                     <th className="text-left p-3 text-neutral-300">CTR</th>
@@ -257,6 +337,11 @@ function FunnelPanel({ flowId }: { flowId: string }) {
                                     <tr key={i}>
                                         <td className="p-3 text-neutral-300">{cta.stepOrder + 1}</td>
                                         <td className="p-3 text-neutral-300">{cta.buttonLabel}</td>
+                                        <td className="p-3">
+                                            <span className={`px-2 py-0.5 rounded-full text-xs ${cta.buttonKind === 'url' ? 'bg-sky-500/20 text-sky-400' : 'bg-purple-500/20 text-purple-400'}`}>
+                                                {cta.buttonKind === 'url' ? 'link' : 'quiz'}
+                                            </span>
+                                        </td>
                                         <td className="p-3 text-neutral-400">{cta.reached}</td>
                                         <td className="p-3 text-neutral-400">{cta.count}</td>
                                         <td className="p-3">

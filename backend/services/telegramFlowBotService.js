@@ -111,12 +111,16 @@ class TelegramFlowBotService {
         await this.runFlow(chat.id, flow, run)
     }
 
-    buildReplyMarkup(step) {
+    // Botões "url" abrem o link direto no cliente do Telegram e nunca disparam
+    // callback_query, então roteamos por um redirect nosso (que loga o clique e
+    // devolve 302 pro destino real) pra conseguir medir quem clicou pra assistir.
+    buildReplyMarkup(step, runId) {
         if (!step.buttons || step.buttons.length === 0) return {}
 
         const inline_keyboard = [step.buttons.map((button, index) => {
             if (button.kind === 'url') {
-                return { text: button.label, url: button.url }
+                const trackedUrl = `${TELEGRAM_FLOW_CONFIG.publicBaseUrl}/api/telegram-flows/click/${runId}/${step.order}/${index}`
+                return { text: button.label, url: trackedUrl }
             }
             return { text: button.label, callback_data: `${step.order}:${index}` }
         })]
@@ -134,7 +138,7 @@ class TelegramFlowBotService {
                 await delay(step.delaySeconds * 1000)
             }
 
-            const replyMarkup = this.buildReplyMarkup(step)
+            const replyMarkup = this.buildReplyMarkup(step, run._id)
             const text = renderStepText(step.text, contact)
 
             try {

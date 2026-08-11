@@ -8,7 +8,8 @@ import {
     deleteFlow,
     getFlowFunnel,
     getFlowLeads,
-    uploadMedia
+    uploadMedia,
+    redirectClick
 } from "../controllers/telegramFlowController.js"
 
 const router = express.Router()
@@ -24,6 +25,8 @@ const upload = multer({
         }
     }
 })
+
+router.get("/click/:runId/:stepOrder/:buttonIndex", redirectClick) // GET /api/telegram-flows/click/:runId/:stepOrder/:buttonIndex - Redirect rastreado (botões de link)
 
 router.post("/create", createFlow)                 // POST /api/telegram-flows/create - Criar fluxo
 router.get("/", getAllFlows)                        // GET /api/telegram-flows - Listar todos os fluxos
